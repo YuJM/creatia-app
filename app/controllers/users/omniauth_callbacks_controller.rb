@@ -1,25 +1,25 @@
 class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   skip_before_action :verify_authenticity_token, only: [:google_oauth2, :github]
-  
+
   def google_oauth2
-    handle_auth "Google"
+    handle_auth("Google")
   end
-  
+
   def github
-    handle_auth "GitHub"
+    handle_auth("GitHub")
   end
-  
+
   def failure
-    redirect_to root_path, alert: "Authentication failed, please try again."
+    redirect_to root_path, alert: "Authentication failed: #{params[:message]}"
   end
-  
+
   private
-  
+
   def handle_auth(kind)
     @user = User.from_omniauth(request.env["omniauth.auth"])
     if @user.persisted?
+      flash[:notice] = I18n.t("devise.omniauth_callbacks.success", kind: kind)
       sign_in_and_redirect @user, event: :authentication
-      set_flash_message(:notice, :success, kind: kind) if is_navigational_format?
     else
       session["devise.#{kind.downcase}_data"] = request.env["omniauth.auth"].except(:extra)
       redirect_to new_user_registration_url, alert: @user.errors.full_messages.join("\n")

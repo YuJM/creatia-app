@@ -8,6 +8,19 @@ class User < ApplicationRecord
   # Validations
   validates :username, uniqueness: { case_sensitive: false }, length: { minimum: 3, maximum: 30 }, format: { with: /\A[a-zA-Z0-9_-]+\z/ }, allow_nil: true, allow_blank: true
   validates :role, inclusion: { in: %w[user admin moderator] }
+  
+  # Role helper methods
+  def admin?
+    role == 'admin'
+  end
+  
+  def moderator?
+    role == 'moderator'
+  end
+  
+  def regular_user?
+    role == 'user'
+  end
          
   def self.from_omniauth(access_token)
     data = access_token.info

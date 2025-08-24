@@ -14,6 +14,7 @@ require 'faker'
 require 'database_cleaner/active_record'
 require 'shoulda/matchers'
 require 'simplecov'
+require 'pundit/matchers'
 
 SimpleCov.start 'rails' do
   add_filter '/spec/'

@@ -4,9 +4,9 @@ class ApplicationController < ActionController::Base
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
   
-  # Pundit authorization check
+  # Pundit authorization check - don't run on Devise or system controllers
   after_action :verify_authorized, unless: :skip_pundit?
-  after_action :verify_policy_scoped, only: :index, unless: :skip_pundit?
+  after_action :verify_policy_scoped, unless: :skip_pundit?, if: -> { action_name == 'index' }
   
   # Pundit exception handling
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
@@ -19,6 +19,9 @@ class ApplicationController < ActionController::Base
   end
   
   def skip_pundit?
-    devise_controller? || params[:controller] =~ /(^(rails_)?admin)|(^pages$)/ || params[:controller] == 'users/omniauth_callbacks'
+    devise_controller? || 
+    params[:controller] =~ /(^(rails_)?admin)|(^pages$)/ || 
+    params[:controller] == 'users/omniauth_callbacks' ||
+    params[:controller] =~ /^devise/
   end
 end

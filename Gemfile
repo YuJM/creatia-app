@@ -95,6 +95,7 @@ group :test do
   gem "database_cleaner-active_record"
   gem "simplecov", require: false
   gem "rails-controller-testing"
+  gem "pundit-matchers", "~> 3.1"
 end
 
 gem "tailwindcss-ruby", "~> 4.1"
