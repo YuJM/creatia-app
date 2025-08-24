@@ -10,15 +10,23 @@ RSpec.describe UsersController, type: :controller do
     it_behaves_like "requires authentication", :index
     
     context "when authenticated as regular user" do
-      before { sign_in user }
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in user, scope: :user
+      end
       
-      it "raises not authorized error" do
-        expect { get :index }.to raise_error(Pundit::NotAuthorizedError)
+      it "redirects with not authorized alert" do
+        get :index
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq("You are not authorized to perform this action.")
       end
     end
     
     context "when authenticated as moderator" do
-      before { sign_in moderator }
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in moderator, scope: :user
+      end
       
       it "returns success" do
         get :index
@@ -42,7 +50,10 @@ RSpec.describe UsersController, type: :controller do
     end
     
     context "when authenticated as admin" do
-      before { sign_in admin }
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in admin, scope: :user
+      end
       
       it "returns success" do
         get :index
@@ -60,7 +71,10 @@ RSpec.describe UsersController, type: :controller do
     it_behaves_like "requires authentication", :show, :get, { id: 1 }
     
     context "when authenticated" do
-      before { sign_in user }
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in user, scope: :user
+      end
       
       it "returns success for own profile" do
         get :show, params: { id: user.id }
@@ -88,17 +102,20 @@ RSpec.describe UsersController, type: :controller do
     it_behaves_like "requires authentication", :edit, :get, { id: 1 }
     
     context "when authenticated as regular user" do
-      before { sign_in user }
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in user, scope: :user
+      end
       
       it "returns success for own profile" do
         get :edit, params: { id: user.id }
         expect(response).to be_successful
       end
       
-      it "raises not authorized for other user" do
-        expect {
-          get :edit, params: { id: other_user.id }
-        }.to raise_error(Pundit::NotAuthorizedError)
+      it "redirects with not authorized for other user" do
+        get :edit, params: { id: other_user.id }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq("You are not authorized to perform this action.")
       end
       
       it "authorizes the action" do
@@ -108,7 +125,10 @@ RSpec.describe UsersController, type: :controller do
     end
     
     context "when authenticated as admin" do
-      before { sign_in admin }
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in admin, scope: :user
+      end
       
       it "returns success for any user" do
         get :edit, params: { id: other_user.id }
@@ -124,7 +144,10 @@ RSpec.describe UsersController, type: :controller do
     it_behaves_like "requires authentication", :update, :patch, { id: 1 }
     
     context "when authenticated as regular user" do
-      before { sign_in user }
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in user, scope: :user
+      end
       
       context "updating own profile" do
         it "updates the user" do
@@ -165,16 +188,19 @@ RSpec.describe UsersController, type: :controller do
       end
       
       context "updating other user" do
-        it "raises not authorized error" do
-          expect {
-            patch :update, params: { id: other_user.id, user: valid_attributes }
-          }.to raise_error(Pundit::NotAuthorizedError)
+        it "redirects with not authorized error" do
+          patch :update, params: { id: other_user.id, user: valid_attributes }
+          expect(response).to redirect_to(root_path)
+          expect(flash[:alert]).to eq("You are not authorized to perform this action.")
         end
       end
     end
     
     context "when authenticated as admin" do
-      before { sign_in admin }
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in admin, scope: :user
+      end
       
       it "can update any user" do
         patch :update, params: { id: other_user.id, user: valid_attributes }
@@ -194,28 +220,34 @@ RSpec.describe UsersController, type: :controller do
     it_behaves_like "requires authentication", :destroy, :delete, { id: 1 }
     
     context "when authenticated as regular user" do
-      before { sign_in user }
-      
-      it "raises not authorized error for own account" do
-        expect {
-          delete :destroy, params: { id: user.id }
-        }.to raise_error(Pundit::NotAuthorizedError)
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in user, scope: :user
       end
       
-      it "raises not authorized error for other user" do
-        expect {
-          delete :destroy, params: { id: other_user.id }
-        }.to raise_error(Pundit::NotAuthorizedError)
+      it "redirects with not authorized error for own account" do
+        delete :destroy, params: { id: user.id }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq("You are not authorized to perform this action.")
+      end
+      
+      it "redirects with not authorized error for other user" do
+        delete :destroy, params: { id: other_user.id }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq("You are not authorized to perform this action.")
       end
     end
     
     context "when authenticated as moderator" do
-      before { sign_in moderator }
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in moderator, scope: :user
+      end
       
-      it "raises not authorized error" do
-        expect {
-          delete :destroy, params: { id: other_user.id }
-        }.to raise_error(Pundit::NotAuthorizedError)
+      it "redirects with not authorized error" do
+        delete :destroy, params: { id: other_user.id }
+        expect(response).to redirect_to(root_path)
+        expect(flash[:alert]).to eq("You are not authorized to perform this action.")
       end
     end
     
@@ -245,7 +277,10 @@ RSpec.describe UsersController, type: :controller do
   
   describe "Pundit integration" do
     context "policy usage" do
-      before { sign_in user }
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in user, scope: :user
+      end
       
       it "uses UserPolicy for authorization" do
         expect(UserPolicy).to receive(:new).with(user, user).and_call_original
@@ -260,7 +295,10 @@ RSpec.describe UsersController, type: :controller do
     end
     
     context "permitted attributes" do
-      before { sign_in user }
+      before do
+        @request.env["devise.mapping"] = Devise.mappings[:user]
+        sign_in user, scope: :user
+      end
       
       it "uses policy for permitted attributes" do
         policy = instance_double(UserPolicy)

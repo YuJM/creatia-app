@@ -17,7 +17,7 @@ class UsersController < ApplicationController
 
   def update
     authorize @user
-    if @user.update(permitted_attributes(@user))
+    if @user.update(user_params)
       redirect_to @user, notice: 'User was successfully updated.'
     else
       render :edit, status: :unprocessable_entity
@@ -36,7 +36,7 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
   end
   
-  def permitted_attributes(user)
-    policy(user).permitted_attributes
+  def user_params
+    params.require(:user).permit(*policy(@user).permitted_attributes)
   end
 end
