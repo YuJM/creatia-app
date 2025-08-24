@@ -5,7 +5,7 @@ class ApplicationController < ActionController::Base
   allow_browser versions: :modern
   
   # Pundit authorization check
-  after_action :verify_authorized, except: :index, unless: :skip_pundit?
+  after_action :verify_authorized, unless: :skip_pundit?
   after_action :verify_policy_scoped, only: :index, unless: :skip_pundit?
   
   # Pundit exception handling
@@ -19,6 +19,6 @@ class ApplicationController < ActionController::Base
   end
   
   def skip_pundit?
-    devise_controller? || params[:controller] =~ /(^(rails_)?admin)|(^pages$)/
+    devise_controller? || params[:controller] =~ /(^(rails_)?admin)|(^pages$)/ || params[:controller] == 'users/omniauth_callbacks'
   end
 end
