@@ -54,6 +54,15 @@ group :development, :test do
 
   # Load environment variables from .env file [https://github.com/bkeepers/dotenv]
   gem "dotenv-rails"
+  
+  # RSpec for testing [https://github.com/rspec/rspec-rails]
+  gem "rspec-rails", "~> 8.0.0"
+  
+  # Factory Bot for test data [https://github.com/thoughtbot/factory_bot_rails]
+  gem "factory_bot_rails"
+  
+  # Faker for generating fake data [https://github.com/faker-ruby/faker]
+  gem "faker"
 end
 
 group :development do
@@ -68,6 +77,12 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  
+  # Additional RSpec matchers and tools
+  gem "shoulda-matchers", "~> 6.4"
+  gem "database_cleaner-active_record"
+  gem "simplecov", require: false
+  gem "rails-controller-testing"
 end
 
 gem "tailwindcss-ruby", "~> 4.1"
