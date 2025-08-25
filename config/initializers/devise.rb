@@ -273,16 +273,32 @@ Devise.setup do |config|
   # up on your models and hooks.
   # config.omniauth :github, 'APP_ID', 'APP_SECRET', scope: 'user,public_repo'
   
-  # Configure OmniAuth providers
+  # Configure OmniAuth providers for SSO
   config.omniauth :google_oauth2, ENV['GOOGLE_CLIENT_ID'], ENV['GOOGLE_CLIENT_SECRET'], {
     scope: 'email,profile',
     prompt: 'select_account',
     image_aspect_ratio: 'square',
-    image_size: 50
+    image_size: 50,
+    # SSO 콜백 URL을 auth 서브도메인으로 고정
+    redirect_uri: -> { 
+      base_domain = ENV.fetch('BASE_DOMAIN', 'localhost')
+      protocol = Rails.env.production? ? 'https' : 'http'
+      port = Rails.env.development? ? ':3000' : ''
+      "#{protocol}://auth.#{base_domain}#{port}/users/auth/google_oauth2/callback"
+    },
+    # state 파라미터 지원
+    state: true
   }
   
   config.omniauth :github, ENV['GITHUB_CLIENT_ID'], ENV['GITHUB_CLIENT_SECRET'], {
-    scope: 'user:email'
+    scope: 'user:email',
+    # SSO 콜백 URL을 auth 서브도메인으로 고정
+    redirect_uri: -> { 
+      base_domain = ENV.fetch('BASE_DOMAIN', 'localhost')
+      protocol = Rails.env.production? ? 'https' : 'http'
+      port = Rails.env.development? ? ':3000' : ''
+      "#{protocol}://auth.#{base_domain}#{port}/users/auth/github/callback"
+    }
   }
 
   # ==> Warden configuration

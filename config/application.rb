@@ -28,5 +28,32 @@ module CreatiaApp
     config.generators do |g|
       g.orm :active_record, primary_key_type: :uuid
     end
+    
+    # Load middleware path
+    config.autoload_paths << Rails.root.join('app/middleware')
+    
+    # Multi-tenant security middleware (프로덕션과 필요시에만)
+    if Rails.env.production? || ENV['ENABLE_RATE_LIMITING'] == 'true'
+      config.middleware.use 'TenantRateLimiter'
+    end
+    
+    # Security headers
+    config.force_ssl = Rails.env.production?
+    config.ssl_options = {
+      redirect: {
+        exclude: ->(request) { 
+          request.path.start_with?('/up') || 
+          request.path.start_with?('/health') 
+        }
+      }
+    }
+    
+    # Session security
+    config.session_store :cookie_store, 
+                        key: '_creatia_session',
+                        secure: Rails.env.production?,
+                        httponly: true,
+                        same_site: :lax,
+                        expire_after: 8.hours
   end
 end

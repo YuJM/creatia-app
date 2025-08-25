@@ -28,6 +28,9 @@ gem "devise", "~> 4.9"
 # Authorization
 gem "pundit", "~> 2.4"
 
+# Multi-tenancy
+gem "acts_as_tenant", "~> 1.0"
+
 # OAuth authentication
 gem "omniauth", "~> 2.1"
 gem "omniauth-google-oauth2", "~> 1.2"

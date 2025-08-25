@@ -10,10 +10,55 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_24_145437) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_25_123616) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
+
+  create_table "organization_memberships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.uuid "organization_id", null: false
+    t.string "role", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_organization_memberships_on_active"
+    t.index ["organization_id"], name: "index_organization_memberships_on_organization_id"
+    t.index ["role"], name: "index_organization_memberships_on_role"
+    t.index ["user_id", "organization_id"], name: "index_org_memberships_on_user_and_org", unique: true
+    t.index ["user_id"], name: "index_organization_memberships_on_user_id"
+  end
+
+  create_table "organizations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name"
+    t.string "subdomain"
+    t.text "description"
+    t.string "plan"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["subdomain"], name: "index_organizations_on_subdomain", unique: true
+  end
+
+  create_table "tasks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "title"
+    t.text "description"
+    t.string "status"
+    t.string "priority"
+    t.uuid "organization_id", null: false
+    t.string "assigned_user_type"
+    t.uuid "assigned_user_id"
+    t.datetime "due_date"
+    t.integer "position", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_user_type", "assigned_user_id"], name: "index_tasks_on_assigned_user"
+    t.index ["organization_id", "assigned_user_id", "assigned_user_type"], name: "idx_on_organization_id_assigned_user_id_assigned_us_0cf40f5b5d"
+    t.index ["organization_id", "priority"], name: "index_tasks_on_organization_id_and_priority"
+    t.index ["organization_id", "status"], name: "index_tasks_on_organization_id_and_status"
+    t.index ["organization_id"], name: "index_tasks_on_organization_id"
+    t.index ["position"], name: "index_tasks_on_position"
+  end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "email", default: "", null: false
@@ -40,4 +85,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_24_145437) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["username"], name: "index_users_on_username", unique: true
   end
+
+  add_foreign_key "organization_memberships", "organizations"
+  add_foreign_key "organization_memberships", "users"
+  add_foreign_key "tasks", "organizations"
 end

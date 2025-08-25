@@ -36,4 +36,69 @@ class UserSerializer < BaseSerializer
   } do |user, params|
     params[:time_helper].time_ago_in_words(user.created_at)
   end
+  
+  # 멀티테넌트 관련 속성들
+  
+  # 현재 조직에서의 역할
+  attribute :current_organization_role, if: proc { |user, params| 
+    params[:current_organization].present? 
+  } do |user, params|
+    organization = params[:current_organization]
+    user.role_in(organization)
+  end
+  
+  # 현재 조직에서의 멤버십 정보
+  attribute :current_membership, if: proc { |user, params| 
+    params[:current_organization].present? && params[:include_membership] 
+  } do |user, params|
+    organization = params[:current_organization]
+    membership = user.organization_memberships.find_by(
+      organization: organization, 
+      active: true
+    )
+    
+    if membership
+      OrganizationMembershipSerializer.new(
+        membership, 
+        params: params.merge(skip_organization: true)
+      ).serializable_hash
+    end
+  end
+  
+  # 사용자가 속한 조직 목록 (전체 조직 컨텍스트에서만)
+  attribute :organizations, if: proc { |user, params| 
+    params[:include_organizations] 
+  } do |user, params|
+    user.organizations.active.map do |org|
+      {
+        id: org.id,
+        name: org.name,
+        subdomain: org.subdomain,
+        display_name: org.display_name,
+        role: user.role_in(org),
+        is_current: params[:current_organization] == org
+      }
+    end
+  end
+  
+  # 권한 정보 (현재 조직 기준)
+  attribute :permissions, if: proc { |user, params| 
+    params[:current_organization].present? 
+  } do |user, params|
+    organization = params[:current_organization]
+    {
+      can_view_organization: user.member_of?(organization),
+      can_manage_members: user.admin_of?(organization),
+      can_manage_organization: user.owner_of?(organization),
+      is_admin: user.admin_of?(organization),
+      is_owner: user.owner_of?(organization)
+    }
+  end
+  
+  # OAuth 제공자 정보 (제한적 공개)
+  attribute :oauth_provider, if: proc { |user, params| 
+    params[:include_oauth_info] 
+  } do |user|
+    user.provider || 'email'
+  end
 end
