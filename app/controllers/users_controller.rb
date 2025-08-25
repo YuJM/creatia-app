@@ -5,10 +5,20 @@ class UsersController < ApplicationController
   def index
     @users = policy_scope(User)
     authorize User
+    
+    respond_to do |format|
+      format.html
+      format.json { render_serialized(UserSerializer, @users) }
+    end
   end
 
   def show
     authorize @user
+    
+    respond_to do |format|
+      format.html
+      format.json { render_serialized(UserSerializer, @user, params: { include_admin_info: true }) }
+    end
   end
 
   def edit
@@ -18,9 +28,15 @@ class UsersController < ApplicationController
   def update
     authorize @user
     if @user.update(user_params)
-      redirect_to @user, notice: 'User was successfully updated.'
+      respond_to do |format|
+        format.html { redirect_to @user, notice: 'User was successfully updated.' }
+        format.json { render_with_success(UserSerializer, @user) }
+      end
     else
-      render :edit, status: :unprocessable_entity
+      respond_to do |format|
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render_error(@user.errors) }
+      end
     end
   end
   

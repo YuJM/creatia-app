@@ -19,6 +19,9 @@ gem "tailwindcss-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
+# Fast JSON serialization [https://github.com/okuramasafumi/alba]
+gem "alba", "~> 3.5"
+
 # Authentication
 gem "devise", "~> 4.9"
 
