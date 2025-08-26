@@ -110,8 +110,16 @@ class DomainService
         host = request.host
         return nil if host == 'localhost' || host.match?(/^\d+\.\d+\.\d+\.\d+$/)
         
-        # {subdomain}.creatia.local 형태에서 subdomain 추출
-        host.sub(".#{base_domain}", '')
+        # 메인 도메인 자체인 경우 nil 반환 (서브도메인 없음)
+        return nil if host == base_domain
+        
+        # {subdomain}.base_domain 형태에서 subdomain 추출
+        if host.end_with?(".#{base_domain}")
+          host.sub(".#{base_domain}", '')
+        else
+          # 예상하지 못한 호스트인 경우 nil 반환
+          nil
+        end
       else
         request.subdomain
       end

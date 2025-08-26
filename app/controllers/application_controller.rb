@@ -1,6 +1,9 @@
 class ApplicationController < ActionController::Base
   include Pundit::Authorization
   
+  # Devise 헬퍼 메서드 명시적 포함
+  include Devise::Controllers::Helpers
+  
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
   
@@ -56,7 +59,9 @@ class ApplicationController < ActionController::Base
   
   # 멀티테넌트 설정
   def set_current_tenant
-    @tenant_context = TenantContextService.new(request, current_user)
+    # 인증이 필요하지 않은 컨트롤러에서는 current_user가 nil일 수 있음
+    user = respond_to?(:current_user) ? current_user : nil
+    @tenant_context = TenantContextService.new(request, user)
     
     begin
       @tenant_context.setup_tenant_context!

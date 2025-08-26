@@ -34,7 +34,7 @@ Rails.application.routes.draw do
       sign_in: 'login',
       sign_out: 'logout',
       sign_up: 'register'
-    }
+    }, as: :main_user
     
     get "pages/home"
     
@@ -63,7 +63,7 @@ Rails.application.routes.draw do
       sign_in: 'login',
       sign_out: 'logout',
       sign_up: 'register'
-    }
+    }, as: :auth_user
     
     # SSO 관련 라우트들
     devise_scope :user do
@@ -82,7 +82,7 @@ Rails.application.routes.draw do
     # 백워드 호환성을 위한 추가 라우트
     get 'switch/:subdomain', to: 'users/sessions#switch_to_organization', as: :legacy_switch_to_organization
     
-    root "pages#home"
+    root "pages#home", as: :auth_root
   end
   
   # =============================================================================
@@ -99,7 +99,7 @@ Rails.application.routes.draw do
     end
     
     # 조직 대시보드
-    root "organizations#dashboard"
+    root "organizations#dashboard", as: :tenant_root
     get 'dashboard', to: 'organizations#dashboard'
     
     # 현재 조직 정보
@@ -169,7 +169,7 @@ Rails.application.routes.draw do
   # =============================================================================
   constraints subdomain: 'admin' do
     namespace :admin do
-      root "dashboard#index"
+      root "dashboard#index", as: :admin_root
       
       resources :organizations do
         resources :organization_memberships, path: 'members'
