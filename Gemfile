@@ -19,6 +19,24 @@ gem "tailwindcss-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
+# Fast JSON serialization [https://github.com/okuramasafumi/alba]
+gem "alba", "~> 3.5"
+
+# Authentication
+gem "devise", "~> 4.9"
+
+# Authorization
+gem "pundit", "~> 2.4"
+
+# Multi-tenancy
+gem "acts_as_tenant", "~> 1.0"
+
+# OAuth authentication
+gem "omniauth", "~> 2.1"
+gem "omniauth-google-oauth2", "~> 1.2"
+gem "omniauth-github", "~> 2.0"
+gem "omniauth-rails_csrf_protection", "~> 1.0"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
@@ -51,15 +69,39 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Load environment variables from .env file [https://github.com/bkeepers/dotenv]
+  gem "dotenv-rails"
+  
+  # RSpec for testing [https://github.com/rspec/rspec-rails]
+  gem "rspec-rails", "~> 8.0.0"
+  
+  # Factory Bot for test data [https://github.com/thoughtbot/factory_bot_rails]
+  gem "factory_bot_rails"
+  
+  # Faker for generating fake data [https://github.com/faker-ruby/faker]
+  gem "faker"
 end
 
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+  
+  # Live reload for Hotwire [https://github.com/kirillplatonov/hotwire-livereload]
+  gem "hotwire-livereload"
 end
 
 group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  
+  # Additional RSpec matchers and tools
+  gem "shoulda-matchers", "~> 6.4"
+  gem "database_cleaner-active_record"
+  gem "simplecov", require: false
+  gem "rails-controller-testing"
+  gem "pundit-matchers", "~> 3.1"
 end
+
+gem "tailwindcss-ruby", "~> 4.1"
