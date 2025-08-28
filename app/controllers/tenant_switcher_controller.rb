@@ -18,10 +18,10 @@ class TenantSwitcherController < ApplicationController
     
     respond_to do |format|
       format.json do
-        render json: {
+        render_serialized(TenantSwitcherSerializer, {
           success: true,
           data: data
-        }
+        })
       end
       format.html do
         @switcher_data = data
@@ -36,10 +36,10 @@ class TenantSwitcherController < ApplicationController
     subdomain = params[:subdomain]
     
     unless subdomain.present?
-      return render json: {
+      return render_serialized(TenantSwitcherSerializer, {
         success: false,
         error: "조직 서브도메인이 필요합니다."
-      }, status: :bad_request
+      }, status: :bad_request)
     end
     
     # 전환 전 현재 조직 정보 저장
@@ -52,11 +52,13 @@ class TenantSwitcherController < ApplicationController
     in Success(data)
       # 테넌트 전환 성공 감사 로그
       SecurityAuditService.log_tenant_switch(current_user, from_tenant, to_tenant, request)
-      render json: { success: true, **data }
+      data[:success] = true
+      render_serialized(TenantSwitcherSerializer, data)
     in Failure(error_data)
       # 무권한 테넌트 접근 시도 감사 로그
       SecurityAuditService.log_cross_tenant_access(current_user, to_tenant, from_tenant, request)
-      render json: { success: false, **error_data }, status: :forbidden
+      error_data[:success] = false
+      render_serialized(TenantSwitcherSerializer, error_data, status: :forbidden)
     end
   end
   
@@ -81,11 +83,11 @@ class TenantSwitcherController < ApplicationController
       }
     end
     
-    render json: {
+    render_serialized(TenantSwitcherSerializer, {
       success: true,
       organizations: serialized_organizations,
-      total_count: serialized_organizations.count
-    }
+      data: { total_count: serialized_organizations.count }
+    })
   end
   
   # GET /tenant_switcher/quick_options
@@ -93,10 +95,10 @@ class TenantSwitcherController < ApplicationController
   def quick_options
     options = @tenant_switcher.quick_switch_options
     
-    render json: {
+    render_serialized(TenantSwitcherSerializer, {
       success: true,
       quick_options: options
-    }
+    })
   end
   
   # GET /tenant_switcher/history
@@ -105,11 +107,11 @@ class TenantSwitcherController < ApplicationController
     limit = params[:limit]&.to_i || 10
     history = @tenant_switcher.recent_switch_history(limit)
     
-    render json: {
+    render_serialized(TenantSwitcherSerializer, {
       success: true,
       history: history,
-      total_count: history.count
-    }
+      data: { total_count: history.count }
+    })
   end
   
   # GET /tenant_switcher/statistics
@@ -140,11 +142,11 @@ class TenantSwitcherController < ApplicationController
   def context
     context_info = tenant_context&.context_info || {}
     
-    render json: {
+    render_serialized(TenantSwitcherSerializer, {
       success: true,
       context: context_info,
-      debug: Rails.env.development? ? tenant_context&.debug_info : nil
-    }
+      data: { debug: Rails.env.development? ? tenant_context&.debug_info : nil }
+    })
   end
   
   # POST /tenant_switcher/validate_access
@@ -153,10 +155,10 @@ class TenantSwitcherController < ApplicationController
     subdomain = params[:subdomain]
     
     unless subdomain.present?
-      return render json: {
+      return render_serialized(TenantSwitcherSerializer, {
         success: false,
         error: "조직 서브도메인이 필요합니다."
-      }, status: :bad_request
+      }, status: :bad_request)
     end
     
     can_access = @tenant_switcher.can_switch_to?(subdomain)

@@ -115,7 +115,7 @@ class SprintsController < TenantBaseController
     
     if @sprint.destroy
       respond_to do |format|
-        format.json { render json: { success: true, message: "스프린트가 삭제되었습니다." } }
+        format.json { render_serialized(SuccessSerializer, { message: "스프린트가 삭제되었습니다." }) }
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.remove("sprint_#{@sprint.id}"),
@@ -152,13 +152,12 @@ class SprintsController < TenantBaseController
       
       respond_to do |format|
         format.json do
-          render json: {
-            success: true,
-            sprint_plan: @sprint_plan.to_h,
+          render_serialized(SprintPlanningSerializer, {
+            sprint_plan: @sprint_plan,
             dependency_analysis: @dependency_analysis,
-            risk_assessment: @risk_assessment.to_h,
+            risk_assessment: @risk_assessment,
             recommendations: generate_sprint_recommendations(@sprint_plan, @risk_assessment)
-          }
+          })
         end
         
         format.turbo_stream do
@@ -193,15 +192,15 @@ class SprintsController < TenantBaseController
     
     respond_to do |format|
       format.json do
-        render json: {
-          metrics: @team_metrics.to_h,
+        render_serialized(SprintMetricsSerializer, {
+          metrics: @team_metrics,
           user_friendly: {
             velocity_status: velocity_status_text(@team_metrics),
             capacity_status: capacity_status_text(@team_metrics),
             progress_description: sprint_progress_description(@team_metrics),
             burndown_trend: burndown_trend_description(@team_metrics)
           }
-        }
+        })
       end
       
       format.turbo_stream do
@@ -443,11 +442,7 @@ class SprintsController < TenantBaseController
   def handle_sprint_planning_error(error)
     respond_to do |format|
       format.json do
-        render json: { 
-          success: false, 
-          error: error.to_s,
-          message: "스프린트 계획 생성에 실패했습니다."
-        }, status: :unprocessable_entity
+        render_error("스프린트 계획 생성에 실패했습니다: #{error}", status: :unprocessable_entity)
       end
       
       format.turbo_stream do

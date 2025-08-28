@@ -115,7 +115,7 @@ class TasksController < TenantBaseController
     authorize @task
     
     if @task.destroy
-      render json: { success: true, message: "태스크가 삭제되었습니다." }
+      render_serialized(SuccessSerializer, { message: "태스크가 삭제되었습니다." })
     else
       render_error("태스크를 삭제할 수 없습니다.")
     end
@@ -141,11 +141,9 @@ class TasksController < TenantBaseController
     
     if @task.save
       message = @task.assigned_user ? "#{@task.assigned_user.email}에게 할당되었습니다." : "할당이 해제되었습니다."
-      render json: {
-        success: true,
-        message: message,
-        task: TaskSerializer.new(@task, params: serializer_context).serializable_hash
-      }
+      render_with_success(TaskSerializer, @task, params: {
+        message: message
+      }.merge(serializer_context))
     else
       render_error(@task.errors)
     end
@@ -182,11 +180,9 @@ class TasksController < TenantBaseController
     @task.position = new_position
     
     if @task.save
-      render json: {
-        success: true,
-        message: "태스크 위치가 변경되었습니다.",
-        task: TaskSerializer.new(@task, params: serializer_context).serializable_hash
-      }
+      render_with_success(TaskSerializer, @task, params: {
+        message: "태스크 위치가 변경되었습니다."
+      }.merge(serializer_context))
     else
       render_error(@task.errors)
     end
@@ -220,7 +216,7 @@ class TasksController < TenantBaseController
       due_soon: tasks.due_soon.count
     }
     
-    render json: { success: true, data: stats }
+    render_serialized(TaskStatsSerializer, stats)
   end
   
   # GET /tasks/:id/metrics
@@ -237,15 +233,13 @@ class TasksController < TenantBaseController
     
     respond_to do |format|
       format.json do
-        render json: { 
-          metrics: @task_metrics.to_h,
-          user_friendly: {
-            efficiency_status: efficiency_status_text(@task_metrics),
-            complexity_description: complexity_description(@task_metrics),
-            progress_description: progress_description(@task_metrics),
-            time_status: time_status_description(@task_metrics)
-          }
-        }
+        render_serialized(TaskMetricsSerializer, @task_metrics, params: {
+          include_descriptions: true,
+          efficiency_status: efficiency_status_text(@task_metrics),
+          complexity_description: complexity_description(@task_metrics),
+          progress_description: progress_description(@task_metrics),
+          time_status: time_status_description(@task_metrics)
+        })
       end
       
       format.turbo_stream do
@@ -439,11 +433,9 @@ class TasksController < TenantBaseController
   def handle_status_change_success(task)
     respond_to do |format|
       format.json do
-        render json: {
-          success: true,
-          message: "상태가 '#{task.status_display_name}'로 변경되었습니다.",
-          task: TaskSerializer.new(task, params: serializer_context).serializable_hash
-        }
+        render_with_success(TaskSerializer, task, params: {
+          message: "상태가 '#{task.status_display_name}'로 변경되었습니다."
+        }.merge(serializer_context))
       end
       
       format.turbo_stream do

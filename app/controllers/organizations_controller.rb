@@ -98,7 +98,7 @@ class OrganizationsController < ApplicationController
     authorize @organization
     
     if @organization.destroy
-      render json: { success: true, message: "조직이 삭제되었습니다." }
+      render_serialized(SuccessSerializer, { message: "조직이 삭제되었습니다." })
     else
       render_error("조직을 삭제할 수 없습니다.")
     end
@@ -127,14 +127,14 @@ class OrganizationsController < ApplicationController
     }
     
     if request.format.json?
-      render json: {
+      render_serialized(OrganizationDashboardSerializer, {
         success: true,
         data: {
-          organization: OrganizationSerializer.new(@organization, params: serializer_context).serializable_hash,
-          recent_tasks: TaskSerializer.new(@recent_tasks, params: serializer_context.merge(skip_organization: true)).serializable_hash,
+          organization: @organization,
+          recent_tasks: @recent_tasks,
           task_stats: @task_stats
         }
-      }
+      }, params: serializer_context)
     else
       # HTML 렌더링 (추후 뷰 파일 생성시)
       render :dashboard
@@ -153,15 +153,14 @@ class OrganizationsController < ApplicationController
       organization_url = DomainService.organization_url(@organization.subdomain)
       
       if request.format.json?
-        render json: {
+        render_serialized(TenantSwitcherSerializer, {
           success: true,
           message: "#{@organization.display_name}으로 전환되었습니다.",
           redirect_url: organization_url,
-          organization: OrganizationSerializer.new(
-            @organization,
-            params: serializer_context
-          ).serializable_hash
-        }
+          data: {
+            organization: @organization
+          }
+        }, params: serializer_context)
       else
         redirect_to organization_url
       end

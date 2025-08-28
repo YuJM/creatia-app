@@ -6,21 +6,21 @@ module Api
       skip_before_action :authenticate_user!, only: [:index]
       
       def index
-        render json: { error: 'Unauthorized' }, status: :unauthorized
+        render_error('Unauthorized', status: :unauthorized)
       end
       
       def show
         organization = Organization.find(params[:id])
-        render json: organization
+        render_serialized(OrganizationSerializer, organization)
       end
       
       def create
         organization = Organization.new(organization_params)
         
         if organization.save
-          render json: organization, status: :created
+          render_serialized(OrganizationSerializer, organization, status: :created)
         else
-          render json: { errors: organization.errors.full_messages }, status: :unprocessable_entity
+          render_error(organization.errors)
         end
       end
       
@@ -28,9 +28,9 @@ module Api
         organization = Organization.find(params[:id])
         
         if organization.update(organization_params)
-          render json: organization
+          render_serialized(OrganizationSerializer, organization)
         else
-          render json: { errors: organization.errors.full_messages }, status: :unprocessable_entity
+          render_error(organization.errors)
         end
       end
       

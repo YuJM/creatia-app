@@ -86,10 +86,9 @@ class OrganizationMembershipsController < ApplicationController
     end
     
     if @membership.destroy
-      render json: { 
-        success: true, 
+      render_serialized(SuccessSerializer, { 
         message: "#{@membership.user.email}님이 조직에서 제거되었습니다." 
-      }
+      })
     else
       render_error("멤버십을 삭제할 수 없습니다.")
     end

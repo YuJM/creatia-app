@@ -17,7 +17,7 @@ class RoadmapsController < ApplicationController
 
     respond_to do |format|
       format.html
-      format.json { render json: roadmap_json_response }
+      format.json { render_serialized(RoadmapSerializer, roadmap_json_response) }
       format.turbo_stream
     end
   end
@@ -34,7 +34,7 @@ class RoadmapsController < ApplicationController
 
     respond_to do |format|
       format.html
-      format.json { render json: roadmap_detail_json }
+      format.json { render_serialized(RoadmapSerializer, roadmap_detail_json) }
       format.turbo_stream
     end
   end
@@ -47,13 +47,13 @@ class RoadmapsController < ApplicationController
       respond_to do |format|
         format.html { redirect_to [@organization, @service, @roadmap], notice: '로드맵이 생성되었습니다.' }
         format.turbo_stream { render :create }
-        format.json { render json: { success: true, roadmap: @roadmap } }
+        format.json { render_serialized(RoadmapSerializer, { success: true, roadmap: @roadmap }) }
       end
     else
       respond_to do |format|
         format.html { render :new, status: :unprocessable_entity }
         format.turbo_stream { render :create_error }
-        format.json { render json: { success: false, errors: @roadmap.errors } }
+        format.json { render_serialized(RoadmapSerializer, { success: false, errors: @roadmap.errors }) }
       end
     end
   end
@@ -66,13 +66,13 @@ class RoadmapsController < ApplicationController
       respond_to do |format|
         format.html { redirect_to [@organization, @service, @roadmap], notice: '로드맵이 업데이트되었습니다.' }
         format.turbo_stream { render :update }
-        format.json { render json: { success: true, roadmap: @roadmap } }
+        format.json { render_serialized(RoadmapSerializer, { success: true, roadmap: @roadmap }) }
       end
     else
       respond_to do |format|
         format.html { render :edit, status: :unprocessable_entity }
         format.turbo_stream { render :update_error }
-        format.json { render json: { success: false, errors: @roadmap.errors } }
+        format.json { render_serialized(RoadmapSerializer, { success: false, errors: @roadmap.errors }) }
       end
     end
   end
@@ -85,7 +85,7 @@ class RoadmapsController < ApplicationController
 
     respond_to do |format|
       format.html
-      format.json { render json: timeline_json_response }
+      format.json { render_serialized(RoadmapSerializer, timeline_json_response) }
       format.turbo_stream
     end
   end
@@ -100,7 +100,7 @@ class RoadmapsController < ApplicationController
 
     respond_to do |format|
       format.html
-      format.json { render json: gantt_json_response }
+      format.json { render_serialized(RoadmapSerializer, gantt_json_response) }
       format.turbo_stream
     end
   end
@@ -112,7 +112,7 @@ class RoadmapsController < ApplicationController
 
     respond_to do |format|
       format.html { render partial: 'metrics' }
-      format.json { render json: { success: true, metrics: @roadmap_metrics } }
+      format.json { render_serialized(RoadmapSerializer, { success: true, metrics: @roadmap_metrics }) }
       format.turbo_stream
     end
   end

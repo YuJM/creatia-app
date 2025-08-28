@@ -46,6 +46,7 @@ bin/rails server
 - 📋 **태스크 관리**: 조직별 태스크 생성 및 관리
 - 🔐 **보안**: Pundit 권한 시스템, CSRF 보호
 - 🌐 **API**: RESTful API with Alba 직렬화
+- 🔐 **인증**: Devise + HTTP Basic Auth (개발/테스트 환경)
 
 ## 🧪 테스트
 
@@ -106,6 +107,49 @@ open coverage/index.html
 - **Rubocop** - 코드 스타일 검사
 - **Brakeman** - 보안 검사
 - **Caddy** - 로컬 개발용 리버스 프록시
+
+## 🔐 인증
+
+### HTTP Basic Authentication (개발/테스트 환경)
+
+개발 및 테스트 환경에서는 API 접근을 위해 HTTP Basic Authentication을 사용할 수 있습니다:
+
+```bash
+# curl 예제
+curl -u "user@example.com:password" \
+  http://auth.creatia.local:3000/api/v1/user
+
+# HTTPie 예제  
+http --auth user@example.com:password \
+  GET auth.creatia.local:3000/api/v1/user
+
+# JavaScript fetch 예제
+const credentials = btoa('user@example.com:password');
+fetch('http://auth.creatia.local:3000/api/v1/user', {
+  headers: {
+    'Authorization': `Basic ${credentials}`
+  }
+});
+```
+
+**주요 특징:**
+- ✅ 개발 및 테스트 환경에서만 활성화
+- ✅ 기존 Devise 세션 인증과 병행 사용 가능
+- ✅ API 클라이언트 개발에 편리
+- ❌ 프로덕션 환경에서는 비활성화 (보안상)
+
+### 세션 기반 인증 (모든 환경)
+
+브라우저 기반 접근에는 표준 Devise 세션 인증을 사용:
+
+```erb
+<!-- 로그인 폼 -->
+<%= form_with scope: :user, url: session_path(:user) do |f| %>
+  <%= f.email_field :email %>
+  <%= f.password_field :password %>
+  <%= f.submit "로그인" %>
+<% end %>
+```
 
 ## 🔧 개발 환경 설정
 

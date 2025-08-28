@@ -12,7 +12,7 @@ class DashboardCustomizationController < ApplicationController
 
     respond_to do |format|
       format.html
-      format.json { render json: customization_json_response }
+      format.json { render_serialized(DashboardCustomizationSerializer, customization_json_response) }
       format.turbo_stream
     end
   end
@@ -31,7 +31,7 @@ class DashboardCustomizationController < ApplicationController
 
       respond_to do |format|
         format.html { redirect_to dashboard_customization_path, notice: '대시보드 설정이 저장되었습니다.' }
-        format.json { render json: { success: true, message: '설정이 저장되었습니다.' } }
+        format.json { render_serialized(DashboardCustomizationSerializer, { success: true, message: '설정이 저장되었습니다.' }) }
         format.turbo_stream { render :update_success }
       end
     rescue => error
@@ -39,7 +39,7 @@ class DashboardCustomizationController < ApplicationController
       
       respond_to do |format|
         format.html { render :show, status: :unprocessable_entity, alert: '설정 저장에 실패했습니다.' }
-        format.json { render json: { success: false, error: error.message }, status: :unprocessable_entity }
+        format.json { render_serialized(DashboardCustomizationSerializer, { success: false, error: error.message }, status: :unprocessable_entity) }
         format.turbo_stream { render :update_error }
       end
     end
@@ -57,7 +57,7 @@ class DashboardCustomizationController < ApplicationController
     
     respond_to do |format|
       format.html { redirect_to dashboard_customization_path, notice: '대시보드가 기본 설정으로 초기화되었습니다.' }
-      format.json { render json: { success: true, message: '기본 설정으로 초기화되었습니다.' } }
+      format.json { render_serialized(DashboardCustomizationSerializer, { success: true, message: '기본 설정으로 초기화되었습니다.' }) }
       format.turbo_stream { render :reset_success }
     end
   end
@@ -71,7 +71,7 @@ class DashboardCustomizationController < ApplicationController
 
     respond_to do |format|
       format.html { render :preview }
-      format.json { render json: { success: true, preview: @preview_data } }
+      format.json { render_serialized(DashboardCustomizationSerializer, { success: true, preview: @preview_data }) }
       format.turbo_stream { render :preview_update }
     end
   end
@@ -437,7 +437,7 @@ class DashboardCustomizationController < ApplicationController
     widget_config = params[:config] || {}
     
     unless @available_widgets.key?(widget_id.to_sym)
-      return render json: { success: false, error: '존재하지 않는 위젯입니다' }, status: :unprocessable_entity
+      return render_serialized(DashboardCustomizationSerializer, { success: false, error: '존재하지 않는 위젯입니다' }, status: :unprocessable_entity)
     end
     
     current_widgets = @user_dashboard.widget_configurations || {}
@@ -450,7 +450,7 @@ class DashboardCustomizationController < ApplicationController
     @user_dashboard.update!(widget_configurations: current_widgets)
     clear_dashboard_cache
     
-    render json: { success: true, widget: current_widgets[widget_id] }
+    render_serialized(DashboardCustomizationSerializer, { success: true, widget: current_widgets[widget_id] })
   end
 
   def remove_widget
@@ -462,9 +462,9 @@ class DashboardCustomizationController < ApplicationController
       @user_dashboard.update!(widget_configurations: current_widgets)
       clear_dashboard_cache
       
-      render json: { success: true, message: '위젯이 제거되었습니다' }
+      render_serialized(DashboardCustomizationSerializer, { success: true, message: '위젯이 제거되었습니다' })
     else
-      render json: { success: false, error: '위젯을 찾을 수 없습니다' }, status: :not_found
+      render_serialized(DashboardCustomizationSerializer, { success: false, error: '위젯을 찾을 수 없습니다' }, status: :not_found)
     end
   end
 
@@ -479,18 +479,18 @@ class DashboardCustomizationController < ApplicationController
       @user_dashboard.update!(widget_configurations: current_widgets)
       clear_dashboard_cache
       
-      render json: { success: true, position: new_position }
+      render_serialized(DashboardCustomizationSerializer, { success: true, position: new_position })
     else
-      render json: { success: false, error: '위젯을 찾을 수 없습니다' }, status: :not_found
+      render_serialized(DashboardCustomizationSerializer, { success: false, error: '위젯을 찾을 수 없습니다' }, status: :not_found)
     end
   end
 
   def list_widgets
-    render json: {
+    render_serialized(DashboardCustomizationSerializer, {
       success: true,
-      widgets: @user_dashboard.widget_configurations || {},
-      available: @available_widgets
-    }
+      widget_configurations: @user_dashboard.widget_configurations || {},
+      available_widgets: @available_widgets
+    })
   end
 
   def find_available_position

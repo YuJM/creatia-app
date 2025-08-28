@@ -23,15 +23,14 @@ class DashboardController < TenantBaseController
     respond_to do |format|
       format.html # dashboard.html.erb
       format.json do
-        render json: {
-          success: true,
+        render_serialized(DashboardDataSerializer, {
           data: {
-            metrics: @dashboard_metrics.to_h,
+            metrics: @dashboard_metrics,
             active_sprint: @active_sprint ? SprintSerializer.new(@active_sprint).serializable_hash : nil,
             recent_activities: serialize_activities(@recent_activities),
             alerts: @alerts
           }
-        }
+        })
       end
     end
   end
@@ -59,12 +58,11 @@ class DashboardController < TenantBaseController
     
     respond_to do |format|
       format.json do
-        render json: {
-          success: true,
-          metrics: @dashboard_metrics.to_h,
+        render_serialized(DashboardDataSerializer, {
+          metrics: @dashboard_metrics,
           charts: @chart_data,
           last_updated: Time.current.iso8601
-        }
+        })
       end
       
       format.turbo_stream do
@@ -110,13 +108,14 @@ class DashboardController < TenantBaseController
     
     respond_to do |format|
       format.json do
-        render json: {
-          success: true,
-          chart_type: chart_type,
-          data: @chart_data,
-          range: date_range,
-          generated_at: Time.current.iso8601
-        }
+        render_serialized(DashboardDataSerializer, {
+          data: {
+            chart_type: chart_type,
+            data: @chart_data,
+            range: date_range,
+            generated_at: Time.current.iso8601
+          }
+        })
       end
       
       format.turbo_stream do
@@ -139,12 +138,13 @@ class DashboardController < TenantBaseController
     
     respond_to do |format|
       format.json do
-        render json: {
-          success: true,
+        render_serialized(DashboardDataSerializer, {
           alerts: @alerts,
-          notifications: serialize_notifications(@notifications),
-          alert_count: @alerts.count { |a| a[:severity] != 'info' }
-        }
+          data: {
+            notifications: serialize_notifications(@notifications),
+            alert_count: @alerts.count { |a| a[:severity] != 'info' }
+          }
+        })
       end
       
       format.turbo_stream do
@@ -174,11 +174,10 @@ class DashboardController < TenantBaseController
     
     respond_to do |format|
       format.json do
-        render json: { 
-          success: true, 
+        render_serialized(SuccessSerializer, { 
           message: "알림이 해제되었습니다.",
-          dismissed_at: Time.current.iso8601
-        }
+          data: { dismissed_at: Time.current.iso8601 }
+        })
       end
       
       format.turbo_stream do

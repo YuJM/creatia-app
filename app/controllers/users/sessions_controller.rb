@@ -60,7 +60,7 @@ class Users::SessionsController < Devise::SessionsController
     respond_to do |format|
       format.html # organization_selection.html.erb
       format.json do
-        render json: {
+        render_serialized(SessionResponseSerializer, {
           success: true,
           user: UserSerializer.new(
             current_user, 
@@ -71,7 +71,7 @@ class Users::SessionsController < Devise::SessionsController
             params: { current_user: current_user }
           ).serializable_hash,
           return_organization: @return_organization
-        }
+        })
       end
     end
   end
@@ -80,7 +80,7 @@ class Users::SessionsController < Devise::SessionsController
   # 선택된 조직으로 이동
   def switch_to_organization
     unless user_signed_in?
-      render json: { error: "로그인이 필요합니다." }, status: :unauthorized
+      render_serialized(SessionResponseSerializer, { success: false, error: "로그인이 필요합니다." }, status: :unauthorized)
       return
     end
     
@@ -88,12 +88,12 @@ class Users::SessionsController < Devise::SessionsController
     organization = current_user.organizations.find_by(subdomain: organization_subdomain)
     
     unless organization
-      render json: { error: "해당 조직에 접근할 권한이 없습니다." }, status: :forbidden
+      render_serialized(SessionResponseSerializer, { success: false, error: "해당 조직에 접근할 권한이 없습니다." }, status: :forbidden)
       return
     end
     
     unless current_user.can_access?(organization)
-      render json: { error: "비활성화된 조직이거나 접근할 수 없습니다." }, status: :forbidden
+      render_serialized(SessionResponseSerializer, { success: false, error: "비활성화된 조직이거나 접근할 수 없습니다." }, status: :forbidden)
       return
     end
     
@@ -106,7 +106,7 @@ class Users::SessionsController < Devise::SessionsController
     respond_to do |format|
       format.html { redirect_to organization_url }
       format.json do
-        render json: {
+        render_serialized(SessionResponseSerializer, {
           success: true,
           message: "#{organization.display_name}으로 이동합니다.",
           redirect_url: organization_url,
@@ -114,7 +114,7 @@ class Users::SessionsController < Devise::SessionsController
             organization,
             params: { current_user: current_user }
           ).serializable_hash
-        }
+        })
       end
     end
   end
@@ -128,11 +128,12 @@ class Users::SessionsController < Devise::SessionsController
     respond_to do |format|
       format.html # access_denied.html.erb
       format.json do
-        render json: {
+        render_serialized(SessionResponseSerializer, {
+          success: false,
           error: "조직에 접근할 권한이 없습니다.",
           organization: @organization_subdomain,
-          available_organizations: current_user&.organizations&.active&.pluck(:subdomain, :name) || []
-        }, status: :forbidden
+          organizations: current_user&.organizations&.active&.pluck(:subdomain, :name) || []
+        }, status: :forbidden)
       end
     end
   end

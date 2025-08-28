@@ -12,7 +12,7 @@ class Webhooks::GithubController < ApplicationController
       ProcessGithubPushJob.perform_later(result.to_h)
       head :ok
     else
-      render json: { errors: result.errors.to_h }, status: :unprocessable_entity
+      render_error(result.errors, status: :unprocessable_entity)
     end
   end
   
