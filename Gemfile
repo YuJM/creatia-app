@@ -28,6 +28,9 @@ gem "devise", "~> 4.9"
 # Authorization
 gem "pundit", "~> 2.4"
 
+# JWT for secure cross-domain authentication
+gem "jwt", "~> 2.7"
+
 # Service object utilities
 gem "attr_extras", "~> 7.1"
 gem "memo_wise", "~> 1.8"

@@ -225,7 +225,7 @@ GEM
       actionview (>= 7.0.0)
       activesupport (>= 7.0.0)
     json (2.13.2)
-    jwt (3.1.2)
+    jwt (2.10.2)
       base64
     kamal (2.7.0)
       activesupport (>= 7.0)
@@ -592,6 +592,7 @@ DEPENDENCIES
   ice_cube (~> 0.17)
   importmap-rails
   jbuilder
+  jwt (~> 2.7)
   kamal
   local_time (~> 3.0)
   memo_wise (~> 1.8)

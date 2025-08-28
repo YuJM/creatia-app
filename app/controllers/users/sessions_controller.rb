@@ -145,7 +145,7 @@ class Users::SessionsController < Devise::SessionsController
       # auth 도메인이 아니면 auth 도메인으로 리다이렉트
       intended_org = DomainService.extract_subdomain(request)
       return_param = intended_org.present? ? "?return_to=#{intended_org}" : ""
-      redirect_to DomainService.auth_url("login#{return_param}")
+      redirect_to DomainService.auth_url("login#{return_param}"), allow_other_host: true
     end
   end
   
@@ -157,6 +157,9 @@ class Users::SessionsController < Devise::SessionsController
   
   # 로그인 성공 후 처리
   def handle_successful_login(user)
+    # 크로스 도메인 세션 쿠키 설정
+    set_cross_domain_session(user)
+    
     return_org = session[:return_organization]
     
     if return_org.present?
@@ -167,7 +170,7 @@ class Users::SessionsController < Devise::SessionsController
         # 직접 조직으로 이동
         session[:current_organization_id] = organization.id
         session.delete(:return_organization)
-        redirect_to DomainService.organization_url(organization.subdomain, 'dashboard')
+        redirect_to DomainService.organization_url(organization.subdomain, 'dashboard'), allow_other_host: true
         return
       else
         # 권한이 없거나 조직이 없으면 액세스 거부 페이지로
@@ -182,12 +185,12 @@ class Users::SessionsController < Devise::SessionsController
     case user_organizations.count
     when 0
       # 조직이 없으면 메인 페이지로 (조직 생성 안내)
-      redirect_to DomainService.main_url
+      redirect_to DomainService.main_url, allow_other_host: true
     when 1
       # 조직이 하나뿐이면 바로 이동
       organization = user_organizations.first
       session[:current_organization_id] = organization.id
-      redirect_to DomainService.organization_url(organization.subdomain, 'dashboard')
+      redirect_to DomainService.organization_url(organization.subdomain, 'dashboard'), allow_other_host: true
     else
       # 여러 조직이 있으면 선택 페이지로
       redirect_to organization_selection_path
@@ -209,6 +212,58 @@ class Users::SessionsController < Devise::SessionsController
   
   # Devise 기본 after_sign_out_path 오버라이드  
   def after_sign_out_path_for(resource_or_scope)
+    # 크로스 도메인 세션 쿠키 삭제
+    clear_cross_domain_session
     DomainService.main_url
+  end
+  
+  # JWT 기반 크로스 도메인 세션 설정
+  def set_cross_domain_session(user)
+    # JWT 액세스 토큰 생성
+    access_token = JwtService.generate_sso_token(user, session[:current_organization])
+    refresh_token = JwtService.generate_refresh_token(user)
+    
+    # HttpOnly 쿠키로 안전하게 저장 (크로스 도메인)
+    domain = Rails.env.production? ? ".creatia.io" : ".creatia.local"
+    
+    # 액세스 토큰 (짧은 수명)
+    cookies[:jwt_access_token] = {
+      value: access_token,
+      domain: domain,
+      httponly: true,
+      secure: Rails.env.production?,
+      same_site: :lax,
+      expires: 8.hours.from_now
+    }
+    
+    # 리프레시 토큰 (긴 수명)
+    cookies[:jwt_refresh_token] = {
+      value: refresh_token,
+      domain: domain,
+      httponly: true,
+      secure: Rails.env.production?,
+      same_site: :strict,
+      expires: 30.days.from_now
+    }
+    
+    # 추가 보안: CSRF 토큰 생성
+    session[:jwt_csrf] = SecureRandom.hex(16)
+  end
+  
+  # JWT 기반 크로스 도메인 세션 삭제
+  def clear_cross_domain_session
+    domain = Rails.env.production? ? ".creatia.io" : ".creatia.local"
+    
+    # JWT 토큰 무효화 (블랙리스트 추가)
+    if cookies[:jwt_access_token]
+      JwtService.revoke_token(cookies[:jwt_access_token])
+    end
+    
+    # 쿠키 삭제
+    cookies.delete(:jwt_access_token, domain: domain)
+    cookies.delete(:jwt_refresh_token, domain: domain)
+    
+    # CSRF 토큰 삭제
+    session.delete(:jwt_csrf)
   end
 end
