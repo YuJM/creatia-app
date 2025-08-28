@@ -4,7 +4,9 @@ Rails.application.routes.draw do
   
   # Webhook routes (모든 서브도메인에서 접근 가능)
   namespace :webhooks do
-    post 'github', to: 'github#create'
+    post 'github/push', to: 'github#push'
+    post 'github/issues', to: 'github#issues'
+    post 'github/pull_request', to: 'github#pull_request'
   end
   
   # Development routes
