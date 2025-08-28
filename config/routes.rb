@@ -2,6 +2,13 @@ Rails.application.routes.draw do
   # Health check and system routes (모든 서브도메인에서 접근 가능)
   get "up" => "rails/health#show", as: :rails_health_check
   
+  # Webhook routes (모든 서브도메인에서 접근 가능)
+  namespace :webhooks do
+    post 'github/push', to: 'github#push'
+    post 'github/issues', to: 'github#issues'
+    post 'github/pull_request', to: 'github#pull_request'
+  end
+  
   # Development routes
   mount Hotwire::Livereload::Engine => "/hotwire-livereload" if Rails.env.development?
   
@@ -28,18 +35,16 @@ Rails.application.routes.draw do
   # 메인 도메인 라우팅 (www 또는 서브도메인 없음)
   # =============================================================================
   constraints subdomain: /^(www)?$/ do
-    devise_for :users, controllers: { 
-      omniauth_callbacks: 'users/omniauth_callbacks'
-    }, path_names: {
+    devise_for :users, path_names: {
       sign_in: 'login',
       sign_out: 'logout',
       sign_up: 'register'
-    }
+    }, as: :main_user, skip: [:omniauth_callbacks]
     
     get "pages/home"
     
     # 조직 관리 (전역)
-    resources :organizations, only: [:index, :create, :show, :update, :destroy] do
+    resources :organizations, only: [:index, :new, :create, :show, :update, :destroy] do
       member do
         post :switch
       end
@@ -58,12 +63,13 @@ Rails.application.routes.draw do
   constraints subdomain: 'auth' do
     devise_for :users, controllers: {
       omniauth_callbacks: 'users/omniauth_callbacks',
-      sessions: 'users/sessions'
-    }, path_names: {
+      sessions: 'users/sessions',
+      registrations: 'users/registrations'
+    }, path: '', path_names: {
       sign_in: 'login',
       sign_out: 'logout',
       sign_up: 'register'
-    }
+    }, as: :auth_user
     
     # SSO 관련 라우트들
     devise_scope :user do
@@ -82,7 +88,7 @@ Rails.application.routes.draw do
     # 백워드 호환성을 위한 추가 라우트
     get 'switch/:subdomain', to: 'users/sessions#switch_to_organization', as: :legacy_switch_to_organization
     
-    root "pages#home"
+    root "pages#home", as: :auth_root
   end
   
   # =============================================================================
@@ -95,11 +101,15 @@ Rails.application.routes.draw do
         subdomain = DomainService.extract_subdomain(request)
         DomainService.login_url(subdomain)
       }
+      get 'users/login', to: redirect { |params, request|
+        subdomain = DomainService.extract_subdomain(request)
+        DomainService.login_url(subdomain)
+      }
       delete 'logout', to: 'devise/sessions#destroy'
     end
     
     # 조직 대시보드
-    root "organizations#dashboard"
+    root "organizations#dashboard", as: :tenant_root
     get 'dashboard', to: 'organizations#dashboard'
     
     # 현재 조직 정보
@@ -120,6 +130,7 @@ Rails.application.routes.draw do
         patch :assign
         patch :change_status, path: 'status'
         patch :reorder
+        get :metrics  # 새로 추가
       end
       collection do
         get :stats
@@ -156,7 +167,7 @@ Rails.application.routes.draw do
         get 'auth/me', to: 'auth#me'
         
         # 조직 API
-        resources :organizations, only: [:index, :show] do
+        resources :organizations do
           resources :tasks
           resources :organization_memberships, path: 'members'
         end
@@ -169,7 +180,7 @@ Rails.application.routes.draw do
   # =============================================================================
   constraints subdomain: 'admin' do
     namespace :admin do
-      root "dashboard#index"
+      root "dashboard#index", as: :admin_root
       
       resources :organizations do
         resources :organization_memberships, path: 'members'

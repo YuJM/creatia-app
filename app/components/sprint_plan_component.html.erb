@@ -1,0 +1,314 @@
+<%# Sprint Plan Component - 상세 계획 및 분석 정보 %>
+<%= turbo_frame_tag "sprint_plan_#{sprint.id}",
+                    class: "sprint-plan bg-white shadow-lg rounded-lg overflow-hidden",
+                    data: {
+                      controller: "sprint-plan",
+                      sprint_plan_sprint_id_value: sprint.id,
+                      turbo_permanent: true
+                    } do %>
+  
+  <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-xl font-semibold text-white">
+          📊 <%= sprint.name %> 스프린트 계획
+        </h2>
+        <p class="text-blue-100 text-sm mt-1">
+          상세 분석 및 권장사항
+        </p>
+      </div>
+      
+      <button type="button" 
+              data-action="click->sprint-plan#refresh"
+              class="text-blue-100 hover:text-white p-2 rounded-full hover:bg-blue-800 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </button>
+    </div>
+  </div>
+  
+  <div class="p-6">
+    <!-- 핵심 지표 요약 -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <!-- 예상 완료율 -->
+      <div class="text-center p-4 bg-gradient-to-b from-green-50 to-green-100 rounded-lg">
+        <div class="text-2xl font-bold <%= completion_probability_class %>">
+          <%= completion_probability || "?" %>%
+        </div>
+        <div class="text-sm text-gray-600 mt-1">완료 확률</div>
+      </div>
+      
+      <!-- 총 작업량 -->
+      <div class="text-center p-4 bg-gradient-to-b from-blue-50 to-blue-100 rounded-lg">
+        <div class="text-2xl font-bold text-blue-600">
+          <%= total_workload.round(1) %>h
+        </div>
+        <div class="text-sm text-gray-600 mt-1">총 작업량</div>
+      </div>
+      
+      <!-- 평균 작업량 -->
+      <div class="text-center p-4 bg-gradient-to-b from-purple-50 to-purple-100 rounded-lg">
+        <div class="text-2xl font-bold text-purple-600">
+          <%= average_workload %>h
+        </div>
+        <div class="text-sm text-gray-600 mt-1">평균 작업량</div>
+      </div>
+      
+      <!-- 의존성 복잡도 -->
+      <div class="text-center p-4 bg-gradient-to-b from-yellow-50 to-yellow-100 rounded-lg">
+        <div class="text-2xl font-bold <%= dependency_complexity_status&.dig(:class) || 'text-gray-400' %>">
+          <% if dependency_complexity_status %>
+            <%= dependency_complexity_status[:text] %>
+          <% else %>
+            -
+          <% end %>
+        </div>
+        <div class="text-sm text-gray-600 mt-1">의존성 복잡도</div>
+      </div>
+    </div>
+    
+    <!-- 업무 분배 현황 -->
+    <% if show_workload_distribution? %>
+      <div class="mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">👥 업무 분배 현황</h3>
+        
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="grid gap-3">
+            <% workload_distribution_data.each do |data| %>
+              <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                <div class="flex items-center space-x-3">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span class="text-white text-sm font-medium">
+                        <%= data[:user].email.first.upcase %>
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div class="font-medium text-gray-900">
+                      <%= data[:user].email %>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      <%= data[:tasks_count] %>개 작업 담당
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                  <div class="text-right">
+                    <div class="font-semibold text-gray-900">
+                      <%= data[:hours] %>h
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      <%= data[:percentage] %>%
+                    </div>
+                  </div>
+                  
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= data[:status][:class] %>">
+                    <%= data[:status][:text] %>
+                  </span>
+                </div>
+              </div>
+            <% end %>
+          </div>
+          
+          <!-- 과부하 경고 -->
+          <% if bottleneck_users.any? %>
+            <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <h4 class="text-sm font-medium text-red-800">업무 과부하 감지</h4>
+                  <div class="mt-1 text-sm text-red-700">
+                    <p>다음 팀원들의 업무량이 평균보다 30% 이상 높습니다:</p>
+                    <ul class="list-disc list-inside mt-1">
+                      <% bottleneck_users.each do |data| %>
+                        <li><%= data[:user].email %> (<%= data[:hours] %>시간)</li>
+                      <% end %>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+    
+    <!-- 크리티컬 패스 -->
+    <% if show_critical_path? %>
+      <div class="mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">🎯 크리티컬 패스</h3>
+        
+        <div class="bg-red-50 rounded-lg p-4">
+          <p class="text-sm text-red-700 mb-4">
+            다음 작업들이 스프린트 완료에 가장 중요한 경로입니다. 지연 시 전체 일정에 영향을 미칩니다.
+          </p>
+          
+          <div class="space-y-2">
+            <% critical_path_tasks.each_with_index do |task, index| %>
+              <div class="flex items-center p-3 bg-white rounded-lg shadow-sm">
+                <div class="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <span class="text-red-600 text-sm font-medium">
+                    <%= index + 1 %>
+                  </span>
+                </div>
+                
+                <div class="ml-3 flex-1">
+                  <div class="font-medium text-gray-900">
+                    <%= link_to task.title, task_path(task), 
+                          class: "hover:text-blue-600 transition-colors" %>
+                  </div>
+                  
+                  <div class="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                    <% if task.assigned_user %>
+                      <span>👤 <%= task.assigned_user.email %></span>
+                    <% else %>
+                      <span>👤 미배정</span>
+                    <% end %>
+                    
+                    <% if task.due_date %>
+                      <span>📅 <%= task.due_date.strftime('%m/%d') %></span>
+                    <% end %>
+                    
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium <%= task.status == 'done' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' %>">
+                      <%= task.status_display_name %>
+                    </span>
+                  </div>
+                </div>
+                
+                <% if index < critical_path_tasks.length - 1 %>
+                  <div class="flex-shrink-0 text-gray-400">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    
+    <!-- 리스크 분석 -->
+    <% if risk_indicators.any? %>
+      <div class="mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">⚠️ 리스크 분석</h3>
+        
+        <div class="space-y-3">
+          <% risk_indicators.each do |indicator| %>
+            <div class="p-4 border-l-4 rounded-lg <%= risk_severity_class(indicator[:severity]) %>">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="font-medium">
+                    <%= indicator[:text] %>
+                  </h4>
+                  <p class="text-sm mt-1">
+                    <%= indicator[:description] %>
+                  </p>
+                </div>
+                
+                <span class="text-2xl">
+                  <%= indicator[:severity] == "high" ? "🔴" : indicator[:severity] == "medium" ? "🟡" : "🔵" %>
+                </span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+    
+    <!-- 권장사항 -->
+    <% if show_recommendations? %>
+      <div class="mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">💡 권장사항</h3>
+        
+        <div class="space-y-4">
+          <% recommendations.each do |recommendation| %>
+            <div class="border-l-4 rounded-lg p-4 <%= recommendation_priority_class(recommendation[:priority]) %>">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <%= recommendation[:priority] == "high" ? "🚨" : recommendation[:priority] == "medium" ? "⚠️" : "ℹ️" %>
+                </div>
+                
+                <div class="ml-3 flex-1">
+                  <h4 class="font-medium text-gray-900">
+                    <%= recommendation[:title] %>
+                  </h4>
+                  <p class="text-sm text-gray-700 mt-1">
+                    <%= recommendation[:message] %>
+                  </p>
+                  
+                  <% if recommendation[:affected_users] %>
+                    <div class="mt-2">
+                      <p class="text-xs text-gray-600">영향 받는 팀원:</p>
+                      <div class="flex flex-wrap gap-1 mt-1">
+                        <% recommendation[:affected_users].each do |email| %>
+                          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white text-gray-700">
+                            <%= email %>
+                          </span>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+    
+    <!-- 예상 완료 일정 -->
+    <% if estimated_completion_date %>
+      <div class="bg-blue-50 rounded-lg p-4">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <svg class="h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          
+          <div class="ml-4">
+            <h4 class="text-lg font-medium text-blue-900">예상 완료일</h4>
+            <p class="text-blue-700">
+              현재 진행 속도로는 
+              <strong><%= estimated_completion_date.strftime('%Y년 %m월 %d일') %></strong>에 완료 예정입니다.
+            </p>
+            
+            <% if estimated_completion_date > sprint.end_date %>
+              <p class="text-red-600 text-sm mt-1">
+                ⚠️ 예정된 스프린트 종료일(<%= sprint.end_date.strftime('%m/%d') %>)보다 
+                <%= (estimated_completion_date - sprint.end_date).to_i %>일 늦을 수 있습니다.
+              </p>
+            <% elsif estimated_completion_date < sprint.end_date %>
+              <p class="text-green-600 text-sm mt-1">
+                ✅ 예정된 스프린트 종료일보다 
+                <%= (sprint.end_date - estimated_completion_date).to_i %>일 일찍 완료될 수 있습니다.
+              </p>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  
+  <!-- 로딩 상태 -->
+  <div class="hidden absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center" 
+       data-sprint-plan-target="loadingOverlay">
+    <div class="flex items-center space-x-3">
+      <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span class="text-sm text-gray-600">계획을 분석하고 있습니다...</span>
+    </div>
+  </div>
+<% end %>

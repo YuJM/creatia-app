@@ -10,6 +10,90 @@ class ApplicationController < ActionController::Base
   before_action :authenticate_user!, unless: :skip_authentication?
   before_action :ensure_organization_access, unless: :skip_organization_check?
   
+  # Devise 인증 메서드 정의
+  def authenticate_user!
+    redirect_to new_main_user_user_session_path unless user_signed_in?
+  end
+  
+  def user_signed_in?
+    current_user.present?
+  end
+  
+  def current_user
+    return @current_user if defined?(@current_user)
+    
+    # 1. Warden에서 확인
+    if warden && warden.user(:user)
+      user_data = warden.user(:user)
+      # If warden returns a hash (can happen in tests), find the actual user
+      @current_user = if user_data.is_a?(Hash)
+        User.find_by(id: user_data['id'] || user_data[:id])
+      else
+        user_data
+      end
+    # 2. JWT 토큰에서 확인 (크로스 도메인 지원)
+    elsif cookies[:jwt_access_token].present? || cookies[:jwt_refresh_token].present?
+      @current_user = authenticate_from_jwt_token
+    else
+      @current_user = nil
+    end
+  end
+  
+  def authenticate_from_jwt_token
+    # JWT 액세스 토큰 확인
+    access_token = cookies[:jwt_access_token]
+    
+    # 액세스 토큰이 없거나 만료된 경우 리프레시 토큰으로 갱신 시도
+    if access_token.blank?
+      access_token = refresh_jwt_access_token
+      return nil unless access_token
+    end
+    
+    # JWT 토큰 검증
+    token_data = JwtService.verify_sso_token(access_token)
+    return nil unless token_data
+    
+    # 사용자 찾기 및 Warden 세션 설정
+    user = token_data[:user]
+    if user && warden
+      warden.set_user(user, scope: :user)
+    end
+    
+    user
+  rescue => e
+    Rails.logger.error "JWT Authentication Error: #{e.message}"
+    nil
+  end
+  
+  # JWT 액세스 토큰 갱신
+  def refresh_jwt_access_token
+    refresh_token = cookies[:jwt_refresh_token]
+    return nil unless refresh_token
+    
+    # 새 액세스 토큰 발급
+    new_access_token = JwtService.refresh_access_token(refresh_token)
+    return nil unless new_access_token
+    
+    # 쿠키 업데이트
+    domain = Rails.env.production? ? ".creatia.io" : ".creatia.local"
+    cookies[:jwt_access_token] = {
+      value: new_access_token,
+      domain: domain,
+      httponly: true,
+      secure: Rails.env.production?,
+      same_site: :lax,
+      expires: 8.hours.from_now
+    }
+    
+    new_access_token
+  end
+  
+  private
+  
+  def warden
+    request.env['warden']
+  end
+  
   # Pundit authorization check - don't run on Devise or system controllers
   after_action :verify_authorized, unless: :skip_pundit?
   after_action :verify_policy_scoped, unless: :skip_pundit?, if: -> { action_name == 'index' }
@@ -56,7 +140,9 @@ class ApplicationController < ActionController::Base
   
   # 멀티테넌트 설정
   def set_current_tenant
-    @tenant_context = TenantContextService.new(request, current_user)
+    # 인증이 필요하지 않은 컨트롤러에서는 current_user가 nil일 수 있음
+    user = user_signed_in? ? current_user : nil
+    @tenant_context = TenantContextService.new(request, user)
     
     begin
       @tenant_context.setup_tenant_context!
@@ -182,7 +268,7 @@ class ApplicationController < ActionController::Base
       render json: { error: "조직을 찾을 수 없습니다." }, status: :not_found
     else
       flash[:alert] = "조직을 찾을 수 없습니다."
-      redirect_to DomainService.main_url
+      redirect_to DomainService.main_url, allow_other_host: true
     end
   end
   
@@ -196,7 +282,7 @@ class ApplicationController < ActionController::Base
       }, status: :not_found
     else
       flash[:alert] = "조직 '#{subdomain}'을 찾을 수 없습니다."
-      redirect_to DomainService.main_url
+      redirect_to DomainService.main_url, allow_other_host: true
     end
   end
   

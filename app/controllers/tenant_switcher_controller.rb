@@ -48,14 +48,15 @@ class TenantSwitcherController < ApplicationController
     
     result = @tenant_switcher.switch_to!(subdomain, record_history: true)
     
-    if result[:success]
+    case result
+    in Success(data)
       # 테넌트 전환 성공 감사 로그
       SecurityAuditService.log_tenant_switch(current_user, from_tenant, to_tenant, request)
-      render json: result
-    else
+      render json: { success: true, **data }
+    in Failure(error_data)
       # 무권한 테넌트 접근 시도 감사 로그
       SecurityAuditService.log_cross_tenant_access(current_user, to_tenant, from_tenant, request)
-      render json: result, status: :forbidden
+      render json: { success: false, **error_data }, status: :forbidden
     end
   end
   

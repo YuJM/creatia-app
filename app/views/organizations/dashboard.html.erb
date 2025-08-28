@@ -1,0 +1,38 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-8">Organization Dashboard</h1>
+  
+  <% if ActsAsTenant.current_tenant %>
+    <%= render OrganizationCardComponent.new(organization: ActsAsTenant.current_tenant) %>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+      <%= render StatCardComponent.new(
+        title: "Tasks",
+        value: Task.count,
+        color: "blue",
+        link: tasks_path,
+        link_text: "View Tasks"
+      ) %>
+      
+      <%= render StatCardComponent.new(
+        title: "Members",
+        value: OrganizationMembership.count,
+        color: "green",
+        link: organization_organization_memberships_path(ActsAsTenant.current_tenant),
+        link_text: "Manage Members"
+      ) %>
+      
+      <%= render StatCardComponent.new(
+        title: "Settings",
+        value: "",
+        link: settings_organization_path,
+        link_text: "Organization Settings"
+      ) %>
+    </div>
+  <% else %>
+    <%= render AlertComponent.new(type: :warning) do %>
+      <p>No organization selected. Please select an organization to continue.</p>
+      <%= link_to "Select Organization", organizations_path, 
+          class: "bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4 inline-block" %>
+    <% end %>
+  <% end %>
+</div>

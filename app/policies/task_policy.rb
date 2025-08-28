@@ -1,68 +1,74 @@
 # frozen_string_literal: true
 
 class TaskPolicy < ApplicationPolicy
-  def index?
-    member?
-  end
-
   def show?
-    member?
+    organization_member? && (assigned_to_user? || team_member?)
   end
-
-  def create?
-    member?
-  end
-
+  
   def update?
-    assigned_to_me? || admin?
+    return false if viewer?
+    assigned_to_user? || task_owner? || organization_admin?
   end
-
+  
   def destroy?
-    admin?
+    task_owner? || organization_admin?
   end
-
-  # 할당 관련 권한
+  
   def assign?
-    admin?
+    organization_admin? || team_lead? || task_owner?
   end
-
-  def unassign?
-    assigned_to_me? || admin?
+  
+  def complete?
+    assigned_to_user? || task_owner?
   end
-
-  # 상태 변경 권한
-  def change_status?
-    assigned_to_me? || admin?
+  
+  def start_pomodoro?
+    assigned_to_user?
   end
-
-  # 우선순위 변경 권한
-  def change_priority?
-    admin?
-  end
-
-  # 위치 변경 권한 (칸반 보드 드래그 앤 드롭)
-  def reorder?
-    member?
-  end
-
-  private
-
-  def assigned_to_me?
-    return false unless record.assigned_user
-    record.assigned_user == user
-  end
-
+  
   class Scope < ApplicationPolicy::Scope
     def resolve
-      return scope.none unless user && organization
-
-      # 멤버는 모든 태스크를 볼 수 있음
-      # 추후 프로젝트별, 팀별 제한 가능
-      if member?
-        scope.includes(:assigned_user, :organization)
+      if organization_admin?
+        # Admin은 모든 Task 조회 가능
+        scope.joins(:service).where(services: { organization_id: organization.id })
+      elsif user
+        # 일반 사용자는 자신이 할당받았거나 팀 내 Task만 조회
+        scope.joins(:service)
+             .where(services: { organization_id: organization.id })
+             .where('tasks.assignee_id = ? OR tasks.team_id IN (?)', 
+                    user.id, 
+                    user.team_ids)
       else
         scope.none
       end
     end
+    
+    private
+    
+    def organization_admin?
+      return false unless user && organization
+      %w[owner admin].include?(organization.role_for(user))
+    end
+  end
+  
+  private
+  
+  def assigned_to_user?
+    record.assignee_id == user.id
+  end
+  
+  def task_owner?
+    record.created_by_id == user.id
+  end
+  
+  def team_member?
+    return false unless record.team_id
+    user.team_ids.include?(record.team_id)
+  end
+  
+  def team_lead?
+    return false unless record.team_id
+    team = Team.find(record.team_id)
+    team.lead_id == user.id
   end
 end

@@ -90,6 +90,15 @@ RSpec.configure do |config|
   # FactoryBot 설정
   config.include FactoryBot::Syntax::Methods
   
+  # Configure Capybara for system tests with Caddy
+  config.before(:each, type: :system) do
+    # Use test domain for Capybara tests to work with Caddy reverse proxy
+    Capybara.app_host = 'http://localhost.test:8080'
+    Capybara.server_host = 'localhost'
+    Capybara.server_port = 3000
+    Capybara.always_include_port = false
+  end
+  
   # Database Cleaner 설정
   config.before(:suite) do
     DatabaseCleaner.strategy = :transaction

@@ -1,0 +1,96 @@
+# Solid Queue Configuration
+#
+# Rails 8의 기본 백그라운드 작업 시스템 설정
+#
+
+default: &default
+  # 큐 설정
+  queues:
+    - notifications: 10  # 알림 관련 작업 (높은 우선순위)
+    - pomodoro: 8       # 포모도로 타이머 작업
+    - tasks: 6          # 작업 관리 관련
+    - sprints: 5        # 스프린트 관련
+    - reports: 4        # 리포트 생성
+    - analytics: 3      # 분석 및 통계
+    - maintenance: 2    # 유지보수 작업
+    - default: 1        # 기본 큐
+    - monitoring: 1     # 모니터링
+
+  # 워커 설정
+  workers:
+    - queues: [notifications, pomodoro]
+      processes: 2
+      threads: 5
+    - queues: [tasks, sprints, default]
+      processes: 2
+      threads: 3
+    - queues: [reports, analytics, maintenance, monitoring]
+      processes: 1
+      threads: 2
+
+  # Recurring 작업 설정 파일
+  recurring_tasks_config: config/recurring.yml
+
+  # 재시도 설정
+  retry:
+    max_attempts: 10
+    base_delay: 5
+    max_delay: 300
+    multiplier: 2
+
+  # 작업 보존 기간
+  job_retention:
+    completed: 7.days
+    failed: 30.days
+    discarded: 7.days
+
+development:
+  <<: *default
+  # 개발 환경에서는 간소화된 설정
+  workers:
+    - queues: "*"
+      processes: 1
+      threads: 5
+  
+  # 로컬 개발을 위한 짧은 폴링 간격
+  polling_interval: 1
+
+test:
+  <<: *default
+  # 테스트 환경에서는 인라인 실행
+  workers:
+    - queues: "*"
+      processes: 1
+      threads: 1
+  
+  # 테스트에서는 즉시 실행
+  inline: true
+
+production:
+  <<: *default
+  # 프로덕션 환경 최적화 설정
+  workers:
+    - queues: [notifications, pomodoro]
+      processes: 4
+      threads: 10
+    - queues: [tasks, sprints]
+      processes: 3
+      threads: 8
+    - queues: [default]
+      processes: 2
+      threads: 5
+    - queues: [reports, analytics]
+      processes: 2
+      threads: 3
+    - queues: [maintenance, monitoring]
+      processes: 1
+      threads: 2
+  
+  # 프로덕션 폴링 최적화
+  polling_interval: 3
+  
+  # 프로덕션 작업 보존 기간
+  job_retention:
+    completed: 30.days
+    failed: 90.days
+    discarded: 30.days

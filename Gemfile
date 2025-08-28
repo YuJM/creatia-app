@@ -28,6 +28,18 @@ gem "devise", "~> 4.9"
 # Authorization
 gem "pundit", "~> 2.4"
 
+# JWT for secure cross-domain authentication
+gem "jwt", "~> 2.7"
+
+# Service object utilities
+gem "attr_extras", "~> 7.1"
+gem "memo_wise", "~> 1.8"
+gem "dry-monads", "~> 1.6"
+gem "dry-validation", "~> 1.10"
+gem "dry-struct", "~> 1.6"
+gem "dry-types", "~> 1.7"
+gem "hashie", "~> 5.0"
+
 # Multi-tenancy
 gem "acts_as_tenant", "~> 1.0"
 
@@ -36,6 +48,20 @@ gem "omniauth", "~> 2.1"
 gem "omniauth-google-oauth2", "~> 1.2"
 gem "omniauth-github", "~> 2.0"
 gem "omniauth-rails_csrf_protection", "~> 1.0"
+
+# ViewComponent for reusable view components [https://github.com/viewcomponent/view_component]
+gem "view_component", "~> 3.20"
+
+# Time management and tracking
+gem 'business_time', '~> 0.13.0'  # Business time calculations
+gem 'working_hours', '~> 1.4'     # Team-specific working hours
+gem 'ice_cube', '~> 0.17'          # Recurring schedules (Sprint, meetings)
+gem 'local_time', '~> 3.0'         # Client timezone conversion
+gem 'chronic', '~> 0.10.2'         # Natural language time parsing
+gem 'groupdate', '~> 6.6'          # Time series data grouping
+
+# Notifications
+gem 'noticed', '~> 2.5'            # Multi-channel notification system
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"

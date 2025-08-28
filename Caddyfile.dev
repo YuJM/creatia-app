@@ -1,0 +1,55 @@
+# Development environment Caddy configuration
+# For BASE_DOMAIN=creatia.local
+
+# Import hosts file or use /etc/hosts:
+# 127.0.0.1 creatia.local
+# 127.0.0.1 www.creatia.local
+# 127.0.0.1 auth.creatia.local
+# 127.0.0.1 api.creatia.local
+# 127.0.0.1 admin.creatia.local
+# 127.0.0.1 demo.creatia.local
+
+# Main domain (www or no subdomain)
+http://creatia.local, http://www.creatia.local {
+    reverse_proxy localhost:3000 {
+        header_up Host {http.request.host}
+        header_up X-Real-IP {remote}
+        header_up X-Original-Host {http.request.host}
+    }
+}
+
+# Auth subdomain
+http://auth.creatia.local {
+    reverse_proxy localhost:3000 {
+        header_up Host {http.request.host}
+        header_up X-Real-IP {remote}
+        header_up X-Original-Host {http.request.host}
+    }
+}
+
+# API subdomain
+http://api.creatia.local {
+    reverse_proxy localhost:3000 {
+        header_up Host {http.request.host}
+        header_up X-Real-IP {remote}
+        header_up X-Original-Host {http.request.host}
+    }
+}
+
+# Admin subdomain
+http://admin.creatia.local {
+    reverse_proxy localhost:3000 {
+        header_up Host {http.request.host}
+        header_up X-Real-IP {remote}
+        header_up X-Original-Host {http.request.host}
+    }
+}
+
+# Wildcard for organization subdomains
+http://*.creatia.local {
+    reverse_proxy localhost:3000 {
+        header_up Host {http.request.host}
+        header_up X-Real-IP {remote}
+        header_up X-Original-Host {http.request.host}
+    }
+}

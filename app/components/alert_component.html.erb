@@ -1,0 +1,14 @@
+<div class="<%= container_class %> relative">
+  <% if title %>
+    <h4 class="<%= text_class %> font-semibold mb-2"><%= title %></h4>
+  <% end %>
+  <p class="<%= text_class %>">
+    <%= content %>
+  </p>
+  <% if dismissable %>
+    <button type="button" class="absolute top-2 right-2 <%= text_class %> hover:opacity-75" 
+            onclick="this.parentElement.style.display='none'">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  <% end %>
+</div>

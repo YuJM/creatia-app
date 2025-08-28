@@ -51,3 +51,9 @@
 
 # Test coverage
 /coverage
+
+# Custom development logs
+/logs/
+
+# IDE folders
+.idea/

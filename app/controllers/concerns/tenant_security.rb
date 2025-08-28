@@ -117,7 +117,7 @@ module TenantSecurity
     if Rails.env.production? && session[:last_ip] && session[:last_ip] != request.remote_ip
       Rails.logger.security "Session IP mismatch: stored=#{session[:last_ip]}, current=#{request.remote_ip}"
       reset_session
-      redirect_to DomainService.auth_url('login'), alert: "보안상의 이유로 다시 로그인해주세요."
+      redirect_to DomainService.auth_url('login'), alert: "보안상의 이유로 다시 로그인해주세요.", allow_other_host: true
       return false
     end
     
@@ -138,7 +138,7 @@ module TenantSecurity
     if last_activity < timeout_duration.ago
       Rails.logger.security "Session timeout: user=#{current_user&.id}, last_activity=#{last_activity}"
       reset_session
-      redirect_to DomainService.auth_url('login'), alert: "세션이 만료되었습니다. 다시 로그인해주세요."
+      redirect_to DomainService.auth_url('login'), alert: "세션이 만료되었습니다. 다시 로그인해주세요.", allow_other_host: true
       return false
     end
     
@@ -164,7 +164,7 @@ module TenantSecurity
         redirect_url: DomainService.auth_url("access_denied?org=#{organization.subdomain}")
       }, status: :forbidden
     else
-      redirect_to DomainService.auth_url("access_denied?org=#{organization.subdomain}")
+      redirect_to DomainService.auth_url("access_denied?org=#{organization.subdomain}"), allow_other_host: true
     end
   end
   

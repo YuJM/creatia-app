@@ -1,0 +1,16 @@
+# Gemfile에 추가가 필요한 gem들
+
+# Calendar 기능 (CAL-001에서 필요)
+gem 'icalendar', '~> 2.10'
+gem 'icalendar-recurrence', '~> 1.2'
+
+# GitHub API 통합 (STRUCT-004에서 필요)  
+gem 'jwt', '~> 2.9'
+gem 'faraday', '~> 2.13'
+gem 'faraday-retry', '~> 2.2'
+gem 'octokit', '~> 9.2'
+gem 'git', '~> 2.3'
+
+# Google Calendar 통합 (CAL-003에서 필요)
+gem 'google-apis-calendar_v3', '~> 0.40'
+gem 'googleauth', '~> 1.11'

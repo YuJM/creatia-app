@@ -3,6 +3,9 @@
 # 멀티테넌트 Creatia 시드 데이터
 # 이 파일은 개발 및 테스트 환경에서 사용할 수 있는 샘플 데이터를 생성합니다.
 
+# BASE_DOMAIN 환경변수 사용 (기본값: creatia.local)
+base_domain = ENV.fetch('BASE_DOMAIN', 'creatia.local')
+
 puts "\n🌱 Creatia 멀티테넌트 시드 데이터 생성 중..."
 puts "=" * 60
 
@@ -13,35 +16,35 @@ puts "\n👥 사용자 생성 중..."
 
 users = [
   {
-    email: "admin@creatia.local",
+    email: "admin@#{base_domain}",
     password: "password123",
     name: "관리자",
     role: "admin",
     username: "admin"
   },
   {
-    email: "john@creatia.local", 
+    email: "john@#{base_domain}", 
     password: "password123",
     name: "John Doe",
     role: "user",
     username: "johndoe"
   },
   {
-    email: "jane@creatia.local",
+    email: "jane@#{base_domain}",
     password: "password123", 
     name: "Jane Smith",
     role: "user",
     username: "janesmith"
   },
   {
-    email: "mike@creatia.local",
+    email: "mike@#{base_domain}",
     password: "password123",
     name: "Mike Johnson", 
     role: "user",
     username: "mikejohnson"
   },
   {
-    email: "sarah@creatia.local",
+    email: "sarah@#{base_domain}",
     password: "password123",
     name: "Sarah Wilson",
     role: "user", 
@@ -78,28 +81,28 @@ organizations_data = [
     subdomain: "demo", 
     description: "데모용 조직입니다. 멀티테넌트 시스템을 체험해보세요.",
     plan: "team",
-    owner_email: "admin@creatia.local"
+    owner_email: "admin@#{base_domain}"
   },
   {
     name: "Acme Corporation",
     subdomain: "acme",
     description: "Acme Corporation의 프로젝트 관리 워크스페이스",
     plan: "pro", 
-    owner_email: "john@creatia.local"
+    owner_email: "john@#{base_domain}"
   },
   {
     name: "Startup Inc",
     subdomain: "startup",
     description: "빠르게 성장하는 스타트업을 위한 협업 공간",
     plan: "team",
-    owner_email: "jane@creatia.local"
+    owner_email: "jane@#{base_domain}"
   },
   {
     name: "Test Organization",
     subdomain: "test",
     description: "테스트용 조직",
     plan: "free",
-    owner_email: "mike@creatia.local"
+    owner_email: "mike@#{base_domain}"
   }
 ]
 
@@ -143,11 +146,11 @@ puts "\n👨‍👩‍👧‍👦 조직 멤버십 생성 중..."
 demo_org = created_organizations.find { |org| org.subdomain == "demo" }
 if demo_org
   created_users.each do |user|
-    next if user.email == "admin@creatia.local" # 이미 소유자로 설정됨
+    next if user.email == "admin@#{base_domain}" # 이미 소유자로 설정됨
     
     role = case user.email
-           when "john@creatia.local" then "admin"
-           when "jane@creatia.local" then "admin" 
+           when "john@#{base_domain}" then "admin"
+           when "jane@#{base_domain}" then "admin" 
            else "member"
            end
     
@@ -167,9 +170,9 @@ end
 acme_org = created_organizations.find { |org| org.subdomain == "acme" }
 if acme_org
   [
-    { email: "jane@creatia.local", role: "admin" },
-    { email: "mike@creatia.local", role: "member" },
-    { email: "sarah@creatia.local", role: "member" }
+    { email: "jane@#{base_domain}", role: "admin" },
+    { email: "mike@#{base_domain}", role: "member" },
+    { email: "sarah@#{base_domain}", role: "member" }
   ].each do |member_data|
     user = created_users.find { |u| u.email == member_data[:email] }
     next unless user
@@ -282,6 +285,14 @@ created_organizations.each do |organization|
   
   # acts_as_tenant 컨텍스트 초기화
   ActsAsTenant.current_tenant = nil
+end
+
+# ============================================================================
+# 데모 데이터 로드 (옵션)
+# ============================================================================
+if ENV['LOAD_DEMO_DATA'] == 'true' || ENV['LOAD_ADVANCED_DEMO'] == 'true'
+  puts "\n🚀 데모 데이터 로드 중..."
+  require_relative 'seeds/basic_demo_data'
 end
 
 # ============================================================================

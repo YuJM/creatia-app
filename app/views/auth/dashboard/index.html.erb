@@ -1,0 +1,25 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-8">Select Organization</h1>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% @organizations.each do |org| %>
+      <%= render OrganizationCardComponent.new(
+        organization: org,
+        action_path: switch_to_organization_path(subdomain: org.subdomain),
+        action_method: :post
+      ) %>
+    <% end %>
+    
+    <% if @organizations.empty? %>
+      <div class="col-span-full">
+        <%= render AlertComponent.new(type: :info) do %>
+          <div class="text-center py-8">
+            <p class="mb-4">You don't belong to any organizations yet.</p>
+            <%= link_to "Create Organization", new_organization_path, 
+                class: "bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600" %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

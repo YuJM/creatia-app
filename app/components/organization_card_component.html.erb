@@ -1,0 +1,12 @@
+<div class="bg-white rounded-lg shadow p-6">
+  <h2 class="text-xl font-semibold mb-2"><%= organization.name %></h2>
+  <% if organization.description.present? %>
+    <p class="text-gray-600 mb-4"><%= organization.description %></p>
+  <% end %>
+  <% if action_path %>
+    <%= link_to action_text, action_path,
+        method: action_method,
+        class: action_class,
+        data: action_method == :delete ? { confirm: "Are you sure?" } : {} %>
+  <% end %>
+</div>

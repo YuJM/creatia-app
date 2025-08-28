@@ -10,11 +10,16 @@ class OrganizationsController < ApplicationController
     @organizations = policy_scope(Organization)
     authorize Organization
     
-    render_serialized(
-      OrganizationSerializer,
-      @organizations,
-      params: { include_organizations: true }
-    )
+    respond_to do |format|
+      format.html # renders index.html.erb
+      format.json do
+        render_serialized(
+          OrganizationSerializer,
+          @organizations,
+          params: { include_organizations: true }
+        )
+      end
+    end
   end
   
   # GET /organizations/:id
@@ -22,14 +27,26 @@ class OrganizationsController < ApplicationController
   def show
     authorize @organization
     
-    render_serialized(
-      OrganizationSerializer,
-      @organization,
-      params: { 
-        current_organization: @organization,
-        include_membership: true 
-      }
-    )
+    respond_to do |format|
+      format.html # renders show.html.erb
+      format.json do
+        render_serialized(
+          OrganizationSerializer,
+          @organization,
+          params: { 
+            current_organization: @organization,
+            include_membership: true 
+          }
+        )
+      end
+    end
+  end
+  
+  # GET /organizations/new
+  # 새 조직 생성 폼을 표시합니다.
+  def new
+    @organization = Organization.new
+    authorize @organization
   end
   
   # POST /organizations
@@ -38,20 +55,28 @@ class OrganizationsController < ApplicationController
     @organization = Organization.new(organization_params)
     authorize @organization
     
-    if @organization.save
-      # 생성자를 소유자로 설정
-      @organization.organization_memberships.create!(
-        user: current_user,
-        role: 'owner'
-      )
-      
-      render_with_success(
-        OrganizationSerializer,
-        @organization,
-        status: :created
-      )
-    else
-      render_error(@organization.errors)
+    respond_to do |format|
+      if @organization.save
+        # 생성자를 소유자로 설정
+        @organization.organization_memberships.create!(
+          user: current_user,
+          role: 'owner'
+        )
+        
+        format.html do
+          redirect_to organizations_path, notice: 'Organization was successfully created.'
+        end
+        format.json do
+          render_with_success(
+            OrganizationSerializer,
+            @organization,
+            status: :created
+          )
+        end
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render_error(@organization.errors) }
+      end
     end
   end
   
@@ -83,7 +108,7 @@ class OrganizationsController < ApplicationController
   # 현재 조직의 대시보드를 표시합니다.
   def dashboard
     unless current_organization
-      redirect_to DomainService.main_url
+      redirect_to DomainService.main_url, allow_other_host: true
       return
     end
     

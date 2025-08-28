@@ -1,0 +1,91 @@
+<%= turbo_frame_tag "task_metrics_#{task.id}", 
+                    class: "bg-white shadow rounded-lg overflow-hidden",
+                    data: { 
+                      controller: "task-metrics",
+                      task_metrics_task_id_value: task.id,
+                      turbo_permanent: true
+                    } do %>
+  <div class="px-4 py-5 sm:p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-medium text-gray-900">작업 진행 현황</h3>
+      <button type="button" 
+              data-action="click->task-metrics#refresh"
+              class="text-sm text-blue-600 hover:text-blue-800 transition-colors">
+        🔄 새로고침
+      </button>
+    </div>
+    
+    <!-- 진행률 표시 -->
+    <div class="mb-6">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-sm font-medium text-gray-700">완료율</span>
+        <span class="text-sm font-bold text-gray-900" data-task-metrics-target="completionPercent">
+          <%= task_metrics.completion_percentage.round(1) %>%
+        </span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="<%= progress_bar_color %> h-2 rounded-full transition-all duration-300" 
+             style="width: <%= task_metrics.completion_percentage %>%"
+             data-task-metrics-target="progressBar"></div>
+      </div>
+    </div>
+    
+    <!-- 시간 정보 -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="text-center p-3 bg-gray-50 rounded-lg">
+        <div class="text-2xl font-bold text-blue-600" data-task-metrics-target="estimatedHours">
+          <%= task_metrics.estimated_hours || "미설정" %>
+        </div>
+        <div class="text-xs text-gray-500">예상 시간</div>
+      </div>
+      <div class="text-center p-3 bg-gray-50 rounded-lg">
+        <div class="text-2xl font-bold <%= time_status_color %>" data-task-metrics-target="actualHours">
+          <%= task_metrics.actual_hours || "0" %>
+        </div>
+        <div class="text-xs text-gray-500">실제 시간</div>
+      </div>
+    </div>
+    
+    <!-- 상태 배지들 -->
+    <div class="space-y-2">
+      <!-- 효율성 상태 -->
+      <div class="flex items-center justify-between p-3 rounded-lg <%= efficiency_status_class %>" 
+           data-task-metrics-target="efficiencyStatus">
+        <span class="text-sm font-medium">
+          <%= efficiency_status_text %>
+        </span>
+        <% unless task_metrics.is_on_track? %>
+          <span class="text-xs">효율성: <%= (task_metrics.efficiency_ratio * 100).round(1) %>%</span>
+        <% end %>
+      </div>
+      
+      <!-- 복잡도 표시 -->
+      <div class="flex items-center justify-between p-3 rounded-lg <%= complexity_badge_class %>">
+        <span class="text-sm font-medium text-gray-700">
+          <%= complexity_description %>
+        </span>
+        <span class="text-xs text-gray-500">복잡도: <%= task_metrics.complexity_score %>/10</span>
+      </div>
+    </div>
+    
+    <!-- 남은 작업 정보 -->
+    <% if task_metrics.remaining_percentage > 0 %>
+      <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+        <div class="text-sm text-blue-800" data-task-metrics-target="remainingInfo">
+          <strong><%= task_metrics.remaining_percentage.round(1) %>%</strong> 작업이 남아있습니다
+        </div>
+        <div class="text-xs text-blue-600 mt-1">
+          <%= progress_description %>
+        </div>
+      </div>
+    <% end %>
+    
+    <!-- 로딩 상태 표시 -->
+    <div class="hidden" data-task-metrics-target="loading">
+      <div class="animate-pulse">
+        <div class="h-4 bg-gray-300 rounded mb-2"></div>
+        <div class="h-4 bg-gray-300 rounded w-3/4"></div>
+      </div>
+    </div>
+  </div>
+<% end %>

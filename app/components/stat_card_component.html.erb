@@ -1,0 +1,7 @@
+<div class="bg-white rounded-lg shadow p-6">
+  <h3 class="text-lg font-semibold mb-2"><%= title %></h3>
+  <p class="<%= value_class %>"><%= value %></p>
+  <% if link && link_text %>
+    <%= link_to link_text, link, class: "text-blue-500 hover:underline mt-2 inline-block" %>
+  <% end %>
+</div>
