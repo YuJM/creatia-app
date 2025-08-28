@@ -33,6 +33,9 @@ gem "attr_extras", "~> 7.1"
 gem "memo_wise", "~> 1.8"
 gem "dry-monads", "~> 1.6"
 gem "dry-validation", "~> 1.10"
+gem "dry-struct", "~> 1.6"
+gem "dry-types", "~> 1.7"
+gem "hashie", "~> 5.0"
 
 # Multi-tenancy
 gem "acts_as_tenant", "~> 1.0"
