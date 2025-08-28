@@ -10,7 +10,7 @@
 # 127.0.0.1 demo.creatia.local
 
 # Main domain (www or no subdomain)
-http://creatia.local:8080, http://www.creatia.local:8080 {
+http://creatia.local, http://www.creatia.local {
     reverse_proxy localhost:3000 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote}
@@ -19,7 +19,7 @@ http://creatia.local:8080, http://www.creatia.local:8080 {
 }
 
 # Auth subdomain
-http://auth.creatia.local:8080 {
+http://auth.creatia.local {
     reverse_proxy localhost:3000 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote}
@@ -28,7 +28,7 @@ http://auth.creatia.local:8080 {
 }
 
 # API subdomain
-http://api.creatia.local:8080 {
+http://api.creatia.local {
     reverse_proxy localhost:3000 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote}
@@ -37,7 +37,7 @@ http://api.creatia.local:8080 {
 }
 
 # Admin subdomain
-http://admin.creatia.local:8080 {
+http://admin.creatia.local {
     reverse_proxy localhost:3000 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote}
@@ -46,7 +46,7 @@ http://admin.creatia.local:8080 {
 }
 
 # Wildcard for organization subdomains
-http://*.creatia.local:8080 {
+http://*.creatia.local {
     reverse_proxy localhost:3000 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote}

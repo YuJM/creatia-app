@@ -3,6 +3,15 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
+  # Session cookie domain for cross-subdomain SSO
+  config.session_store :cookie_store,
+                      key: '_creatia_session',
+                      domain: '.creatia.local', # 모든 서브도메인에서 세션 공유
+                      secure: false, # 개발환경에서는 false
+                      httponly: true,
+                      same_site: :lax,
+                      expire_after: 8.hours
+
   # Make code changes take effect immediately without server restart.
   config.enable_reloading = true
 

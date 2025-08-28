@@ -50,12 +50,8 @@ module CreatiaApp
       }
     }
     
-    # Session security
-    config.session_store :cookie_store, 
-                        key: '_creatia_session',
-                        secure: Rails.env.production?,
-                        httponly: true,
-                        same_site: :lax,
-                        expire_after: 8.hours
+    # Session security - 환경별 설정은 environments/*.rb에서 관리
+    # development.rb: domain: '.creatia.local'
+    # production.rb: domain을 환경변수로 설정 가능
   end
 end

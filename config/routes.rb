@@ -35,13 +35,11 @@ Rails.application.routes.draw do
   # 메인 도메인 라우팅 (www 또는 서브도메인 없음)
   # =============================================================================
   constraints subdomain: /^(www)?$/ do
-    devise_for :users, controllers: { 
-      omniauth_callbacks: 'users/omniauth_callbacks'
-    }, path_names: {
+    devise_for :users, path_names: {
       sign_in: 'login',
       sign_out: 'logout',
       sign_up: 'register'
-    }, as: :main_user
+    }, as: :main_user, skip: [:omniauth_callbacks]
     
     get "pages/home"
     
@@ -65,8 +63,9 @@ Rails.application.routes.draw do
   constraints subdomain: 'auth' do
     devise_for :users, controllers: {
       omniauth_callbacks: 'users/omniauth_callbacks',
-      sessions: 'users/sessions'
-    }, path_names: {
+      sessions: 'users/sessions',
+      registrations: 'users/registrations'
+    }, path: '', path_names: {
       sign_in: 'login',
       sign_out: 'logout',
       sign_up: 'register'
@@ -99,6 +98,10 @@ Rails.application.routes.draw do
     # 조직 컨텍스트에서는 간단한 인증만
     devise_scope :user do
       get 'login', to: redirect { |params, request| 
+        subdomain = DomainService.extract_subdomain(request)
+        DomainService.login_url(subdomain)
+      }
+      get 'users/login', to: redirect { |params, request|
         subdomain = DomainService.extract_subdomain(request)
         DomainService.login_url(subdomain)
       }

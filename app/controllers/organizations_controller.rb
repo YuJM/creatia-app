@@ -108,7 +108,7 @@ class OrganizationsController < ApplicationController
   # 현재 조직의 대시보드를 표시합니다.
   def dashboard
     unless current_organization
-      redirect_to DomainService.main_url
+      redirect_to DomainService.main_url, allow_other_host: true
       return
     end
     

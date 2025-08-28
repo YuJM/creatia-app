@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Caddy 개발 서버 실행 스크립트
+# 80번 포트를 사용하기 위한 옵션 제공
+
+echo "🚀 Caddy 개발 서버 시작..."
+echo "================================"
+
+# 방법 1: sudo로 실행 (권장)
+if [ "$1" = "sudo" ]; then
+    echo "📌 sudo 권한으로 80번 포트에서 Caddy 실행"
+    sudo caddy run --config Caddyfile.dev --adapter caddyfile
+    
+# 방법 2: 포트 포워딩 사용 (pfctl)
+elif [ "$1" = "forward" ]; then
+    echo "📌 포트 포워딩 설정 (8080 → 80)"
+    echo "rdr pass inet proto tcp from any to any port 80 -> 127.0.0.1 port 8080" | sudo pfctl -ef -
+    
+    # 8080 포트용 Caddyfile 생성
+    cat > Caddyfile.dev.8080 <<EOF
+# Port forwarding configuration (8080 → 80)
+http://:8080 {
+    @main host creatia.local www.creatia.local
+    @auth host auth.creatia.local
+    @api host api.creatia.local  
+    @admin host admin.creatia.local
+    
+    handle {
+        reverse_proxy localhost:3000 {
+            header_up Host {http.request.host}
+            header_up X-Real-IP {remote}
+            header_up X-Original-Host {http.request.host}
+        }
+    }
+}
+EOF
+    
+    caddy run --config Caddyfile.dev.8080 --adapter caddyfile
+    
+    # 종료 시 포트 포워딩 해제
+    trap "sudo pfctl -F all -f /etc/pf.conf" EXIT
+    
+# 방법 3: 기본 80번 포트 (sudo 자동 요청)
+else
+    echo "📌 기본 80번 포트에서 Caddy 실행"
+    echo "⚠️  sudo 권한이 필요합니다"
+    sudo caddy run --config Caddyfile.dev --adapter caddyfile
+fi

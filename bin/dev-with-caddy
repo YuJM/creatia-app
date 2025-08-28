@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# 전체 개발 환경 실행 스크립트 (Caddy 포함)
+
+echo "🚀 Creatia 개발 환경 시작..."
+echo "================================"
+echo ""
+
+# Caddy를 백그라운드에서 실행
+echo "📌 Caddy 시작 (80번 포트)..."
+sudo caddy start --config Caddyfile.dev --adapter caddyfile
+
+# Rails + Tailwind 실행
+echo "📌 Rails 서버 + Tailwind CSS 시작..."
+bin/dev
+
+# 종료 시 Caddy 중지
+trap "sudo caddy stop" EXIT

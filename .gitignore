@@ -54,3 +54,6 @@
 
 # Custom development logs
 /logs/
+
+# IDE folders
+.idea/
