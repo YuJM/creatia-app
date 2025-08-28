@@ -1,0 +1,255 @@
+<%# Sprint Card Component with ViewComponent + Turbo integration %>
+<%= turbo_frame_tag "sprint_#{sprint.id}", 
+                    class: "sprint-card bg-white shadow-sm rounded-lg overflow-hidden #{card_border_class}",
+                    data: { 
+                      controller: "sprint-card",
+                      sprint_card_sprint_id_value: sprint.id,
+                      turbo_permanent: true
+                    } do %>
+  <div class="p-6">
+    <!-- Header Section -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex-1">
+        <div class="flex items-center space-x-3">
+          <h3 class="text-lg font-semibold text-gray-900">
+            <%= link_to sprint.name, sprint_path(sprint), 
+                  class: "hover:text-blue-600 transition-colors",
+                  data: { turbo_frame: "_top" } %>
+          </h3>
+          
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= status_badge_class %>">
+            <%= status_display_name %>
+          </span>
+          
+          <% if risk_level %>
+            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium <%= risk_level[:class] %>">
+              ⚠️ <%= risk_level[:text] %> 리스크
+            </span>
+          <% end %>
+        </div>
+        
+        <% if sprint.goal.present? %>
+          <p class="mt-1 text-sm text-gray-600">
+            🎯 <%= truncate(sprint.goal, length: 100) %>
+          </p>
+        <% end %>
+      </div>
+      
+      <!-- Actions Dropdown -->
+      <div class="relative" data-controller="dropdown">
+        <button type="button" 
+                data-action="click->dropdown#toggle"
+                class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+          </svg>
+        </button>
+        
+        <div class="hidden absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-10 border" data-dropdown-target="menu">
+          <div class="py-1">
+            <%= link_to "상세 보기", sprint_path(sprint), 
+                  class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100",
+                  data: { turbo_frame: "_top" } %>
+            <%= link_to "수정", edit_sprint_path(sprint), 
+                  class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100",
+                  data: { turbo_frame: "_top" } %>
+            <%= button_to "삭제", sprint_path(sprint), 
+                  method: :delete,
+                  class: "block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50",
+                  data: { 
+                    turbo_method: :delete,
+                    turbo_confirm: "정말로 #{sprint.name} 스프린트를 삭제하시겠습니까?",
+                    turbo_frame: "_top"
+                  } %>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Progress Section -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between text-sm mb-2">
+        <span class="font-medium text-gray-700">진행률</span>
+        <span class="font-semibold text-gray-900"><%= progress_percentage %>%</span>
+      </div>
+      
+      <div class="w-full bg-gray-200 rounded-full h-2 mb-1">
+        <div class="<%= progress_bar_color %> h-2 rounded-full transition-all duration-300" 
+             style="width: <%= progress_percentage %>%"></div>
+      </div>
+      
+      <div class="flex items-center justify-between text-xs text-gray-600">
+        <span><%= task_breakdown[:done] %>/<%= sprint.tasks.count %> 작업 완료</span>
+        <% if days_remaining %>
+          <span class="<%= days_remaining_class %> font-medium">
+            <%= days_remaining %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+    
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <!-- 기간 -->
+      <div class="text-center p-3 bg-gray-50 rounded-lg">
+        <div class="text-lg font-semibold text-gray-900">
+          <%= sprint_duration %>
+        </div>
+        <div class="text-xs text-gray-500 mt-1">기간</div>
+      </div>
+      
+      <!-- 총 작업 -->
+      <div class="text-center p-3 bg-blue-50 rounded-lg">
+        <div class="text-lg font-semibold text-blue-600">
+          <%= sprint.tasks.count %>
+        </div>
+        <div class="text-xs text-gray-500 mt-1">총 작업</div>
+      </div>
+      
+      <!-- 속도 -->
+      <% if velocity_status %>
+        <div class="text-center p-3 bg-green-50 rounded-lg">
+          <div class="text-lg font-semibold <%= velocity_status[:class] %>">
+            <%= team_metrics.velocity.round(1) %>
+          </div>
+          <div class="text-xs text-gray-500 mt-1">속도</div>
+        </div>
+      <% else %>
+        <div class="text-center p-3 bg-gray-50 rounded-lg">
+          <div class="text-lg font-semibold text-gray-400">-</div>
+          <div class="text-xs text-gray-500 mt-1">속도</div>
+        </div>
+      <% end %>
+      
+      <!-- 용량 활용도 -->
+      <% if capacity_utilization %>
+        <div class="text-center p-3 bg-yellow-50 rounded-lg">
+          <div class="text-lg font-semibold <%= capacity_utilization[:status][:class] %>">
+            <%= capacity_utilization[:percentage] %>%
+          </div>
+          <div class="text-xs text-gray-500 mt-1">용량</div>
+        </div>
+      <% else %>
+        <div class="text-center p-3 bg-gray-50 rounded-lg">
+          <div class="text-lg font-semibold text-gray-400">-</div>
+          <div class="text-xs text-gray-500 mt-1">용량</div>
+        </div>
+      <% end %>
+    </div>
+    
+    <!-- Task Status Breakdown -->
+    <div class="mb-6">
+      <h4 class="text-sm font-medium text-gray-700 mb-3">작업 현황</h4>
+      <div class="flex space-x-4">
+        <div class="flex-1">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-gray-600">할 일</span>
+            <span class="font-medium"><%= task_breakdown[:todo] %></span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-1">
+            <div class="bg-gray-400 h-1 rounded-full" 
+                 style="width: <%= sprint.tasks.count > 0 ? (task_breakdown[:todo].to_f / sprint.tasks.count * 100).round(1) : 0 %>%"></div>
+          </div>
+        </div>
+        
+        <div class="flex-1">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-gray-600">진행 중</span>
+            <span class="font-medium"><%= task_breakdown[:in_progress] %></span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-1">
+            <div class="bg-yellow-400 h-1 rounded-full" 
+                 style="width: <%= sprint.tasks.count > 0 ? (task_breakdown[:in_progress].to_f / sprint.tasks.count * 100).round(1) : 0 %>%"></div>
+          </div>
+        </div>
+        
+        <div class="flex-1">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-gray-600">리뷰</span>
+            <span class="font-medium"><%= task_breakdown[:review] %></span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-1">
+            <div class="bg-blue-400 h-1 rounded-full" 
+                 style="width: <%= sprint.tasks.count > 0 ? (task_breakdown[:review].to_f / sprint.tasks.count * 100).round(1) : 0 %>%"></div>
+          </div>
+        </div>
+        
+        <div class="flex-1">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-gray-600">완료</span>
+            <span class="font-medium"><%= task_breakdown[:done] %></span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-1">
+            <div class="bg-green-400 h-1 rounded-full" 
+                 style="width: <%= sprint.tasks.count > 0 ? (task_breakdown[:done].to_f / sprint.tasks.count * 100).round(1) : 0 %>%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Additional Info & Actions -->
+    <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+      <div class="flex items-center space-x-4 text-xs text-gray-500">
+        <% if sprint.start_date && sprint.end_date %>
+          <span>
+            📅 <%= sprint.start_date.strftime('%m/%d') %> - <%= sprint.end_date.strftime('%m/%d') %>
+          </span>
+        <% end %>
+        
+        <% if burndown_trend %>
+          <span class="<%= burndown_trend[:class] %>">
+            <%= burndown_trend[:icon] %> 번다운 <%= burndown_trend[:trend] %>
+          </span>
+        <% end %>
+        
+        <% if team_workload_summary %>
+          <span>
+            👥 평균 <%= team_workload_summary[:average_hours] %>h
+          </span>
+        <% end %>
+      </div>
+      
+      <div class="flex items-center space-x-2">
+        <!-- 메트릭 새로고침 버튼 -->
+        <button type="button" 
+                data-action="click->sprint-card#refreshMetrics"
+                class="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors"
+                title="메트릭 새로고침">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+        
+        <!-- 계획 보기 버튼 -->
+        <% if show_planning? %>
+          <%= link_to sprint_plan_path(sprint), 
+                data: { 
+                  action: "click->sprint-card#loadPlan",
+                  turbo_frame: "sprint_plan_modal"
+                },
+                class: "text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors" do %>
+            📊 계획 보기
+          <% end %>
+        <% else %>
+          <button type="button" 
+                  data-action="click->sprint-card#generatePlan"
+                  class="text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors">
+            🔄 계획 생성
+          </button>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  <div class="hidden absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center" 
+       data-sprint-card-target="loadingOverlay">
+    <div class="flex items-center space-x-2">
+      <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span class="text-sm text-gray-600">업데이트 중...</span>
+    </div>
+  </div>
+<% end %>
