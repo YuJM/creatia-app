@@ -5,8 +5,19 @@ Rails.application.config.to_prepare do
   # 1. Warden 세션 스토어 설정
   Warden::Manager.after_set_user do |user, auth, opts|
     scope = opts[:scope]
+    
+    # 사용자 객체에서 ID 추출 (배열이나 해시인 경우 처리)
+    user_id = case user
+              when Array
+                user.first.respond_to?(:id) ? user.first.id : user.first
+              when Hash
+                user['id'] || user[:id]
+              else
+                user.respond_to?(:id) ? user.id : user
+              end
+    
     auth.cookies.signed["#{scope}_id"] = {
-      value: user.id,
+      value: user_id,
       domain: Rails.env.production? ? ".creatia.io" : ".creatia.local",
       httponly: true,
       secure: Rails.env.production?,

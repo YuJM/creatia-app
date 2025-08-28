@@ -79,7 +79,8 @@ Devise.setup do |config|
   # enable this with :database unless you are using a custom strategy.
   # The supported strategies are:
   # :database      = Support basic authentication with authentication key + password
-  # config.http_authenticatable = false
+  # Enable HTTP Basic Authentication for development and test environments only
+  config.http_authenticatable = Rails.env.development? || Rails.env.test? ? [:database] : false
 
   # If 401 status code should be returned for AJAX requests. True by default.
   # config.http_authenticatable_on_xhr = true

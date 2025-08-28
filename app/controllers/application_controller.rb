@@ -25,12 +25,21 @@ class ApplicationController < ActionController::Base
     # 1. Warden에서 확인
     if warden && warden.user(:user)
       user_data = warden.user(:user)
-      # If warden returns a hash (can happen in tests), find the actual user
-      @current_user = if user_data.is_a?(Hash)
-        User.find_by(id: user_data['id'] || user_data[:id])
-      else
-        user_data
-      end
+      # Handle different data types returned by warden
+      @current_user = case user_data
+                      when Array
+                        # Devise 직렬화에서 배열이 반환되는 경우
+                        user_data.first.is_a?(User) ? user_data.first : User.find(user_data.first)
+                      when Hash
+                        # If warden returns a hash (can happen in tests)
+                        User.find_by(id: user_data['id'] || user_data[:id])
+                      when User
+                        # 이미 User 객체인 경우
+                        user_data
+                      else
+                        # ID나 다른 형태인 경우
+                        user_data.is_a?(Integer) ? User.find(user_data) : user_data
+                      end
     # 2. JWT 토큰에서 확인 (크로스 도메인 지원)
     elsif cookies[:jwt_access_token].present? || cookies[:jwt_refresh_token].present?
       @current_user = authenticate_from_jwt_token

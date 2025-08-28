@@ -50,6 +50,12 @@ module CreatiaApp
       }
     }
     
+    # HTTP Basic Authentication middleware for development and test environments
+    if Rails.env.development? || Rails.env.test?
+      require Rails.root.join('app/middleware/basic_auth_middleware')
+      config.middleware.insert_before Warden::Manager, BasicAuthMiddleware
+    end
+    
     # Session security - 환경별 설정은 environments/*.rb에서 관리
     # development.rb: domain: '.creatia.local'
     # production.rb: domain을 환경변수로 설정 가능

@@ -24,7 +24,7 @@ class UserSerializer < BaseSerializer
   
   # 조건부 속성 - admin 정보는 권한이 있을 때만 포함
   attribute :admin, if: proc { |user, params| 
-    params[:include_admin_info] == true 
+    params.is_a?(Hash) && params[:include_admin_info] == true 
   } do |user|
     # admin 컬럼이 있다면 사용, 없다면 false 반환
     user.respond_to?(:admin?) ? user.admin? : false
@@ -32,7 +32,7 @@ class UserSerializer < BaseSerializer
   
   # 시간 헬퍼를 사용한 상대 시간 표시
   attribute :joined_ago, if: proc { |user, params| 
-    params[:time_helper].present? 
+    params.is_a?(Hash) && params[:time_helper].present? 
   } do |user, params|
     params[:time_helper].time_ago_in_words(user.created_at)
   end
@@ -41,7 +41,7 @@ class UserSerializer < BaseSerializer
   
   # 현재 조직에서의 역할
   attribute :current_organization_role, if: proc { |user, params| 
-    params[:current_organization].present? 
+    params.is_a?(Hash) && params[:current_organization].present? 
   } do |user, params|
     organization = params[:current_organization]
     user.role_in(organization)
@@ -49,7 +49,7 @@ class UserSerializer < BaseSerializer
   
   # 현재 조직에서의 멤버십 정보
   attribute :current_membership, if: proc { |user, params| 
-    params[:current_organization].present? && params[:include_membership] 
+    params.is_a?(Hash) && params[:current_organization].present? && params[:include_membership] 
   } do |user, params|
     organization = params[:current_organization]
     membership = user.organization_memberships.find_by(
@@ -67,7 +67,7 @@ class UserSerializer < BaseSerializer
   
   # 사용자가 속한 조직 목록 (전체 조직 컨텍스트에서만)
   attribute :organizations, if: proc { |user, params| 
-    params[:include_organizations] 
+    params.is_a?(Hash) && params[:include_organizations] 
   } do |user, params|
     user.organizations.active.map do |org|
       {
@@ -83,7 +83,7 @@ class UserSerializer < BaseSerializer
   
   # 권한 정보 (현재 조직 기준)
   attribute :permissions, if: proc { |user, params| 
-    params[:current_organization].present? 
+    params.is_a?(Hash) && params[:current_organization].present? 
   } do |user, params|
     organization = params[:current_organization]
     {
@@ -97,7 +97,7 @@ class UserSerializer < BaseSerializer
   
   # OAuth 제공자 정보 (제한적 공개)
   attribute :oauth_provider, if: proc { |user, params| 
-    params[:include_oauth_info] 
+    params.is_a?(Hash) && params[:include_oauth_info] 
   } do |user|
     user.provider || 'email'
   end
