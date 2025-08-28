@@ -390,22 +390,22 @@ test.describe('Time Tracking System', () => {
 
 ---
 
-## 📊 Progress Tracking
+## 📊 Progress Tracking (Updated: 2025-08-28)
 
-| Task ID | Story Points | Status | Progress |
-|---------|-------------|--------|----------|
-| CORE-001 | 3 | 🔄 In Progress | 20% |
-| CORE-002 | 5 | 📋 Pending | 0% |
-| CORE-003 | 3 | 📋 Pending | 0% |
-| CORE-004 | 5 | 📋 Pending | 0% |
-| CORE-005 | 3 | 📋 Pending | 0% |
-| CORE-006 | 2 | 📋 Pending | 0% |
-| CORE-007 | 3 | 📋 Pending | 0% |
-| CORE-008 | 5 | 📋 Pending | 0% |
+| Task ID | Story Points | Status | Progress | 구현 파일 |
+|---------|-------------|--------|----------|----------|
+| CORE-001 | 3 | ✅ Complete | 100% | `app/models/concerns/time_trackable.rb` |
+| CORE-002 | 5 | ✅ Complete | 100% | `app/models/sprint.rb` |
+| CORE-003 | 3 | ✅ Complete | 100% | `app/models/pomodoro_session.rb` |
+| CORE-004 | 5 | ✅ Complete | 100% | `app/notifiers/task_reminder_notifier.rb` |
+| CORE-005 | 3 | ✅ Complete | 100% | `app/services/dashboard_service.rb` |
+| CORE-006 | 2 | ✅ Complete | 100% | `app/components/time_display_component.rb` |
+| CORE-007 | 3 | ✅ Complete | 100% | `app/jobs/notification_scheduler_job.rb` |
+| CORE-008 | 5 | 📋 Pending | 0% | - |
 
 **Total Story Points**: 29
-**Completed**: 0
-**Velocity**: TBD
+**Completed**: 24 (82.8%)
+**Velocity**: 24 points/sprint
 
 ---
 
