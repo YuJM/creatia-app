@@ -1,0 +1,197 @@
+<%# Turbo Frame 기반 Task 생성 폼 %>
+<%= turbo_frame_tag "task_form", class: "task-form" do %>
+  <%= form_with model: @task, 
+                data: { 
+                  turbo_frame: "_top",
+                  controller: "task-form github-integration",
+                  action: "turbo:submit-end->task-form#handleSubmit",
+                  github_integration_repository_value: current_organization.github_repository,
+                  github_integration_enabled_value: github_integration_enabled?
+                },
+                class: "space-y-6" do |form| %>
+    
+    <!-- 기본 정보 -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <h3 class="text-lg font-medium mb-4">작업 정보</h3>
+      
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <!-- 제목 -->
+        <div class="sm:col-span-2">
+          <%= form.label :title, "작업 제목", class: "block text-sm font-medium text-gray-700" %>
+          <%= form.text_field :title, 
+                placeholder: "예: 로그인 페이지 디자인 개선",
+                class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500",
+                data: { 
+                  task_form_target: "titleField",
+                  action: "input->github-integration#updateBranchName"
+                } %>
+        </div>
+        
+        <!-- 우선순위 -->
+        <div>
+          <%= form.label :priority, "우선순위", class: "block text-sm font-medium text-gray-700" %>
+          <%= form.select :priority, 
+                options_for_select([
+                  ['낮음', 'low'], 
+                  ['보통', 'medium'], 
+                  ['높음', 'high'], 
+                  ['긴급', 'urgent']
+                ], @task.priority),
+                { prompt: '우선순위를 선택하세요' },
+                { 
+                  class: "mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md",
+                  data: { task_form_target: "priorityField" }
+                } %>
+        </div>
+        
+        <!-- 마감일 -->
+        <div>
+          <%= form.label :due_date, "마감일", class: "block text-sm font-medium text-gray-700" %>
+          <%= form.date_field :due_date, 
+                class: "mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                data: { task_form_target: "dueDateField" } %>
+        </div>
+        
+        <!-- 담당자 -->
+        <div class="sm:col-span-2">
+          <%= form.label :assigned_user_id, "담당자", class: "block text-sm font-medium text-gray-700" %>
+          <%= form.collection_select :assigned_user_id, 
+                current_organization.users.active, 
+                :id, :email,
+                { prompt: '담당자를 선택하세요 (선택사항)' },
+                { 
+                  class: "mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md",
+                  data: { task_form_target: "assigneeField" }
+                } %>
+        </div>
+        
+        <!-- 설명 -->
+        <div class="sm:col-span-2">
+          <%= form.label :description, "상세 설명", class: "block text-sm font-medium text-gray-700" %>
+          <div class="mt-1">
+            <%= form.rich_text_area :description,
+                  placeholder: "작업에 대한 자세한 설명을 입력하세요...",
+                  class: "block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500",
+                  data: { task_form_target: "descriptionField" } %>
+          </div>
+          <p class="mt-2 text-sm text-gray-500">
+            💡 Markdown 형식을 지원합니다. 체크리스트, 링크, 이미지 등을 사용할 수 있어요.
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- GitHub 연동 (옵셔널) -->
+    <% if github_integration_enabled? %>
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-6" 
+           data-github-integration-target="container">
+        <div class="flex items-start">
+          <div class="flex items-center h-5">
+            <%= check_box_tag :create_github_branch, "true", false,
+                  id: "create_github_branch",
+                  class: "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded",
+                  data: { 
+                    github_integration_target: "enableCheckbox",
+                    action: "change->github-integration#toggleBranchPreview" 
+                  } %>
+          </div>
+          <div class="ml-3 flex-1">
+            <%= label_tag :create_github_branch, 
+                  "GitHub 브랜치 자동 생성", 
+                  class: "block text-sm text-blue-900 font-medium" %>
+            
+            <div id="branch-preview" 
+                 class="hidden mt-3 p-3 bg-white rounded border"
+                 data-github-integration-target="branchPreview">
+              <p class="text-sm text-gray-600 mb-2">생성될 브랜치명:</p>
+              <code id="branch-name" 
+                    class="text-sm bg-gray-100 px-2 py-1 rounded font-mono"
+                    data-github-integration-target="branchName">
+                feature/TASK-XXX-branch-name
+              </code>
+              
+              <div class="mt-2 text-xs text-gray-500">
+                <p>📁 저장소: <strong><%= current_organization.github_repository %></strong></p>
+                <p>🌿 기본 브랜치에서 생성됩니다</p>
+              </div>
+            </div>
+            
+            <p class="mt-2 text-sm text-blue-700">
+              💡 개발 작업의 경우 GitHub 브랜치를 생성하면 코드 관리가 편리합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    <% else %>
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-gray-800">GitHub 연동 사용 불가</h3>
+            <div class="mt-2 text-sm text-gray-600">
+              <p>GitHub 연동을 사용하려면 조직 설정에서 GitHub을 연동하고, 개발자 권한이 필요합니다.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    
+    <!-- 폼 검증 메시지 -->
+    <div class="hidden" data-task-form-target="validationMessage">
+      <div class="rounded-md bg-red-50 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">입력 오류</h3>
+            <div class="mt-2 text-sm text-red-700">
+              <ul role="list" class="list-disc pl-5 space-y-1" data-task-form-target="validationList">
+                <!-- 검증 오류 메시지들이 여기에 추가됩니다 -->
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 제출 버튼 -->
+    <div class="flex justify-end space-x-3">
+      <%= link_to "취소", tasks_path, 
+            class: "bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
+      <%= form.submit "작업 생성", 
+            class: "bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed",
+            data: { 
+              task_form_target: "submitButton",
+              action: "click->task-form#validateForm"
+            } %>
+    </div>
+  <% end %>
+<% end %>
+
+<!-- 로딩 상태 표시 -->
+<div class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" 
+     data-task-form-target="loadingOverlay">
+  <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div class="mt-3 text-center">
+      <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 mt-2">작업 생성 중...</h3>
+      <div class="mt-2 px-7 py-3">
+        <p class="text-sm text-gray-500" data-task-form-target="loadingMessage">
+          작업을 생성하고 있습니다.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -127,6 +127,7 @@ Rails.application.routes.draw do
         patch :assign
         patch :change_status, path: 'status'
         patch :reorder
+        get :metrics  # 새로 추가
       end
       collection do
         get :stats

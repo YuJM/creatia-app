@@ -46,6 +46,13 @@ class Task < ApplicationRecord
   scope :high_priority, -> { by_priority('high') }
   scope :urgent, -> { by_priority('urgent') }
   
+  # Additional scopes for UI integration
+  scope :active, -> { where(status: %w[todo in_progress review]) }
+  scope :completed, -> { where(status: %w[done]) }
+  scope :blocked, -> { where(status: %w[blocked]) } # 추후 blocked 상태 추가 시 사용
+  scope :overdue, -> { where('due_date < ?', Date.current).where.not(status: %w[done archived]) }
+  scope :due_soon, -> { where(due_date: Date.current..7.days.from_now).where.not(status: %w[done archived]) }
+  
   # Callbacks
   before_validation :set_default_values, on: :create
   
@@ -214,6 +221,28 @@ class Task < ApplicationRecord
     when 'high' then '높음'
     when 'urgent' then '긴급'
     else priority.humanize
+    end
+  end
+  
+  # GitHub 브랜치 정보 (추후 마이그레이션으로 추가 예정)
+  def github_branch
+    # 임시로 nil 반환, 추후 DB 컬럼 추가 시 해당 컬럼 값 반환
+    nil
+  end
+  
+  def github_branch=(value)
+    # 임시로 무시, 추후 DB 컬럼 추가 시 해당 컬럼에 저장
+  end
+  
+  # 복잡도 점수 (추후 마이그레이션으로 추가 예정)
+  def complexity_score
+    # 기본값으로 우선순위 기반 복잡도 반환
+    case priority
+    when 'low' then 2
+    when 'medium' then 4
+    when 'high' then 6
+    when 'urgent' then 8
+    else 3
     end
   end
   

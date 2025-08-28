@@ -41,6 +41,11 @@ class OrganizationMembership < ApplicationRecord
     owner?
   end
   
+  def developer_role?
+    # 개발자 관련 역할인지 확인 (admin과 member은 개발 작업을 할 수 있다고 가정)
+    role.in?(%w[owner admin member])
+  end
+  
   def display_role
     case role
     when 'owner' then '소유자'

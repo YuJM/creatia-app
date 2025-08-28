@@ -45,4 +45,35 @@ class Organization < ApplicationRecord
   def role_for(user)
     organization_memberships.find_by(user: user, active: true)&.role
   end
+  
+  # GitHub 통합 관련 메서드들 (옵셔널)
+  def github_integration_active?
+    # 기본적으로 비활성화
+    # 추후 settings 테이블이나 GitHub 설정이 구현되면 여기서 확인
+    false
+  end
+  
+  def github_repository
+    # 기본값 nil 반환
+    # 추후 GitHub 저장소 설정이 구현되면 여기서 반환
+    nil
+  end
+  
+  def github_access_token
+    # 기본값 nil 반환
+    # 추후 암호화된 토큰 저장이 구현되면 여기서 반환
+    nil
+  end
+  
+  def current_service
+    # 임시로 self를 반환 (Phase 2 CreateTaskWithBranchService에서 service 파라미터 요구)
+    # 추후 Service 모델이 구현되면 해당 서비스를 반환
+    self
+  end
+  
+  def active_members
+    # 활성 멤버들의 User 객체 반환
+    users.joins(:organization_memberships)
+         .where(organization_memberships: { organization: self, active: true })
+  end
 end
