@@ -148,6 +148,44 @@ class Task < ApplicationRecord
     assigned_user.present?
   end
   
+  # Task ID generation
+  def task_id
+    return nil unless service&.task_prefix && id
+    "#{service.task_prefix}-#{id}"
+  end
+  
+  # TaskStatus struct integration
+  def status_struct
+    @status_struct ||= TaskStatus.new(
+      state: status,
+      blocked_by: blocked_by_task_ids,
+      blocking: blocking_task_ids,
+      assigned_to: assignee&.email,
+      started_at: started_at,
+      completed_at: completed_at
+    )
+  end
+  
+  def transition_to!(new_state)
+    if status_struct.can_transition_to?(new_state)
+      update!(status: new_state)
+      true
+    else
+      errors.add(:status, "#{status}에서 #{new_state}로 전환할 수 없습니다")
+      false
+    end
+  end
+  
+  def blocked_by_task_ids
+    # 나중에 구현: 의존성 관계에서 blocking tasks를 가져옴
+    []
+  end
+  
+  def blocking_task_ids
+    # 나중에 구현: 의존성 관계에서 blocked tasks를 가져옴
+    []
+  end
+  
   def priority_color
     case priority
     when 'low' then 'green'
