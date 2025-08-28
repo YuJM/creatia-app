@@ -2,13 +2,15 @@
 
 Rails.application.config.middleware.use OmniAuth::Builder do
   # GitHub OAuth
-  provider :github,
-           Rails.application.credentials.github[:client_id],
-           Rails.application.credentials.github[:client_secret],
-           scope: 'user,repo,admin:org,admin:repo_hook'
+  if Rails.application.credentials.dig(:github, :client_id)
+    provider :github,
+             Rails.application.credentials.github[:client_id],
+             Rails.application.credentials.github[:client_secret],
+             scope: 'user,repo,admin:org,admin:repo_hook'
+  end
   
   # Google OAuth (기존)
-  if Rails.application.credentials.google
+  if Rails.application.credentials.dig(:google, :client_id)
     provider :google_oauth2,
              Rails.application.credentials.google[:client_id],
              Rails.application.credentials.google[:client_secret],
