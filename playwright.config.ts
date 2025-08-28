@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// BASE_DOMAIN 환경변수 설정 (기본값: creatia.local)
+const BASE_DOMAIN = process.env.BASE_DOMAIN || 'creatia.local';
+const PORT = process.env.PORT || '3000';
+
 /**
  * Playwright E2E 테스트 설정
  */
@@ -12,7 +16,7 @@ export default defineConfig({
   reporter: 'html',
   
   use: {
-    baseURL: 'http://creatia.local', // Caddy 사용 시 포트 80
+    baseURL: `http://${BASE_DOMAIN}`, // Caddy 사용 시 포트 80
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Caddyfile 생성 스크립트
+# 환경변수 BASE_DOMAIN을 사용하여 Caddyfile을 생성합니다
+
+# Colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# BASE_DOMAIN 환경변수 확인
+BASE_DOMAIN=${BASE_DOMAIN:-"creatia.local"}
+
+echo -e "${GREEN}🔧 Generating Caddyfile with BASE_DOMAIN=${BASE_DOMAIN}${NC}"
+
+# Caddyfile.template을 사용하여 Caddyfile 생성
+if [ -f "Caddyfile.template" ]; then
+    # envsubst를 사용하여 템플릿에서 환경변수 치환
+    export BASE_DOMAIN
+    envsubst < Caddyfile.template > Caddyfile
+    echo -e "${GREEN}✅ Caddyfile generated successfully${NC}"
+else
+    # 템플릿이 없으면 직접 생성
+    cat > Caddyfile <<EOF
+{
+	auto_https off
+}
+
+http://${BASE_DOMAIN} {
+	reverse_proxy localhost:3000 {
+		header_up Host {http.request.host}
+	}
+}
+EOF
+    echo -e "${GREEN}✅ Caddyfile created with BASE_DOMAIN=${BASE_DOMAIN}${NC}"
+fi
+
+# Caddyfile.dev도 생성
+if [ -f "Caddyfile.dev" ]; then
+    # Caddyfile.dev 업데이트
+    sed -i.bak "s/BASE_DOMAIN=.*/BASE_DOMAIN=$BASE_DOMAIN/g" Caddyfile.dev
+    rm Caddyfile.dev.bak
+    echo -e "${GREEN}✅ Caddyfile.dev updated with BASE_DOMAIN=${BASE_DOMAIN}${NC}"
+fi
+
+echo ""
+echo "To start Caddy, run:"
+echo "  caddy run --config Caddyfile --adapter caddyfile"

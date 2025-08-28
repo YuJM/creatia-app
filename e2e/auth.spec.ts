@@ -1,8 +1,9 @@
 import { test, expect, Page } from '@playwright/test';
+import { DomainHelper } from './helpers/domain.helper';
 
 // 테스트 데이터
 const testUser = {
-  email: 'admin@creatia.local',
+  email: DomainHelper.getTestEmail('admin'),
   password: 'password123'
 };
 
@@ -19,10 +20,10 @@ test.describe('인증 플로우 테스트', () => {
 
   test.skip('조직 서브도메인에서 로그인 페이지로 리다이렉트되고 로그인 후 다시 돌아온다', async ({ page }) => {
     // 1. 조직 서브도메인 접근 시도 (포트 3000 직접 사용)
-    await page.goto(`http://${demoOrg.subdomain}.creatia.local:3000/dashboard`);
+    await page.goto(DomainHelper.getOrganizationUrl(demoOrg.subdomain, 'dashboard'));
     
     // 2. auth 서브도메인의 로그인 페이지로 리다이렉트 확인
-    await expect(page).toHaveURL(/auth\.creatia\.local.*\/login/);
+    await expect(page).toHaveURL(DomainHelper.getUrlPattern('auth', 'login'));
     await expect(page).toHaveURL(new RegExp(`return_to=${demoOrg.subdomain}`));
     
     // 3. 로그인 페이지 UI 확인
@@ -37,8 +38,8 @@ test.describe('인증 플로우 테스트', () => {
     await page.locator('input[type="submit"][value="로그인"]').click();
     
     // 5. 원래 요청한 조직의 대시보드로 리다이렉트 확인
-    await page.waitForURL(`http://${demoOrg.subdomain}.creatia.local:3000/dashboard`);
-    await expect(page).toHaveURL(`http://${demoOrg.subdomain}.creatia.local:3000/dashboard`);
+    await page.waitForURL(DomainHelper.getOrganizationUrl(demoOrg.subdomain, 'dashboard'));
+    await expect(page).toHaveURL(DomainHelper.getOrganizationUrl(demoOrg.subdomain, 'dashboard'));
     
     // 6. 대시보드 콘텐츠 확인
     await expect(page.locator('h1, h2')).toContainText(demoOrg.displayName);
@@ -46,7 +47,7 @@ test.describe('인증 플로우 테스트', () => {
 
   test.skip('auth 서브도메인에서 직접 로그인하면 조직 선택 또는 대시보드로 이동', async ({ page }) => {
     // 1. auth 서브도메인의 로그인 페이지 접근
-    await page.goto('http://auth.creatia.local:3000/login');
+    await page.goto(DomainHelper.getAuthUrl('login'));
     
     // 2. 로그인 페이지 확인
     await expect(page.locator('h2')).toContainText('Welcome to Creatia');
@@ -63,7 +64,7 @@ test.describe('인증 플로우 테스트', () => {
     // 조직이 하나면 바로 대시보드로, 여러 개면 선택 페이지로
     const validUrls = [
       'organization_selection',
-      `${demoOrg.subdomain}.creatia.local:3000/dashboard`
+      `${demoOrg.subdomain}.${DomainHelper.getFullDomain()}/dashboard`
     ];
     
     expect(validUrls.some(valid => url.includes(valid))).toBeTruthy();
@@ -71,19 +72,19 @@ test.describe('인증 플로우 테스트', () => {
 
   test('로그인 페이지에 데모 계정 정보가 표시된다', async ({ page }) => {
     // 1. 로그인 페이지 접근
-    await page.goto('http://auth.creatia.local:3000/login');
+    await page.goto(DomainHelper.getAuthUrl('login'));
     
     // 2. 데모 계정 정보 카드 확인
     const demoCard = page.locator('.bg-blue-50');
     await expect(demoCard).toBeVisible();
     await expect(demoCard).toContainText('데모 계정');
-    await expect(demoCard).toContainText('Email: admin@creatia.local');
+    await expect(demoCard).toContainText(`Email: ${DomainHelper.getTestEmail('admin')}`);
     await expect(demoCard).toContainText('Password: password123');
   });
 
   test('잘못된 자격 증명으로 로그인 시도시 에러 메시지 표시', async ({ page }) => {
     // 1. 로그인 페이지 접근
-    await page.goto('http://auth.creatia.local:3000/login');
+    await page.goto(DomainHelper.getAuthUrl('login'));
     
     // 2. 잘못된 자격 증명으로 로그인
     await page.fill('input[name="auth_user_user[email]"]', 'wrong@email.com');
@@ -96,7 +97,7 @@ test.describe('인증 플로우 테스트', () => {
 
   test('로그인 폼 UI 요소들이 올바르게 표시된다', async ({ page }) => {
     // 1. 로그인 페이지 접근
-    await page.goto('http://auth.creatia.local:3000/login');
+    await page.goto(DomainHelper.getAuthUrl('login'));
     
     // 2. Creatia 로고/브랜딩 확인
     const logo = page.locator('.h-16.w-16');
@@ -147,10 +148,10 @@ test.describe('인증 플로우 테스트', () => {
     });
     
     // 1. 조직 서브도메인 접근 시도
-    await page.goto(`http://${demoOrg.subdomain}.creatia.local/dashboard`);
+    await page.goto(DomainHelper.getOrganizationUrl(demoOrg.subdomain, 'dashboard').replace(':3000', ''));
     
     // 2. auth 도메인으로 리다이렉트
-    await expect(page).toHaveURL(/auth\.creatia\.local.*\/login/);
+    await expect(page).toHaveURL(DomainHelper.getUrlPattern('auth', 'login'));
     
     // 3. 로그인
     await page.fill('input[name="auth_user_user[email]"]', testUser.email);
@@ -158,7 +159,7 @@ test.describe('인증 플로우 테스트', () => {
     await page.locator('input[type="submit"][value="로그인"]').click();
     
     // 4. 조직 도메인으로 리다이렉트
-    await page.waitForURL(`http://${demoOrg.subdomain}.creatia.local/dashboard`);
+    await page.waitForURL(DomainHelper.getOrganizationUrl(demoOrg.subdomain, 'dashboard').replace(':3000', ''));
     
     // 5. "Unsafe redirect" 에러가 없는지 확인
     expect(errors.filter(e => e.includes('Unsafe redirect'))).toHaveLength(0);
@@ -174,20 +175,20 @@ test.describe('조직 선택 플로우', () => {
 
   test.skip('권한이 없는 조직 접근 시 접근 거부 페이지를 표시한다', async ({ page }) => {
     // 1. 로그인
-    await page.goto('http://auth.creatia.local:3000/login');
+    await page.goto(DomainHelper.getAuthUrl('login'));
     await page.fill('input[name="auth_user_user[email]"]', testUser.email);
     await page.fill('input[name="auth_user_user[password]"]', testUser.password);
     await page.locator('input[type="submit"][value="로그인"]').click();
     
     // 2. 권한 없는 조직으로 접근 시도
-    await page.goto('http://unauthorized.creatia.local:3000/dashboard');
+    await page.goto(DomainHelper.getOrganizationUrl('unauthorized', 'dashboard'));
     
     // 3. 접근 거부 또는 로그인 페이지로 리다이렉트 확인
     const url = page.url();
     expect(
       url.includes('access_denied') || 
       url.includes('login') ||
-      url.includes('auth.creatia.local')
+      url.includes(`auth.${DomainHelper.getBaseDomain()}`);
     ).toBeTruthy();
   });
 });
@@ -195,7 +196,7 @@ test.describe('조직 선택 플로우', () => {
 test.describe('세션 관리', () => {
   test('로그아웃 후 보호된 페이지 접근 시 로그인 페이지로 리다이렉트', async ({ page, context }) => {
     // 1. 로그인
-    await page.goto('http://auth.creatia.local:3000/login');
+    await page.goto(DomainHelper.getAuthUrl('login'));
     await page.fill('input[name="auth_user_user[email]"]', testUser.email);
     await page.fill('input[name="auth_user_user[password]"]', testUser.password);
     await page.locator('input[type="submit"][value="로그인"]').click();
@@ -207,9 +208,9 @@ test.describe('세션 관리', () => {
     await context.clearCookies();
     
     // 4. 보호된 페이지 접근 시도
-    await page.goto(`http://${demoOrg.subdomain}.creatia.local/dashboard`);
+    await page.goto(DomainHelper.getOrganizationUrl(demoOrg.subdomain, 'dashboard').replace(':3000', ''));
     
     // 5. 로그인 페이지로 리다이렉트 확인
-    await expect(page).toHaveURL(/auth\.creatia\.local.*\/login/);
+    await expect(page).toHaveURL(DomainHelper.getUrlPattern('auth', 'login'));
   });
 });
