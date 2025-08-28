@@ -1,0 +1,11 @@
+ko:
+  time:
+    formats:
+      default: "%Y-%m-%d %H:%M"
+      long: "%Y년 %m월 %d일 %H:%M"
+      short: "%m/%d %H:%M"
+  date:
+    formats:
+      default: "%Y-%m-%d"
+      long: "%Y년 %m월 %d일"
+      short: "%m/%d"

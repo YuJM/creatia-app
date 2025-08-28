@@ -10,10 +10,34 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_25_123616) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_28_045242) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
+
+  create_table "noticed_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "type"
+    t.string "record_type"
+    t.uuid "record_id"
+    t.jsonb "params"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "notifications_count"
+    t.index ["record_type", "record_id"], name: "index_noticed_events_on_record"
+  end
+
+  create_table "noticed_notifications", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "type"
+    t.uuid "event_id", null: false
+    t.string "recipient_type", null: false
+    t.uuid "recipient_id", null: false
+    t.datetime "read_at", precision: nil
+    t.datetime "seen_at", precision: nil
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id"], name: "index_noticed_notifications_on_event_id"
+    t.index ["recipient_type", "recipient_id"], name: "index_noticed_notifications_on_recipient"
+  end
 
   create_table "organization_memberships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
@@ -40,6 +64,57 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_25_123616) do
     t.index ["subdomain"], name: "index_organizations_on_subdomain", unique: true
   end
 
+  create_table "pomodoro_sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "task_id", null: false
+    t.uuid "user_id", null: false
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.integer "session_count"
+    t.integer "duration"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "ended_at"
+    t.integer "actual_duration"
+    t.datetime "paused_at"
+    t.integer "paused_duration", default: 0
+    t.integer "status", default: 0, null: false
+    t.index ["status"], name: "index_pomodoro_sessions_on_status"
+    t.index ["task_id"], name: "index_pomodoro_sessions_on_task_id"
+    t.index ["user_id"], name: "index_pomodoro_sessions_on_user_id"
+  end
+
+  create_table "services", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "organization_id", null: false
+    t.string "name"
+    t.string "key"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id"], name: "index_services_on_organization_id"
+  end
+
+  create_table "sprints", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "service_id", null: false
+    t.string "name"
+    t.date "start_date"
+    t.date "end_date"
+    t.text "goal"
+    t.text "schedule"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "status", default: 0, null: false
+    t.time "start_time", default: "2000-01-01 09:00:00"
+    t.time "end_time", default: "2000-01-01 18:00:00"
+    t.boolean "flexible_hours", default: false
+    t.boolean "weekend_work", default: false
+    t.time "daily_standup_time"
+    t.datetime "review_meeting_time"
+    t.datetime "retrospective_time"
+    t.jsonb "custom_schedule"
+    t.index ["service_id"], name: "index_sprints_on_service_id"
+    t.index ["status"], name: "index_sprints_on_status"
+  end
+
   create_table "tasks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "title"
     t.text "description"
@@ -52,12 +127,40 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_25_123616) do
     t.integer "position", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.decimal "estimated_hours", precision: 10, scale: 2
+    t.decimal "actual_hours", precision: 10, scale: 2
+    t.datetime "deadline"
+    t.integer "story_points"
+    t.uuid "sprint_id"
+    t.uuid "team_id"
+    t.uuid "service_id"
+    t.uuid "assignee_id"
     t.index ["assigned_user_type", "assigned_user_id"], name: "index_tasks_on_assigned_user"
+    t.index ["assignee_id"], name: "index_tasks_on_assignee_id"
+    t.index ["completed_at"], name: "index_tasks_on_completed_at"
+    t.index ["deadline", "completed_at"], name: "index_tasks_on_deadline_and_completed"
+    t.index ["deadline"], name: "index_tasks_on_deadline"
     t.index ["organization_id", "assigned_user_id", "assigned_user_type"], name: "idx_on_organization_id_assigned_user_id_assigned_us_0cf40f5b5d"
+    t.index ["organization_id", "deadline"], name: "index_tasks_on_org_and_deadline"
     t.index ["organization_id", "priority"], name: "index_tasks_on_organization_id_and_priority"
     t.index ["organization_id", "status"], name: "index_tasks_on_organization_id_and_status"
     t.index ["organization_id"], name: "index_tasks_on_organization_id"
     t.index ["position"], name: "index_tasks_on_position"
+    t.index ["service_id"], name: "index_tasks_on_service_id"
+    t.index ["sprint_id"], name: "index_tasks_on_sprint_id"
+    t.index ["started_at"], name: "index_tasks_on_started_at"
+    t.index ["team_id"], name: "index_tasks_on_team_id"
+  end
+
+  create_table "teams", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "organization_id", null: false
+    t.string "name"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id"], name: "index_teams_on_organization_id"
   end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -88,5 +191,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_25_123616) do
 
   add_foreign_key "organization_memberships", "organizations"
   add_foreign_key "organization_memberships", "users"
+  add_foreign_key "pomodoro_sessions", "tasks"
+  add_foreign_key "pomodoro_sessions", "users"
+  add_foreign_key "services", "organizations"
+  add_foreign_key "sprints", "services"
   add_foreign_key "tasks", "organizations"
+  add_foreign_key "tasks", "services"
+  add_foreign_key "tasks", "sprints"
+  add_foreign_key "tasks", "teams"
+  add_foreign_key "tasks", "users", column: "assignee_id"
+  add_foreign_key "teams", "organizations"
 end

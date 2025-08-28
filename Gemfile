@@ -46,6 +46,17 @@ gem "omniauth-rails_csrf_protection", "~> 1.0"
 # ViewComponent for reusable view components [https://github.com/viewcomponent/view_component]
 gem "view_component", "~> 3.20"
 
+# Time management and tracking
+gem 'business_time', '~> 0.13.0'  # Business time calculations
+gem 'working_hours', '~> 1.4'     # Team-specific working hours
+gem 'ice_cube', '~> 0.17'          # Recurring schedules (Sprint, meetings)
+gem 'local_time', '~> 3.0'         # Client timezone conversion
+gem 'chronic', '~> 0.10.2'         # Natural language time parsing
+gem 'groupdate', '~> 6.6'          # Time series data grouping
+
+# Notifications
+gem 'noticed', '~> 2.5'            # Multi-channel notification system
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
