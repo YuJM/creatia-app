@@ -2,120 +2,83 @@
 
 class ApplicationPolicy
   attr_reader :user, :record, :organization
-
+  
   def initialize(user, record)
     @user = user
     @record = record
-    @organization = current_organization
+    @organization = ActsAsTenant.current_tenant
   end
-
+  
   def index?
-    member?
+    organization_member?
   end
-
+  
   def show?
-    member?
+    organization_member?
   end
-
+  
   def create?
-    member?
+    organization_member? && !viewer?
   end
-
+  
   def new?
     create?
   end
-
+  
   def update?
-    admin?
+    organization_member? && !viewer?
   end
-
+  
   def edit?
     update?
   end
-
+  
   def destroy?
-    admin?
+    organization_admin?
   end
-
-  private
-
-  def current_organization
-    # acts_as_tenant로 설정된 현재 조직 가져오기
-    ActsAsTenant.current_tenant
-  end
-
-  def membership
-    @membership ||= user&.organization_memberships&.find_by(
-      organization: organization,
-      active: true
-    )
-  end
-
-  def member?
-    return false unless user && organization
-    membership.present?
-  end
-
-  def admin?
-    return false unless user && organization
-    membership&.role&.in?(%w[owner admin])
-  end
-
-  def owner?
-    return false unless user && organization
-    membership&.role == 'owner'
-  end
-
-  def viewer?
-    return false unless user && organization
-    membership&.role == 'viewer'
-  end
-
-  def can_manage_members?
-    admin?
-  end
-
-  def can_manage_organization?
-    owner?
-  end
-
+  
   class Scope
     def initialize(user, scope)
       @user = user
       @scope = scope
       @organization = ActsAsTenant.current_tenant
     end
-
+    
     def resolve
-      return scope.none unless user && organization
-      return scope.none unless member?
-      
-      # 기본적으로 현재 조직의 모든 레코드 반환
-      # 각 모델별 Policy에서 오버라이드 가능
-      scope.all
+      if @organization
+        @scope.where(organization: @organization)
+      else
+        @scope.none
+      end
     end
-
+    
     private
-
+    
     attr_reader :user, :scope, :organization
-
-    def membership
-      @membership ||= user.organization_memberships.find_by(
-        organization: organization,
-        active: true
-      )
-    end
-
-    def member?
-      membership.present?
-    end
-
-    def admin?
-      membership&.role&.in?(%w[owner admin])
-    end
-
-    def owner?
-      membership&.role == 'owner'
-    end
+  end
+  
+  private
+  
+  def organization_member?
+    return false unless user && organization
+    organization.member?(user)
+  end
+  
+  def organization_admin?
+    return false unless organization_member?
+    %w[owner admin].include?(organization.role_for(user))
+  end
+  
+  def organization_owner?
+    return false unless organization_member?
+    organization.role_for(user) == 'owner'
+  end
+  
+  def viewer?
+    organization.role_for(user) == 'viewer'
+  end
+  
+  def member?
+    %w[member contributor].include?(organization.role_for(user))
   end
 end
