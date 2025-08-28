@@ -43,6 +43,9 @@ gem "omniauth-google-oauth2", "~> 1.2"
 gem "omniauth-github", "~> 2.0"
 gem "omniauth-rails_csrf_protection", "~> 1.0"
 
+# ViewComponent for reusable view components [https://github.com/viewcomponent/view_component]
+gem "view_component", "~> 3.20"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 

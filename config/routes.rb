@@ -44,7 +44,7 @@ Rails.application.routes.draw do
     get "pages/home"
     
     # 조직 관리 (전역)
-    resources :organizations, only: [:index, :create, :show, :update, :destroy] do
+    resources :organizations, only: [:index, :new, :create, :show, :update, :destroy] do
       member do
         post :switch
       end
@@ -161,7 +161,7 @@ Rails.application.routes.draw do
         get 'auth/me', to: 'auth#me'
         
         # 조직 API
-        resources :organizations, only: [:index, :show] do
+        resources :organizations do
           resources :tasks
           resources :organization_memberships, path: 'members'
         end

@@ -1,0 +1,68 @@
+# Test environment Caddy configuration
+# This file is used for running system tests with subdomain routing
+
+# Import hosts file or use /etc/hosts:
+# 127.0.0.1 localhost.test
+# 127.0.0.1 www.localhost.test
+# 127.0.0.1 auth.localhost.test
+# 127.0.0.1 api.localhost.test
+# 127.0.0.1 admin.localhost.test
+# 127.0.0.1 org1.localhost.test
+# 127.0.0.1 org2.localhost.test
+# 127.0.0.1 testorg.localhost.test
+# 127.0.0.1 unauthorized.localhost.test
+
+# Main domain (www or no subdomain)
+http://localhost.test:8080, http://www.localhost.test:8080 {
+    reverse_proxy localhost:3000 {
+        header_up Host {http.request.host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Original-Host {http.request.host}
+    }
+}
+
+# Auth subdomain (authentication service)
+http://auth.localhost.test:8080 {
+    reverse_proxy localhost:3000 {
+        header_up Host {http.request.host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Original-Host {http.request.host}
+    }
+}
+
+# API subdomain
+http://api.localhost.test:8080 {
+    reverse_proxy localhost:3000 {
+        header_up Host {http.request.host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Original-Host {http.request.host}
+    }
+}
+
+# Admin subdomain
+http://admin.localhost.test:8080 {
+    reverse_proxy localhost:3000 {
+        header_up Host {http.request.host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Original-Host {http.request.host}
+    }
+}
+
+# Wildcard for organization subdomains
+http://*.localhost.test:8080 {
+    reverse_proxy localhost:3000 {
+        header_up Host {http.request.host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Original-Host {http.request.host}
+    }
+}

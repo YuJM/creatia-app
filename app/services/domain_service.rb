@@ -24,7 +24,7 @@ class DomainService
     # 메인 도메인 URL 생성
     def main_url(path = nil)
       url = "#{protocol}://#{base_domain}"
-      url += ":#{port}" if include_port?
+      url += port if include_port?  # port에 이미 ':' 포함됨
       url += "/#{path}" if path.present?
       url
     end
@@ -32,7 +32,7 @@ class DomainService
     # 서브도메인 URL 생성
     def subdomain_url(subdomain, path = nil)
       url = "#{protocol}://#{subdomain}.#{base_domain}"
-      url += ":#{port}" if include_port?
+      url += port if include_port?  # port에 이미 ':' 포함됨
       url += "/#{path}" if path.present?
       url
     end
@@ -107,8 +107,8 @@ class DomainService
     
     # 서브도메인 추출
     def extract_subdomain(request)
-      if Rails.env.development?
-        # 개발환경에서는 localhost:3000 형태이므로 HOST 헤더에서 추출
+      if Rails.env.development? || Rails.env.test?
+        # 개발/테스트 환경에서는 HOST 헤더에서 추출
         host = request.host
         return nil if host == 'localhost' || host.match?(/^\d+\.\d+\.\d+\.\d+$/)
         
@@ -171,15 +171,31 @@ class DomainService
     private
     
     def default_domain
-      Rails.env.production? ? 'creatia.io' : 'localhost'
+      if Rails.env.production?
+        'creatia.io'
+      elsif Rails.env.test?
+        'localhost.test'
+      else
+        'creatia.local'  # 개발환경 기본값
+      end
     end
     
     def port
-      @port ||= Rails.env.development? ? ':3000' : nil
+      @port ||= if Rails.env.test? && use_caddy_proxy?
+        ':8080'  # Caddy proxy port for tests
+      elsif Rails.env.development?
+        ':3000'
+      else
+        nil
+      end
     end
     
     def include_port?
-      Rails.env.development? && !base_domain.include?(':')
+      (Rails.env.development? || (Rails.env.test? && use_caddy_proxy?)) && !base_domain.include?(':')
+    end
+    
+    def use_caddy_proxy?
+      ENV.fetch('USE_CADDY_PROXY', Rails.env.test?).to_s == 'true'
     end
   end
 end

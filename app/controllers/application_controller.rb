@@ -1,9 +1,6 @@
 class ApplicationController < ActionController::Base
   include Pundit::Authorization
   
-  # Devise 헬퍼 메서드 명시적 포함
-  include Devise::Controllers::Helpers
-  
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
   
@@ -12,6 +9,37 @@ class ApplicationController < ActionController::Base
   before_action :set_current_tenant
   before_action :authenticate_user!, unless: :skip_authentication?
   before_action :ensure_organization_access, unless: :skip_organization_check?
+  
+  # Devise 인증 메서드 정의
+  def authenticate_user!
+    redirect_to new_main_user_user_session_path unless user_signed_in?
+  end
+  
+  def user_signed_in?
+    current_user.present?
+  end
+  
+  def current_user
+    return @current_user if defined?(@current_user)
+    
+    if warden && warden.user(:user)
+      user_data = warden.user(:user)
+      # If warden returns a hash (can happen in tests), find the actual user
+      @current_user = if user_data.is_a?(Hash)
+        User.find_by(id: user_data['id'] || user_data[:id])
+      else
+        user_data
+      end
+    else
+      @current_user = nil
+    end
+  end
+  
+  private
+  
+  def warden
+    request.env['warden']
+  end
   
   # Pundit authorization check - don't run on Devise or system controllers
   after_action :verify_authorized, unless: :skip_pundit?
@@ -60,7 +88,7 @@ class ApplicationController < ActionController::Base
   # 멀티테넌트 설정
   def set_current_tenant
     # 인증이 필요하지 않은 컨트롤러에서는 current_user가 nil일 수 있음
-    user = respond_to?(:current_user) ? current_user : nil
+    user = user_signed_in? ? current_user : nil
     @tenant_context = TenantContextService.new(request, user)
     
     begin
