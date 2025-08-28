@@ -2,6 +2,11 @@ Rails.application.routes.draw do
   # Health check and system routes (모든 서브도메인에서 접근 가능)
   get "up" => "rails/health#show", as: :rails_health_check
   
+  # Webhook routes (모든 서브도메인에서 접근 가능)
+  namespace :webhooks do
+    post 'github', to: 'github#create'
+  end
+  
   # Development routes
   mount Hotwire::Livereload::Engine => "/hotwire-livereload" if Rails.env.development?
   

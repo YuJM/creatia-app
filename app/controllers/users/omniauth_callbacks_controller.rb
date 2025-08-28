@@ -1,6 +1,9 @@
 class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
+  include Dry::Monads[:result]
+  
   skip_before_action :verify_authenticity_token, only: [:google_oauth2, :github]
   before_action :store_return_organization, only: [:google_oauth2, :github]
+  before_action :validate_oauth_callback, only: [:google_oauth2, :github]
 
   def google_oauth2
     handle_auth("Google")
@@ -12,10 +15,52 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
 
   def failure
     error_message = params[:message] || "알 수 없는 오류가 발생했습니다."
+    
+    # OAuth 실패 보안 감사 로그
+    SecurityAuditService.log_security_event(:login_failure, {
+      event_type: 'oauth_failure',
+      provider: params[:strategy],
+      error: params[:message],
+      error_description: params[:error_description],
+      ip_address: request.remote_ip,
+      user_agent: request.user_agent,
+      risk_level: :medium
+    })
+    
     redirect_to DomainService.auth_url("login"), alert: "인증 실패: #{error_message}"
   end
 
   private
+  
+  # OAuth 콜백 데이터 검증
+  def validate_oauth_callback
+    return if params[:error].present? # 에러 상황은 failure 액션에서 처리
+    
+    contract = OauthCallbackContract.new
+    auth_data = request.env["omniauth.auth"]&.to_h || {}
+    
+    result = contract.call(auth_data)
+    
+    case result
+    in Success()
+      Rails.logger.info "OAuth 검증 성공: #{auth_data[:provider]} - #{auth_data.dig(:info, :email)}"
+    in Failure()
+      Rails.logger.warn "OAuth 검증 실패: #{result.errors.to_h}"
+      
+      # 검증 실패 보안 감사 로그
+      SecurityAuditService.log_security_event(:invalid_request, {
+        event_type: 'oauth_validation_failed',
+        provider: auth_data[:provider],
+        errors: result.errors.to_h,
+        ip_address: request.remote_ip,
+        risk_level: :high
+      })
+      
+      redirect_to DomainService.auth_url("login"), 
+                  alert: "OAuth 데이터 검증에 실패했습니다. 다시 시도해주세요."
+      return
+    end
+  end
 
   def handle_auth(kind)
     @user = User.from_omniauth(request.env["omniauth.auth"])
@@ -25,12 +70,29 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       sign_in(@user, event: :authentication)
       flash[:notice] = "#{kind}으로 로그인했습니다."
       
+      # OAuth 성공 보안 감사 로그
+      SecurityAuditService.log_login_success(@user, request, {
+        provider: kind.downcase,
+        oauth_provider: request.env["omniauth.auth"]&.provider
+      })
+      
       # SSO 플로우에 따른 리다이렉트 처리
       handle_sso_redirect(@user)
     else
       # 사용자 생성 실패
       session["devise.#{kind.downcase}_data"] = request.env["omniauth.auth"].except(:extra)
       error_messages = @user.errors.full_messages.join(", ")
+      
+      # 사용자 생성 실패 감사 로그
+      SecurityAuditService.log_security_event(:login_failure, {
+        event_type: 'oauth_user_creation_failed',
+        provider: kind.downcase,
+        email: request.env["omniauth.auth"]&.dig(:info, :email),
+        errors: error_messages,
+        ip_address: request.remote_ip,
+        risk_level: :medium
+      })
+      
       redirect_to new_user_registration_url, alert: "계정 생성 중 오류가 발생했습니다: #{error_messages}"
     end
   end

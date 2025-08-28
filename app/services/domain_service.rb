@@ -4,18 +4,20 @@
 # 환경변수를 기반으로 동적 도메인 설정을 제공합니다.
 class DomainService
   class << self
-    # 기본 도메인 반환 (환경변수에서 가져옴)
-    def base_domain
-      @base_domain ||= ENV.fetch('BASE_DOMAIN', default_domain)
+    prepend MemoWise
+    
+    # 기본 도메인 반환 (환경변수에서 가져옴) - 메모이제이션 적용
+    memo_wise def base_domain
+      ENV.fetch('BASE_DOMAIN', default_domain)
     end
     
-    # HTTPS 사용 여부
-    def use_https?
+    # HTTPS 사용 여부 - 메모이제이션 적용
+    memo_wise def use_https?
       Rails.env.production? || ENV['USE_HTTPS'] == 'true'
     end
     
-    # 프로토콜 반환
-    def protocol
+    # 프로토콜 반환 - 메모이제이션 적용
+    memo_wise def protocol
       use_https? ? 'https' : 'http'
     end
     

@@ -8,6 +8,8 @@
 # - 테넌트 전환 및 세션 관리
 # - 안전한 테넌트 격리
 class TenantContextService
+  prepend MemoWise
+  
   class TenantNotFound < StandardError; end
   class AccessDenied < StandardError; end
   class InvalidTenant < StandardError; end
@@ -75,14 +77,14 @@ class TenantContextService
     @user.role_in(@organization)
   end
   
-  # 사용자의 현재 조직에서의 멤버십 반환
-  def user_membership
+  # 사용자의 현재 조직에서의 멤버십 반환 (메모이제이션 적용)
+  memo_wise def user_membership
     return nil unless @user && @organization
     @user.organization_memberships.find_by(organization: @organization, active: true)
   end
   
-  # 사용자가 접근 가능한 모든 조직 반환
-  def accessible_organizations
+  # 사용자가 접근 가능한 모든 조직 반환 (메모이제이션 적용)
+  memo_wise def accessible_organizations
     return Organization.none unless @user
     @user.organizations.active
   end

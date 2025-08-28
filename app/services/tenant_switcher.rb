@@ -8,11 +8,14 @@
 # - 전환 이력 관리
 # - UI에서 사용할 전환 정보 제공
 class TenantSwitcher
+  prepend MemoWise
+  include Dry::Monads[:result]
+  
   class SwitchError < StandardError; end
   class UnauthorizedSwitch < SwitchError; end
   class InvalidTarget < SwitchError; end
   
-  attr_reader :user, :current_organization, :session
+  attr_reader :user, :session, :current_organization
   
   def initialize(user, session = nil)
     @user = user
@@ -20,8 +23,8 @@ class TenantSwitcher
     @current_organization = ActsAsTenant.current_tenant
   end
   
-  # 사용자가 전환할 수 있는 조직 목록을 반환합니다.
-  def available_organizations
+  # 사용자가 전환할 수 있는 조직 목록을 반환합니다. (메모이제이션 적용)
+  memo_wise def available_organizations
     return Organization.none unless @user
     
     @user.organizations.active
@@ -29,31 +32,35 @@ class TenantSwitcher
          .order(:name)
   end
   
-  # 조직 전환을 수행합니다.
+  # 조직 전환을 수행합니다. (Result 패턴 적용)
   def switch_to!(target_subdomain_or_org, options = {})
     target_organization = resolve_target_organization(target_subdomain_or_org)
     
     # 유효성 검증
-    validate_switch!(target_organization)
-    
-    # 전환 수행
-    perform_switch!(target_organization, options)
-    
-    # 전환 이력 기록 (옵션)
-    record_switch_history(target_organization) if options[:record_history]
-    
-    {
-      success: true,
-      organization: organization_info(target_organization),
-      redirect_url: DomainService.organization_url(target_organization.subdomain),
-      message: "#{target_organization.display_name}으로 전환되었습니다."
-    }
+    case validate_switch(target_organization)
+    in Success()
+      # 전환 수행
+      perform_switch!(target_organization, options)
+      
+      # 전환 이력 기록 (옵션)
+      record_switch_history(target_organization) if options[:record_history]
+      
+      Success({
+        organization: organization_info(target_organization),
+        redirect_url: DomainService.organization_url(target_organization.subdomain),
+        message: "#{target_organization.display_name}으로 전환되었습니다."
+      })
+    in Failure(error)
+      Failure({
+        error: error,
+        current_organization: @current_organization ? organization_info(@current_organization) : nil
+      })
+    end
   rescue SwitchError => e
-    {
-      success: false,
+    Failure({
       error: e.message,
       current_organization: @current_organization ? organization_info(@current_organization) : nil
-    }
+    })
   end
   
   # 조직 전환이 가능한지 확인합니다.
@@ -177,24 +184,14 @@ class TenantSwitcher
     end
   end
   
-  # 전환 유효성을 검증합니다.
-  def validate_switch!(target_organization)
-    unless target_organization
-      raise InvalidTarget, "조직을 찾을 수 없습니다."
-    end
+  # 전환 유효성을 검증합니다. (Result 패턴 적용)
+  def validate_switch(target_organization)
+    return Failure("조직을 찾을 수 없습니다.") unless target_organization
+    return Failure("비활성화된 조직입니다.") unless target_organization.active?
+    return Failure("해당 조직에 접근할 권한이 없습니다.") unless @user.can_access?(target_organization)
+    return Failure("이미 현재 조직입니다.") if target_organization == @current_organization
     
-    unless target_organization.active?
-      raise InvalidTarget, "비활성화된 조직입니다."
-    end
-    
-    unless @user.can_access?(target_organization)
-      raise UnauthorizedSwitch, "해당 조직에 접근할 권한이 없습니다."
-    end
-    
-    # 이미 현재 조직인 경우는 에러가 아니라 성공으로 처리
-    if target_organization == @current_organization
-      raise SwitchError, "이미 현재 조직입니다."
-    end
+    Success()
   end
   
   # 실제 전환을 수행합니다.

@@ -8,6 +8,9 @@
 # - 감사 로그 분석
 # - 보안 알림 발송
 class SecurityAuditService
+  class << self
+    prepend MemoWise
+  end
   # 보안 이벤트 유형
   SECURITY_EVENTS = {
     # 인증 관련
@@ -362,24 +365,26 @@ class SecurityAuditService
       # 실제 환경에서는 AlertManager, PagerDuty 등 사용
     end
     
-    # 서브도메인 추출
-    def extract_subdomain(request)
+    # 서브도메인 추출 (메모이제이션 적용)
+    memo_wise def extract_subdomain(request)
       return nil unless request.respond_to?(:subdomain)
       request.subdomain.presence
     end
     
-    # 보안 전용 로거
-    def security_logger
-      @security_logger ||= Logger.new(Rails.root.join('log', 'security.log'))
+    # 보안 전용 로거 (메모이제이션 적용)
+    memo_wise def security_logger
+      Logger.new(Rails.root.join('log', 'security.log'))
     end
     
     # 헬퍼 메서드들 (실제 구현에서는 Redis나 DB 사용)
-    def count_recent_login_failures(email, ip_address, time_range)
+    # 메모이제이션 적용: 같은 email/IP/시간범위로 반복 호출 시 캐시된 결과 반환
+    memo_wise def count_recent_login_failures(email, ip_address, time_range)
       # 간단한 구현 - 실제로는 Redis나 로그 분석 사용
       rand(0..15)
     end
     
-    def count_recent_tenant_switches(user_id, time_range)
+    # 메모이제이션 적용: 같은 user_id/시간범위로 반복 호출 시 캐시된 결과 반환
+    memo_wise def count_recent_tenant_switches(user_id, time_range)
       # 간단한 구현 - 실제로는 Redis나 DB 사용
       rand(0..25)
     end
