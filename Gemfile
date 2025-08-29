@@ -65,7 +65,6 @@ gem 'chronic', '~> 0.10.2'         # Natural language time parsing
 gem 'groupdate', '~> 6.6'          # Time series data grouping
 
 # Notifications
-gem 'noticed', '~> 2.5'            # Multi-channel notification system
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"

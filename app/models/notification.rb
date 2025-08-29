@@ -7,7 +7,7 @@ class Notification
 
   # Constants
   STATUSES = %w[pending queued sending sent delivered read archived failed].freeze
-  PRIORITIES = %w[low normal high urgent critical].freeze
+  PRIORITIES = %w[low medium high urgent critical].freeze
   CATEGORIES = %w[task comment mention sprint team system alert announcement].freeze
   CHANNELS = %w[in_app email push sms slack webhook].freeze
 
@@ -35,7 +35,7 @@ class Notification
   
   # Fields - 분류 및 우선순위
   field :category, type: String
-  field :priority, type: String, default: 'normal'
+  field :priority, type: String, default: 'medium'
   field :tags, type: Array, default: []
   
   # Fields - 발송 정보
@@ -409,7 +409,7 @@ class Notification
 
   def set_defaults
     self.status ||= 'pending'
-    self.priority ||= 'normal'
+    self.priority ||= 'medium'
     self.channels ||= ['in_app']
     self.preview ||= body&.truncate(100)
   end

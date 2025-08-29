@@ -149,11 +149,16 @@ development:
 test:
   clients:
     default:
-      uri: <%= ENV['MONGODB_URI_TEST'] || 'mongodb://localhost:27017/creatia_app_test' %>
+      uri: <%= ENV['MONGODB_URI_TEST'] || 'mongodb://creatia_user:creatia_pass@localhost:27017/creatia_logs_test' %>
       options:
+        connect: :direct
         read:
           mode: :primary
-        max_pool_size: 1
+        max_pool_size: 5
+        min_pool_size: 1
+        server_selection_timeout: 5
+        connect_timeout: 5
+        socket_timeout: 5
 
 production:
   clients:
