@@ -104,11 +104,11 @@ PostgreSQL에서 MongoDB로 대량 데이터 모델들을 마이그레이션하�
 - [x] 캐싱 전략 수립
 - [x] API 엔드포인트 최적화
 
-### Phase 5: 알림 시스템 검토
-- [ ] Noticed gem과 MongoDB 호환성 분석
-- [ ] 하이브리드 접근법 검토 (실시간: PostgreSQL, 아카이브: MongoDB)
-- [ ] 알림 히스토리 아카이빙 구현
-- [ ] 성능 벤치마킹
+### Phase 5: 알림 시스템 검토 ✅ 완료
+- [x] Noticed gem과 MongoDB 호환성 분석
+- [x] 하이브리드 접근법 검토 (실시간: PostgreSQL, 아카이브: MongoDB)
+- [x] 알림 히스토리 아카이빙 구현
+- [x] 성능 벤치마킹
 
 ## 📝 마이그레이션 전략
 
