@@ -108,7 +108,21 @@ class OrganizationsController < ApplicationController
   # 현재 조직의 대시보드를 표시합니다.
   def dashboard
     unless current_organization
-      redirect_to DomainService.main_url, allow_other_host: true
+      # 인증된 사용자가 조직에 접근하려고 하지만 권한이 없는 경우
+      if current_user
+        # 사용자가 속한 첫 번째 조직으로 리다이렉트하거나 조직 선택 페이지로
+        first_org = current_user.organizations.first
+        if first_org
+          redirect_to DomainService.organization_url(first_org.subdomain, 'dashboard'), allow_other_host: true
+        else
+          redirect_to DomainService.auth_url('organization_selection'), allow_other_host: true
+        end
+      else
+        # 로그인이 필요한 경우
+        subdomain = DomainService.extract_subdomain(request)
+        return_param = subdomain.present? ? "?return_to=#{subdomain}" : ""
+        redirect_to DomainService.auth_url("login#{return_param}"), allow_other_host: true
+      end
       return
     end
     

@@ -19,7 +19,17 @@ class ApplicationController < ActionController::Base
   helper_method :user_signed_in?, :current_user
   
   def authenticate_user!
-    redirect_to new_main_user_user_session_path unless user_signed_in?
+    unless user_signed_in?
+      # API 요청인 경우 401 반환
+      if request.format.json?
+        render json: { error: 'Authentication required' }, status: :unauthorized
+      else
+        # 현재 서브도메인을 return_to 파라미터로 전달
+        subdomain = DomainService.extract_subdomain(request)
+        return_param = subdomain.present? && !DomainService.reserved_subdomain?(subdomain) ? "?return_to=#{subdomain}" : ""
+        redirect_to DomainService.auth_url("login#{return_param}"), allow_other_host: true
+      end
+    end
   end
   
   def user_signed_in?
@@ -184,7 +194,10 @@ class ApplicationController < ActionController::Base
       render json: { error: message }, status: :forbidden
     else
       flash[:alert] = message
-      redirect_to root_path
+      # 무한 리다이렉트 방지: auth 도메인으로 리다이렉트
+      subdomain = DomainService.extract_subdomain(request)
+      return_param = subdomain.present? && !DomainService.reserved_subdomain?(subdomain) ? "?return_to=#{subdomain}" : ""
+      redirect_to DomainService.auth_url("login#{return_param}"), allow_other_host: true
     end
   end
   
@@ -275,7 +288,7 @@ class ApplicationController < ActionController::Base
       render json: { error: "이 작업을 수행할 권한이 없습니다." }, status: :forbidden
     else
       flash[:alert] = "이 작업을 수행할 권한이 없습니다."
-      redirect_to(request.referrer || root_path)
+      redirect_to(request.referrer || root_path, allow_other_host: true)
     end
   end
   

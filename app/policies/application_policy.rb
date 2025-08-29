@@ -79,6 +79,15 @@ class ApplicationPolicy
   end
   
   def member?
-    %w[member contributor].include?(organization.role_for(user))
+    return false unless organization_member?
+    %w[owner admin member contributor].include?(organization.role_for(user))
+  end
+  
+  def owner?
+    organization_owner?
+  end
+  
+  def admin?
+    organization_admin?
   end
 end
