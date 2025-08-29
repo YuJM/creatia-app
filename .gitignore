@@ -57,3 +57,7 @@
 
 # IDE folders
 .idea/
+
+# MongoDB local data volumes
+/docker/mongodb/data/
+/docker/mongodb/backups/

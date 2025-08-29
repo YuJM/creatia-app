@@ -10,6 +10,10 @@ class ApplicationController < ActionController::Base
   before_action :authenticate_user!, unless: :skip_authentication?
   before_action :ensure_organization_access, unless: :skip_organization_check?
   
+  # Logging
+  after_action :log_activity, unless: :skip_logging?
+  around_action :handle_exceptions
+  
   # Devise 인증 메서드 정의
   def authenticate_user!
     redirect_to new_main_user_user_session_path unless user_signed_in?
@@ -301,5 +305,40 @@ class ApplicationController < ActionController::Base
     params[:controller] == 'users/omniauth_callbacks' ||
     params[:controller] =~ /^devise/ ||
     params[:controller] =~ /^organizations/ # 조직 관리는 별도 처리
+  end
+  
+  def skip_logging?
+    # health check나 시스템 endpoint는 로깅하지 않음
+    params[:controller] == 'up' ||
+    params[:controller] =~ /^rails\/conductor/ ||
+    params[:controller] =~ /^active_storage/
+  end
+  
+  # 활동 로깅
+  def log_activity
+    LogService.log_activity(
+      self,
+      action_name,
+      current_user,
+      current_organization,
+      metadata: log_metadata
+    )
+  end
+  
+  # 예외 처리 및 에러 로깅
+  def handle_exceptions
+    yield
+  rescue => exception
+    LogService.log_error(exception, self, current_user, current_organization)
+    raise # 에러를 다시 발생시켜 Rails의 기본 에러 처리가 동작하도록 함
+  end
+  
+  # 로깅에 포함할 추가 메타데이터
+  def log_metadata
+    {
+      session_id: session.id,
+      request_id: request.request_id,
+      subdomain: DomainService.extract_subdomain(request)
+    }
   end
 end

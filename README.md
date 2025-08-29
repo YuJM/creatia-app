@@ -10,6 +10,9 @@
 - **Node.js**: 18+
 - **SQLite3**: 개발/테스트용
 - **PostgreSQL**: 프로덕션용
+- **MongoDB**: 로그 저장용
+  - 개발: Podman/Docker 로컬 MongoDB
+  - 프로덕션: MongoDB Atlas
 
 ### 설치 및 실행
 
@@ -18,12 +21,19 @@
 git clone <repository-url>
 cd creatia-app
 
+# 환경변수 설정
+cp env.example .env
+# .env 파일을 열어 필요한 환경변수 설정 (MongoDB URI 포함)
+
 # 의존성 설치
 npm install
 bundle install
 
 # 데이터베이스 설정
 bin/rails db:create db:migrate db:seed
+
+# MongoDB 연결 테스트 (선택사항)
+bin/rails mongoid:test_connection
 
 # 서버 실행
 bin/rails server
@@ -47,6 +57,7 @@ bin/rails server
 - 🔐 **보안**: Pundit 권한 시스템, CSRF 보호
 - 🌐 **API**: RESTful API with Alba 직렬화
 - 🔐 **인증**: Devise + HTTP Basic Auth (개발/테스트 환경)
+- 📊 **로깅**: MongoDB 기반 활동/에러/API 로그 수집 및 분석
 
 ## 🧪 테스트
 
@@ -84,6 +95,7 @@ open coverage/index.html
 ### Backend
 - **Ruby on Rails 8.0.2** - 웹 프레임워크
 - **PostgreSQL** - 메인 데이터베이스
+- **MongoDB** - 로그 데이터베이스 (Mongoid ODM)
 - **SQLite3** - 개발/테스트 데이터베이스
 - **Devise** - 인증
 - **Pundit** - 권한 관리
@@ -164,6 +176,47 @@ DATABASE_PORT=5432
 APP_DOMAIN=localhost:3000
 GITHUB_OAUTH_CLIENT_ID=your_client_id
 GITHUB_OAUTH_CLIENT_SECRET=your_client_secret
+MONGODB_URI=mongodb://localhost:27017/creatia_app_development
+# 또는 MongoDB Atlas 사용시:
+# MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/creatia_logs
+```
+
+### MongoDB 로컬 개발 환경 (Podman/Docker)
+
+```bash
+# Podman 설치 (macOS)
+brew install podman podman-compose
+podman machine init
+podman machine start
+
+# MongoDB 시작
+cd docker/mongodb
+make up
+
+# 상태 확인
+make status
+
+# Mongo Express 웹 UI
+# http://localhost:8081 (admin/admin123)
+```
+
+### MongoDB 로그 관리 명령어
+
+```bash
+# MongoDB 연결 테스트
+bin/rails mongoid:test_connection
+
+# 샘플 로그 데이터 생성
+bin/rails mongoid:create_sample_logs
+
+# 로그 통계 확인
+bin/rails mongoid:stats
+
+# 모든 로그 삭제
+bin/rails mongoid:clear_logs
+
+# MongoDB 쉘 접속
+cd docker/mongodb && make mongo-shell
 ```
 
 ### 서브도메인 개발 (Caddy 권장)

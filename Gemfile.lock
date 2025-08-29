@@ -89,6 +89,7 @@ GEM
       msgpack (~> 1.2)
     brakeman (7.1.0)
       racc
+    bson (5.1.1)
     builder (3.3.0)
     business_time (0.13.0)
       activesupport (>= 3.2.0)
@@ -262,6 +263,13 @@ GEM
     method_source (1.1.0)
     mini_mime (1.1.5)
     minitest (5.25.5)
+    mongo (2.21.3)
+      base64
+      bson (>= 4.14.1, < 6.0.0)
+    mongoid (9.0.7)
+      activemodel (>= 5.1, < 8.1, != 7.0.0)
+      concurrent-ruby (>= 1.0.5, < 2.0)
+      mongo (>= 2.18.0, < 3.0.0)
     msgpack (1.8.0)
     multi_xml (0.7.2)
       bigdecimal (~> 3.1)
@@ -603,6 +611,7 @@ DEPENDENCIES
   kamal
   local_time (~> 3.0)
   memo_wise (~> 1.8)
+  mongoid (~> 9.0)
   noticed (~> 2.5)
   omniauth (~> 2.1)
   omniauth-github (~> 2.0)

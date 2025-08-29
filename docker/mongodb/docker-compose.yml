@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  mongodb-atlas-local:
+    image: mongodb/mongodb-atlas-local:latest
+    container_name: creatia_mongodb_atlas_local
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGODB_INITDB_ROOT_USERNAME=admin
+      - MONGODB_INITDB_ROOT_PASSWORD=admin123
+      - MONGODB_INITDB_DATABASE=creatia_logs
+    volumes:
+      - ./data:/data/db
+      - ./init-atlas.js:/docker-entrypoint-initdb.d/init-atlas.js:ro
+    networks:
+      - creatia_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: creatia_mongo_express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=admin123
+      - ME_CONFIG_MONGODB_URL=mongodb://admin:admin123@mongodb-atlas-local:27017/
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+      - ME_CONFIG_MONGODB_SERVER=mongodb-atlas-local
+    depends_on:
+      mongodb-atlas-local:
+        condition: service_healthy
+    networks:
+      - creatia_network
+
+networks:
+  creatia_network:
+    driver: bridge
