@@ -89,6 +89,7 @@ GEM
       msgpack (~> 1.2)
     brakeman (7.1.0)
       racc
+    browser (6.2.0)
     bson (5.1.1)
     builder (3.3.0)
     business_time (0.13.0)
@@ -587,6 +588,7 @@ DEPENDENCIES
   attr_extras (~> 7.1)
   bootsnap
   brakeman
+  browser (~> 6.0)
   business_time (~> 0.13.0)
   capybara
   chronic (~> 0.10.2)

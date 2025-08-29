@@ -4,6 +4,7 @@ class Task < ApplicationRecord
   
   # Concerns
   include TimeTrackable
+  include TrackableHistory
   
   # Associations
   belongs_to :organization

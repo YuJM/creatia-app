@@ -12,6 +12,7 @@ class ApplicationController < ActionController::Base
   
   # Logging
   after_action :log_activity, unless: :skip_logging?
+  after_action :track_user_action, unless: :skip_action_tracking?
   around_action :handle_exceptions
   
   # Devise 인증 메서드 정의
@@ -314,6 +315,13 @@ class ApplicationController < ActionController::Base
     params[:controller] =~ /^active_storage/
   end
   
+  def skip_action_tracking?
+    # 액션 추적을 건너뛸 조건
+    skip_logging? ||
+    devise_controller? ||
+    request.format.json? == false && action_name == 'index' # 리스트 조회는 제외
+  end
+  
   # 활동 로깅
   def log_activity
     LogService.log_activity(
@@ -323,6 +331,70 @@ class ApplicationController < ActionController::Base
       current_organization,
       metadata: log_metadata
     )
+  end
+  
+  # 사용자 액션 추적 (MongoDB)
+  def track_user_action
+    return unless current_user
+    
+    # 리소스 찾기
+    resource = find_tracked_resource
+    return unless resource
+    
+    # 액션 타입 결정
+    action_type = determine_action_type
+    
+    # UserActionLog에 기록
+    UserActionLog.track(
+      current_user,
+      action_type,
+      resource,
+      request,
+      {
+        controller: controller_name,
+        action: action_name,
+        response_status: response.status,
+        duration_ms: (Time.current - @_start_time) * 1000 if @_start_time
+      }
+    )
+  rescue => e
+    Rails.logger.error "Failed to track user action: #{e.message}"
+  end
+  
+  # 추적할 리소스 찾기
+  def find_tracked_resource
+    # 일반적인 RESTful 패턴 처리
+    if params[:id].present?
+      model_class = controller_name.classify.safe_constantize
+      model_class&.find_by(id: params[:id])
+    elsif instance_variable_defined?("@#{controller_name.singularize}")
+      instance_variable_get("@#{controller_name.singularize}")
+    elsif instance_variable_defined?("@#{controller_name}")
+      collection = instance_variable_get("@#{controller_name}")
+      collection.is_a?(ActiveRecord::Relation) ? collection.first : collection
+    else
+      current_organization # 기본값으로 현재 조직
+    end
+  end
+  
+  # 액션 타입 결정
+  def determine_action_type
+    case action_name
+    when 'show', 'index'
+      'view'
+    when 'new'
+      'preview'
+    when 'create'
+      'create'
+    when 'edit'
+      'preview'
+    when 'update'
+      'update'
+    when 'destroy'
+      'delete'
+    else
+      action_name # 기본값으로 액션 이름 사용
+    end
   end
   
   # 예외 처리 및 에러 로깅
