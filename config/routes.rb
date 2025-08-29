@@ -166,6 +166,35 @@ Rails.application.routes.draw do
         post 'auth/logout', to: 'auth#logout'
         get 'auth/me', to: 'auth#me'
         
+        # Health Check Endpoints
+        namespace :health do
+          get 'status', to: 'health#status'
+          get 'ping', to: 'health#ping'
+          get 'mongodb', to: 'health#mongodb'
+          get 'postgresql', to: 'health#postgresql'
+          get 'redis', to: 'health#redis'
+          get 'detailed', to: 'health#detailed'
+        end
+
+        # Notification Endpoints
+        resources :notifications, only: [:index, :show] do
+          member do
+            post 'read', to: 'notifications#mark_as_read'
+            post 'dismiss'
+            post 'archive'
+            post 'interaction', to: 'notifications#track_interaction'
+          end
+          
+          collection do
+            get 'summary'
+            get 'unread_count'
+            post 'mark_all_read', to: 'notifications#mark_all_as_read'
+            get 'preferences'
+            put 'preferences', to: 'notifications#update_preferences'
+            post 'test', to: 'notifications#send_test'
+          end
+        end
+        
         # 조직 API
         resources :organizations do
           resources :tasks
@@ -181,6 +210,19 @@ Rails.application.routes.draw do
   constraints subdomain: 'admin' do
     namespace :admin do
       root "dashboard#index", as: :admin_root
+      
+      # MongoDB Monitoring Dashboard
+      resources :mongodb_monitoring, only: [:index] do
+        collection do
+          get 'metrics'
+          get 'trends'
+          get 'slow_queries'
+          get 'collections'
+          get 'connections'
+          post 'refresh'
+          get 'export'
+        end
+      end
       
       resources :organizations do
         resources :organization_memberships, path: 'members'
