@@ -46,6 +46,10 @@ class Organization < ApplicationRecord
     organization_memberships.find_by(user: user, active: true)&.role
   end
   
+  def membership_for(user)
+    organization_memberships.find_by(user: user, active: true)
+  end
+  
   # GitHub 통합 관련 메서드들 (옵셔널)
   def github_integration_active?
     # 기본적으로 비활성화

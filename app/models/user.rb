@@ -55,6 +55,11 @@ class User < ApplicationRecord
     member_of?(organization) && organization.active?
   end
   
+  def team_ids
+    # TODO: Implement when team_members association is added
+    []
+  end
+  
   def owned_organizations
     organizations.joins(:organization_memberships)
                  .where(organization_memberships: { user: self, role: 'owner', active: true })

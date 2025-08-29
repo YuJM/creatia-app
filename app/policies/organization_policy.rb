@@ -45,7 +45,11 @@ class OrganizationPolicy < ApplicationPolicy
       # 사용자가 멤버인 조직들만 반환
       return scope.none unless user
 
-      user.organizations.active
+      # 활성화된 멤버십을 가진 조직들만 반환
+      scope.joins(:organization_memberships)
+           .where(organization_memberships: { user: user, active: true })
+           .where(active: true)
+           .distinct
     end
   end
 end

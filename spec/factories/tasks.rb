@@ -5,7 +5,10 @@ FactoryBot.define do
     status { 'todo' }
     priority { 'medium' }
     association :organization
+    association :service
     assigned_user { nil }
+    assignee { nil }
+    team { nil }
     due_date { nil }
     position { 0 }
     

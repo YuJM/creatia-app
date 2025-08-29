@@ -54,11 +54,14 @@ class TaskPolicy < ApplicationPolicy
   private
   
   def assigned_to_user?
+    return false unless user
     record.assignee_id == user.id
   end
   
   def task_owner?
-    record.created_by_id == user.id
+    # TODO: Add created_by field to tasks table
+    # For now, return false
+    false
   end
   
   def team_member?

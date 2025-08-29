@@ -17,13 +17,15 @@ class OrganizationMembershipPolicy < ApplicationPolicy
     # 자신의 멤버십은 제한적으로 수정 가능 (예: 알림 설정)
     # 다른 사람의 멤버십은 관리자만 수정 가능
     return true if own_membership? && can_update_own_membership?
-    return false if target_is_owner? && !owner?
+    # Owner는 다른 owner도 수정 가능
+    return true if owner?
+    return false if target_is_owner?
     admin?
   end
 
   def destroy?
     # 자신의 멤버십 탈퇴는 소유자가 아닌 경우 가능
-    return true if own_membership? && !record.owner?
+    return true if own_membership? && !target_is_owner? && !viewer?
     # 다른 사람의 멤버십 제거는 관리자가 가능 (단, 소유자는 제거 불가)
     return false if target_is_owner?
     admin?
@@ -31,15 +33,20 @@ class OrganizationMembershipPolicy < ApplicationPolicy
 
   # 역할 변경
   def change_role?
-    # 소유자만 다른 사람의 역할을 변경할 수 있음
-    # 단, 소유자 역할은 이전할 때만 변경 가능
-    return false if target_is_owner? && !owner?
-    return false if promoting_to_owner? && !owner?
+    # 자신의 역할은 변경 불가 (ただし、ownerが他のownerのロールを変更するのは可能)
+    if own_membership?
+      return false
+    end
+    # 소유자는 다른 멤버(owner 포함)의 역할을 변경할 수 있음
+    return true if owner?
+    # 관리자는 소유자가 아닌 멤버의 역할 변경 가능
+    return false if target_is_owner?
     admin?
   end
 
   # 멤버십 활성화/비활성화
   def toggle_active?
+    return false if own_membership?  # 자신의 멤버십은 toggle 불가
     return false if target_is_owner?
     admin?
   end
@@ -71,10 +78,19 @@ class OrganizationMembershipPolicy < ApplicationPolicy
       return scope.none unless user && organization
 
       # 관리자는 모든 멤버십을 볼 수 있음
-      return scope.where(organization: organization) if admin?
+      if user && organization && %w[owner admin].include?(organization.role_for(user))
+        return scope.where(organization: organization)
+      end
 
       # 일반 멤버는 활성화된 멤버십만 볼 수 있음
       scope.where(organization: organization, active: true)
+    end
+    
+    private
+    
+    def admin?
+      return false unless user && organization
+      %w[owner admin].include?(organization.role_for(user))
     end
   end
 end
