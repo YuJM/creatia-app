@@ -39,7 +39,13 @@ Rails.application.routes.draw do
       sign_in: 'login',
       sign_out: 'logout',
       sign_up: 'register'
-    }, as: :main_user, skip: [:omniauth_callbacks]
+    }, as: :main_user, skip: [:omniauth_callbacks], controllers: {
+      sessions: 'users/sessions',
+      registrations: 'users/registrations',
+      passwords: 'users/passwords',
+      confirmations: 'users/confirmations',
+      unlocks: 'users/unlocks'
+    }
     
     get "pages/home"
     

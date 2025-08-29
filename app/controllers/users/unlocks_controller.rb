@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 class Users::UnlocksController < Devise::UnlocksController
-  layout 'auth', only: [:new, :create]
-  layout 'public', only: [:show]
+  layout :determine_layout
   # GET /resource/unlock/new
   # def new
   #   super
@@ -29,4 +28,17 @@ class Users::UnlocksController < Devise::UnlocksController
   # def after_unlock_path_for(resource)
   #   super(resource)
   # end
+  
+  private
+  
+  def determine_layout
+    case action_name
+    when 'new', 'create'
+      'auth'
+    when 'show'
+      'public'
+    else
+      'application'
+    end
+  end
 end

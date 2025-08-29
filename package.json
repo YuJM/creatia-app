@@ -22,10 +22,10 @@
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "@types/node": "^24.3.0",
+    "playwright": "^1.55.0",
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "playwright": "^1.55.0",
     "playwright-core": "^1.55.0",
     "undici-types": "^7.10.0"
   },

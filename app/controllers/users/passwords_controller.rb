@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Users::PasswordsController < Devise::PasswordsController
-  layout 'auth', only: [:new, :create, :edit, :update]
+  layout :determine_layout
   # GET /resource/password/new
   # def new
   #   super
@@ -32,4 +32,15 @@ class Users::PasswordsController < Devise::PasswordsController
   # def after_sending_reset_password_instructions_path_for(resource_name)
   #   super(resource_name)
   # end
+  
+  private
+  
+  def determine_layout
+    case action_name
+    when 'new', 'create', 'edit', 'update'
+      'auth'
+    else
+      'application'
+    end
+  end
 end

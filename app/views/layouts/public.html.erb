@@ -1,6 +1,11 @@
-<% content_for :body_class, "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100" %>
+<!DOCTYPE html>
+<html>
+  <head>
+    <%= render 'layouts/head' %>
+  </head>
 
-<%= render layout: 'layouts/base' do %>
+  <body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100" id="layout-public" data-layout="public">
+    <%= render 'layouts/flash_messages' %>
     
     <!-- Public Navigation -->
     <nav class="bg-white shadow-sm">
@@ -15,10 +20,10 @@
           <div class="flex items-center space-x-4">
             <% if user_signed_in? %>
               <%= link_to "대시보드", root_path, class: "text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium" %>
-              <%= button_to "로그아웃", destroy_user_session_path, method: :delete, class: "bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium" %>
+              <%= button_to "로그아웃", destroy_main_user_user_session_path, method: :delete, class: "bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium" %>
             <% else %>
-              <%= link_to "로그인", new_user_session_path, class: "text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium" %>
-              <%= link_to "회원가입", new_user_registration_path, class: "bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium" %>
+              <%= link_to "로그인", new_main_user_user_session_path, class: "text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium" %>
+              <%= link_to "회원가입", new_main_user_user_registration_path, class: "bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium" %>
             <% end %>
           </div>
         </div>
@@ -65,4 +70,5 @@
         </div>
       </div>
     </footer>
-<% end %>
+  </body>
+</html>

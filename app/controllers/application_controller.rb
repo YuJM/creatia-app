@@ -16,6 +16,8 @@ class ApplicationController < ActionController::Base
   around_action :handle_exceptions
   
   # Devise 인증 메서드 정의
+  helper_method :user_signed_in?, :current_user
+  
   def authenticate_user!
     redirect_to new_main_user_user_session_path unless user_signed_in?
   end
@@ -345,17 +347,19 @@ class ApplicationController < ActionController::Base
     action_type = determine_action_type
     
     # UserActionLog에 기록
+    metadata = {
+      controller: controller_name,
+      action: action_name,
+      response_status: response.status
+    }
+    metadata[:duration_ms] = (Time.current - @_start_time) * 1000 if @_start_time
+    
     UserActionLog.track(
       current_user,
       action_type,
       resource,
       request,
-      {
-        controller: controller_name,
-        action: action_name,
-        response_status: response.status,
-        duration_ms: (Time.current - @_start_time) * 1000 if @_start_time
-      }
+      metadata
     )
   rescue => e
     Rails.logger.error "Failed to track user action: #{e.message}"

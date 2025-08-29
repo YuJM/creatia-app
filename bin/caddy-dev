@@ -9,7 +9,7 @@ echo "================================"
 # 방법 1: sudo로 실행 (권장)
 if [ "$1" = "sudo" ]; then
     echo "📌 sudo 권한으로 80번 포트에서 Caddy 실행"
-    sudo caddy run --config Caddyfile.dev --adapter caddyfile
+    caddy run --config Caddyfile.dev --adapter caddyfile
     
 # 방법 2: 포트 포워딩 사용 (pfctl)
 elif [ "$1" = "forward" ]; then
@@ -38,7 +38,7 @@ EOF
     caddy run --config Caddyfile.dev.8080 --adapter caddyfile
     
     # 종료 시 포트 포워딩 해제
-    trap "sudo pfctl -F all -f /etc/pf.conf" EXIT
+    trap "pfctl -F all -f /etc/pf.conf" EXIT
     
 # 방법 3: 기본 80번 포트 (sudo 자동 요청)
 else

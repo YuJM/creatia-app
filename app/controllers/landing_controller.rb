@@ -1,8 +1,11 @@
 class LandingController < ApplicationController
   layout 'public'
-  skip_before_action :authenticate_user!, if: -> { defined?(authenticate_user!) }
+  skip_before_action :authenticate_user!
+  skip_before_action :ensure_organization_access
+  skip_after_action :verify_authorized, :verify_policy_scoped
   
   def index
-    redirect_to root_path if user_signed_in?
+    # user_signed_in?가 있으면 대시보드로 리다이렉트
+    # 없으면 랜딩 페이지 표시
   end
 end

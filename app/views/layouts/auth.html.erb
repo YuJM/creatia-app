@@ -1,18 +1,20 @@
-<% content_for :body_class, "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col justify-center" %>
+<!DOCTYPE html>
+<html>
+  <head>
+    <%= render 'layouts/head' %>
+  </head>
 
-<%= render layout: 'layouts/base' do %>
-  <!-- Auth Content without nav and footer -->
-  <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-      <%= link_to root_path, class: "flex justify-center" do %>
-        <h1 class="text-4xl font-bold text-indigo-600">Creatia</h1>
-      <% end %>
-    </div>
+  <body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col justify-center" id="layout-auth" data-layout="auth">
+    <%= render 'layouts/flash_messages' %>
     
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-      <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-        <%= yield %>
+    <!-- Auth Content without nav and footer -->
+    <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+      
+      <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <%= yield %>
+        </div>
       </div>
     </div>
-  </div>
-<% end %>
+  </body>
+</html>
