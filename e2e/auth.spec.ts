@@ -28,13 +28,13 @@ test.describe('인증 플로우 테스트', () => {
     
     // 3. 로그인 페이지 UI 확인
     await expect(page.locator('h2')).toContainText('Welcome to Creatia');
-    await expect(page.locator('input[name="auth_user_user[email]"]')).toBeVisible();
-    await expect(page.locator('input[name="auth_user_user[password]"]')).toBeVisible();
+    await expect(page.locator('input[name="user[email]"]')).toBeVisible();
+    await expect(page.locator('input[name="user[password]"]')).toBeVisible();
     await expect(page.locator('input[type="submit"][value="로그인"]')).toBeVisible();
     
     // 4. 로그인 수행
-    await page.fill('input[name="auth_user_user[email]"]', testUser.email);
-    await page.fill('input[name="auth_user_user[password]"]', testUser.password);
+    await page.fill('input[name="user[email]"]', testUser.email);
+    await page.fill('input[name="user[password]"]', testUser.password);
     await page.locator('input[type="submit"][value="로그인"]').click();
     
     // 5. 원래 요청한 조직의 대시보드로 리다이렉트 확인
@@ -53,8 +53,8 @@ test.describe('인증 플로우 테스트', () => {
     await expect(page.locator('h2')).toContainText('Welcome to Creatia');
     
     // 3. 로그인
-    await page.fill('input[name="auth_user_user[email]"]', testUser.email);
-    await page.fill('input[name="auth_user_user[password]"]', testUser.password);
+    await page.fill('input[name="user[email]"]', testUser.email);
+    await page.fill('input[name="user[password]"]', testUser.password);
     await page.locator('input[type="submit"][value="로그인"]').click();
     
     // 4. 로그인 후 리다이렉트 확인 (조직 선택 페이지 또는 대시보드)
@@ -87,8 +87,8 @@ test.describe('인증 플로우 테스트', () => {
     await page.goto(DomainHelper.getAuthUrl('login'));
     
     // 2. 잘못된 자격 증명으로 로그인
-    await page.fill('input[name="auth_user_user[email]"]', 'wrong@email.com');
-    await page.fill('input[name="auth_user_user[password]"]', 'wrongpassword');
+    await page.fill('input[name="user[email]"]', 'wrong@email.com');
+    await page.fill('input[name="user[password]"]', 'wrongpassword');
     await page.locator('input[type="submit"][value="로그인"]').click();
     
     // 3. 에러 메시지 확인
@@ -109,18 +109,18 @@ test.describe('인증 플로우 테스트', () => {
     await expect(page.locator('p.text-gray-600').first()).toContainText('멀티테넌트 프로젝트 관리 플랫폼');
     
     // 4. 이메일 입력 필드와 아이콘 확인
-    const emailField = page.locator('input[name="auth_user_user[email]"]');
+    const emailField = page.locator('input[name="user[email]"]');
     await expect(emailField).toBeVisible();
     await expect(emailField).toHaveAttribute('placeholder', 'your@email.com');
     await expect(page.locator('svg').first()).toBeVisible(); // 이메일 아이콘
     
     // 5. 비밀번호 입력 필드와 아이콘 확인
-    const passwordField = page.locator('input[name="auth_user_user[password]"]');
+    const passwordField = page.locator('input[name="user[password]"]');
     await expect(passwordField).toBeVisible();
     await expect(passwordField).toHaveAttribute('placeholder', '••••••••');
     
     // 6. "로그인 상태 유지" 체크박스 확인
-    const rememberCheckbox = page.locator('input[type="checkbox"][name="auth_user_user[remember_me]"]');
+    const rememberCheckbox = page.locator('input[type="checkbox"][name="user[remember_me]"]');
     await expect(rememberCheckbox).toBeVisible();
     await expect(page.locator('label[for*="remember"]')).toContainText('로그인 상태 유지');
     
@@ -154,8 +154,8 @@ test.describe('인증 플로우 테스트', () => {
     await expect(page).toHaveURL(DomainHelper.getUrlPattern('auth', 'login'));
     
     // 3. 로그인
-    await page.fill('input[name="auth_user_user[email]"]', testUser.email);
-    await page.fill('input[name="auth_user_user[password]"]', testUser.password);
+    await page.fill('input[name="user[email]"]', testUser.email);
+    await page.fill('input[name="user[password]"]', testUser.password);
     await page.locator('input[type="submit"][value="로그인"]').click();
     
     // 4. 조직 도메인으로 리다이렉트
@@ -176,8 +176,8 @@ test.describe('조직 선택 플로우', () => {
   test.skip('권한이 없는 조직 접근 시 접근 거부 페이지를 표시한다', async ({ page }) => {
     // 1. 로그인
     await page.goto(DomainHelper.getAuthUrl('login'));
-    await page.fill('input[name="auth_user_user[email]"]', testUser.email);
-    await page.fill('input[name="auth_user_user[password]"]', testUser.password);
+    await page.fill('input[name="user[email]"]', testUser.email);
+    await page.fill('input[name="user[password]"]', testUser.password);
     await page.locator('input[type="submit"][value="로그인"]').click();
     
     // 2. 권한 없는 조직으로 접근 시도
@@ -188,7 +188,7 @@ test.describe('조직 선택 플로우', () => {
     expect(
       url.includes('access_denied') || 
       url.includes('login') ||
-      url.includes(`auth.${DomainHelper.getBaseDomain()}`);
+      url.includes(`auth.${DomainHelper.getBaseDomain()}`)
     ).toBeTruthy();
   });
 });
@@ -197,8 +197,8 @@ test.describe('세션 관리', () => {
   test('로그아웃 후 보호된 페이지 접근 시 로그인 페이지로 리다이렉트', async ({ page, context }) => {
     // 1. 로그인
     await page.goto(DomainHelper.getAuthUrl('login'));
-    await page.fill('input[name="auth_user_user[email]"]', testUser.email);
-    await page.fill('input[name="auth_user_user[password]"]', testUser.password);
+    await page.fill('input[name="user[email]"]', testUser.email);
+    await page.fill('input[name="user[password]"]', testUser.password);
     await page.locator('input[type="submit"][value="로그인"]').click();
     
     // 2. 대시보드로 이동 확인

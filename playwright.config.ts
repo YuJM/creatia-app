@@ -11,12 +11,32 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  retries: process.env.CI ? 2 : 1, // 로컬에서도 1회 재시도
+  workers: process.env.CI ? 1 : 3, // 로컬에서 워커 수 제한
+  
+  // 향상된 리포터 설정
+  reporter: [
+    ['html', { 
+      outputFolder: 'playwright-report',
+      open: 'never' // 자동으로 브라우저 열지 않음
+    }],
+    ['json', { 
+      outputFile: 'test-results/results.json' 
+    }],
+    ['junit', { 
+      outputFile: 'test-results/junit.xml' 
+    }],
+    ['list'], // 콘솔에 진행 상황 표시
+  ],
+  
+  // 테스트 타임아웃 설정
+  timeout: 30000, // 각 테스트 30초
+  expect: {
+    timeout: 10000, // expect 타임아웃 10초
+  },
   
   use: {
-    baseURL: `http://${BASE_DOMAIN}`, // Caddy 사용 시 포트 80
+    baseURL: `http://${BASE_DOMAIN}:${PORT}`, // 포트 포함
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -26,6 +46,10 @@ export default defineConfig({
     extraHTTPHeaders: {
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    
+    // 네트워크 재시도 설정
+    navigationTimeout: 30000,
+    actionTimeout: 10000,
   },
 
   projects: [

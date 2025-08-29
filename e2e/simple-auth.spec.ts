@@ -9,9 +9,9 @@ test.describe('기본 인증 테스트', () => {
     // 페이지가 로드되었는지 확인
     await expect(page.locator('h2')).toContainText('Welcome to Creatia');
     
-    // 로그인 폼 요소들이 있는지 확인 (auth_user_user 프리픽스 포함)
-    await expect(page.locator('input[name="auth_user_user[email]"]')).toBeVisible();
-    await expect(page.locator('input[name="auth_user_user[password]"]')).toBeVisible();
+    // 로그인 폼 요소들이 있는지 확인 (user 프리픽스 포함)
+    await expect(page.locator('input[name="user[email]"]')).toBeVisible();
+    await expect(page.locator('input[name="user[password]"]')).toBeVisible();
     await expect(page.locator('input[type="submit"][value="로그인"]')).toBeVisible();
     
     // 데모 계정 정보 표시 확인
@@ -35,8 +35,8 @@ test.describe('기본 인증 테스트', () => {
     await page.goto(DomainHelper.getAuthUrl('login'));
     
     // 데모 계정으로 로그인
-    await page.fill('input[name="auth_user_user[email]"]', DomainHelper.getTestEmail('admin'));
-    await page.fill('input[name="auth_user_user[password]"]', 'password123');
+    await page.fill('input[name="user[email]"]', DomainHelper.getTestEmail('admin'));
+    await page.fill('input[name="user[password]"]', 'password123');
     
     // 로그인 버튼 클릭
     await page.locator('input[type="submit"][value="로그인"]').click();
@@ -70,9 +70,9 @@ test.describe('기본 인증 테스트', () => {
   test('잘못된 로그인 시도', async ({ page }) => {
     await page.goto(DomainHelper.getAuthUrl('login'));
     
-    // 잘못된 자격 증명 입력 (auth_user_user 프리픽스 포함)
-    await page.fill('input[name="auth_user_user[email]"]', 'wrong@email.com');
-    await page.fill('input[name="auth_user_user[password]"]', 'wrongpassword');
+    // 잘못된 자격 증명 입력 (user 프리픽스 포함)
+    await page.fill('input[name="user[email]"]', 'wrong@email.com');
+    await page.fill('input[name="user[password]"]', 'wrongpassword');
     
     // 로그인 시도
     await page.locator('input[type="submit"][value="로그인"]').click();
