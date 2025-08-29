@@ -24,6 +24,10 @@ gem "alba", "~> 3.5"
 
 # Authentication
 gem "devise", "~> 4.9"
+gem "devise-i18n", "~> 1.12"
+
+# Internationalization
+gem "rails-i18n", "~> 8.0"
 
 # Authorization
 gem "pundit", "~> 2.4"
