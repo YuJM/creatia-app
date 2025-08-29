@@ -2,6 +2,8 @@
 
 # Users::SessionsController - SSO 중앙 인증을 처리하는 커스텀 Devise 컨트롤러
 class Users::SessionsController < Devise::SessionsController
+  layout 'auth', only: [:new, :create]
+  layout 'public', only: [:organization_selection, :access_denied]
   before_action :check_auth_domain, except: [:destroy]
   before_action :store_return_organization, only: [:new, :create]
   

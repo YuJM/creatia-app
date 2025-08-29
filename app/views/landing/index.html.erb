@@ -1,0 +1,160 @@
+<!-- Hero Section -->
+<section class="relative overflow-hidden bg-white">
+  <div class="max-w-7xl mx-auto">
+    <div class="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
+      <div class="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
+        <div class="sm:text-center lg:text-left">
+          <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+            <span class="block">프로젝트 관리의</span>
+            <span class="block text-indigo-600">새로운 기준</span>
+          </h1>
+          <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+            Creatia는 팀 협업을 혁신적으로 개선하는 올인원 프로젝트 관리 플랫폼입니다. 
+            실시간 협업, 직관적인 UI, 강력한 자동화 기능으로 생산성을 극대화하세요.
+          </p>
+          <div class="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
+            <div class="rounded-md shadow">
+              <%= link_to "무료로 시작하기", new_user_registration_path, 
+                  class: "w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10" %>
+            </div>
+            <div class="mt-3 sm:mt-0 sm:ml-3">
+              <%= link_to "데모 보기", "#demo", 
+                  class: "w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:py-4 md:text-lg md:px-10" %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
+    <img class="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full" 
+         src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2850&q=80" 
+         alt="Team collaboration">
+  </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="py-12 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="lg:text-center">
+      <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">기능</h2>
+      <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+        더 나은 협업을 위한 모든 것
+      </p>
+      <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+        Creatia는 프로젝트 관리에 필요한 모든 기능을 제공합니다.
+      </p>
+    </div>
+
+    <div class="mt-10">
+      <div class="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Feature 1 -->
+        <div class="relative">
+          <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <div class="ml-16">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">작업 관리</h3>
+            <p class="mt-2 text-base text-gray-500">
+              칸반 보드, 간트 차트, 리스트 뷰 등 다양한 방식으로 작업을 관리하세요.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="relative">
+          <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <div class="ml-16">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">팀 협업</h3>
+            <p class="mt-2 text-base text-gray-500">
+              실시간 채팅, 코멘트, 멘션 기능으로 팀원들과 원활하게 소통하세요.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="relative">
+          <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <div class="ml-16">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">분석 & 리포트</h3>
+            <p class="mt-2 text-base text-gray-500">
+              프로젝트 진행 상황을 실시간으로 추적하고 인사이트를 얻으세요.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="relative">
+          <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div class="ml-16">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">자동화</h3>
+            <p class="mt-2 text-base text-gray-500">
+              반복적인 작업을 자동화하여 시간을 절약하고 실수를 줄이세요.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="relative">
+          <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <div class="ml-16">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">보안</h3>
+            <p class="mt-2 text-base text-gray-500">
+              엔터프라이즈급 보안으로 데이터를 안전하게 보호합니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="relative">
+          <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </div>
+          <div class="ml-16">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">통합</h3>
+            <p class="mt-2 text-base text-gray-500">
+              GitHub, Slack, Google Workspace 등 다양한 도구와 연동됩니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="bg-indigo-700">
+  <div class="max-w-2xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8">
+    <h2 class="text-3xl font-extrabold text-white sm:text-4xl">
+      <span class="block">지금 바로 시작하세요</span>
+      <span class="block">무료 체험으로 경험해보세요.</span>
+    </h2>
+    <p class="mt-4 text-lg leading-6 text-indigo-200">
+      신용카드 없이 14일간 모든 기능을 무료로 사용할 수 있습니다.
+    </p>
+    <div class="mt-8">
+      <%= link_to "무료 체험 시작", new_user_registration_path, 
+          class: "inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50" %>
+    </div>
+  </div>
+</section>

@@ -54,7 +54,7 @@ Rails.application.routes.draw do
     resources :users, only: [:index, :show, :edit, :update, :destroy]
     
     # 메인 랜딩 페이지
-    root "pages#home"
+    root "landing#index"
   end
   
   # =============================================================================
@@ -64,7 +64,10 @@ Rails.application.routes.draw do
     devise_for :users, controllers: {
       omniauth_callbacks: 'users/omniauth_callbacks',
       sessions: 'users/sessions',
-      registrations: 'users/registrations'
+      registrations: 'users/registrations',
+      passwords: 'users/passwords',
+      confirmations: 'users/confirmations',
+      unlocks: 'users/unlocks'
     }, path: '', path_names: {
       sign_in: 'login',
       sign_out: 'logout',
