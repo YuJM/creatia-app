@@ -5,7 +5,7 @@ class SprintsController < TenantBaseController
   
   # GET /sprints
   def index
-    @sprints = policy_scope(Sprint).includes(:tasks, :organization)
+    @sprints = Sprint.accessible_by(current_ability).includes(:tasks, :organization)
     
     # 필터링
     @sprints = @sprints.active if params[:status] == 'active'
@@ -26,7 +26,7 @@ class SprintsController < TenantBaseController
       @sprints = @sprints.order(:start_date, :created_at)
     end
     
-    authorize Sprint
+    authorize! :index, Sprint
     
     render_serialized(
       SprintSerializer,
@@ -41,7 +41,7 @@ class SprintsController < TenantBaseController
   
   # GET /sprints/:id
   def show
-    authorize @sprint
+    authorize! :show, @sprint
     
     # Sprint 계획 서비스 실행
     @sprint_plan = SprintPlanningService.new(@sprint).call.value_or(nil)
@@ -81,7 +81,7 @@ class SprintsController < TenantBaseController
   # POST /sprints
   def create
     @sprint = build_tenant_resource(Sprint, sprint_params)
-    authorize @sprint
+    authorize! :create, @sprint
     
     if @sprint.save
       handle_sprint_creation_success(@sprint)
@@ -92,7 +92,7 @@ class SprintsController < TenantBaseController
   
   # PATCH/PUT /sprints/:id
   def update
-    authorize @sprint
+    authorize! :update, @sprint
     
     if @sprint.update(sprint_params)
       respond_to do |format|
@@ -111,7 +111,7 @@ class SprintsController < TenantBaseController
   
   # DELETE /sprints/:id
   def destroy
-    authorize @sprint
+    authorize! :destroy, @sprint
     
     if @sprint.destroy
       respond_to do |format|
@@ -131,7 +131,7 @@ class SprintsController < TenantBaseController
   # GET /sprints/:id/plan
   # Sprint 계획 및 분석 정보를 반환합니다.
   def plan
-    authorize @sprint, :show?
+    authorize! :plan, @sprint
     
     # Sprint 계획 서비스 실행
     planning_result = SprintPlanningService.new(@sprint).call
@@ -181,7 +181,7 @@ class SprintsController < TenantBaseController
   # GET /sprints/:id/metrics
   # Sprint 메트릭 정보를 반환합니다.
   def metrics
-    authorize @sprint, :show?
+    authorize! :metrics, @sprint
     
     @team_metrics = TeamMetrics.new(
       velocity: calculate_sprint_velocity(@sprint),
@@ -215,7 +215,7 @@ class SprintsController < TenantBaseController
   private
   
   def set_sprint
-    @sprint = policy_scope(Sprint).find(params[:id])
+    @sprint = Sprint.accessible_by(current_ability).find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render_error("스프린트를 찾을 수 없습니다.", status: :not_found)
   end
@@ -239,7 +239,7 @@ class SprintsController < TenantBaseController
   # Sprint 계획 관련 helper 메서드들
   def calculate_sprint_velocity(sprint)
     # 이전 3개 스프린트의 평균 완료 작업 수
-    previous_sprints = policy_scope(Sprint)
+    previous_sprints = Sprint.accessible_by(current_ability)
                       .where('end_date < ?', sprint.start_date)
                       .order(end_date: :desc)
                       .limit(3)

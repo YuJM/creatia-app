@@ -13,9 +13,9 @@ export class AuthHelper {
     // auth 서브도메인의 로그인 페이지로 이동 (Rails 라우트에 맞게 수정)
     await page.goto('http://auth.creatia.local:3000/login');
     
-    // 로그인 폼 제출 (Devise 기본 필드명 사용)
-    await page.fill('input[name="user[email]"]', email);
-    await page.fill('input[name="user[password]"]', 'password123');
+    // 로그인 폼 제출 (AuthUser 네임스페이스 필드명 사용)
+    await page.fill('input[name="auth_user_user[email]"]', email);
+    await page.fill('input[name="auth_user_user[password]"]', 'password123');
     
     // 로그인 버튼 클릭 (다양한 형태 지원)
     const submitButton = page.locator('input[type="submit"][value="로그인"], button[type="submit"]:has-text("로그인")');
@@ -143,12 +143,12 @@ export class AuthHelper {
       // CSRF 토큰 획득을 위해 먼저 로그인 페이지 방문
       await page.goto('http://auth.creatia.local:3000/login');
       
-      // 로그인 API 호출 (Devise 세션 경로 사용)
+      // 로그인 API 호출 (AuthUser 네임스페이스 사용)
       const response = await page.request.post('http://auth.creatia.local:3000/users/sign_in', {
         data: {
-          'user[email]': email,
-          'user[password]': password,
-          'user[remember_me]': '1'
+          'auth_user_user[email]': email,
+          'auth_user_user[password]': password,
+          'auth_user_user[remember_me]': '1'
         },
         headers: {
           'Accept': 'application/json',

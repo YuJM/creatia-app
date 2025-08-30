@@ -7,8 +7,8 @@ class OrganizationsController < ApplicationController
   # GET /organizations
   # 사용자가 속한 조직 목록을 반환합니다.
   def index
-    @organizations = policy_scope(Organization)
-    authorize Organization
+    @organizations = Organization.accessible_by(current_ability)
+    authorize! :index, Organization
     
     respond_to do |format|
       format.html # renders index.html.erb
@@ -25,7 +25,7 @@ class OrganizationsController < ApplicationController
   # GET /organizations/:id
   # 특정 조직의 상세 정보를 반환합니다.
   def show
-    authorize @organization
+    authorize! :show, @organization
     
     respond_to do |format|
       format.html # renders show.html.erb
@@ -46,14 +46,14 @@ class OrganizationsController < ApplicationController
   # 새 조직 생성 폼을 표시합니다.
   def new
     @organization = Organization.new
-    authorize @organization
+    authorize! :new, @organization
   end
   
   # POST /organizations
   # 새로운 조직을 생성합니다.
   def create
     @organization = Organization.new(organization_params)
-    authorize @organization
+    authorize! :create, @organization
     
     respond_to do |format|
       if @organization.save
@@ -83,7 +83,7 @@ class OrganizationsController < ApplicationController
   # PATCH/PUT /organizations/:id
   # 조직 정보를 업데이트합니다.
   def update
-    authorize @organization
+    authorize! :update, @organization
     
     if @organization.update(organization_params)
       render_serialized(OrganizationSerializer, @organization)
@@ -95,7 +95,7 @@ class OrganizationsController < ApplicationController
   # DELETE /organizations/:id
   # 조직을 삭제합니다.
   def destroy
-    authorize @organization
+    authorize! :destroy, @organization
     
     if @organization.destroy
       render_serialized(SuccessSerializer, { message: "조직이 삭제되었습니다." })
@@ -126,18 +126,18 @@ class OrganizationsController < ApplicationController
       return
     end
     
-    authorize current_organization, :show?
+    authorize! :show, current_organization
     
     # 대시보드에서 필요한 데이터들
     @organization = current_organization
-    @recent_tasks = policy_scope(Task).includes(:assigned_user)
+    @recent_tasks = Task.accessible_by(current_ability).includes(:assigned_user)
                                      .order(updated_at: :desc)
                                      .limit(10)
     @task_stats = {
-      total: policy_scope(Task).count,
-      todo: policy_scope(Task).todo.count,
-      in_progress: policy_scope(Task).in_progress.count,
-      done: policy_scope(Task).done.count
+      total: Task.accessible_by(current_ability).count,
+      todo: Task.accessible_by(current_ability).todo.count,
+      in_progress: Task.accessible_by(current_ability).in_progress.count,
+      done: Task.accessible_by(current_ability).done.count
     }
     
     if request.format.json?
@@ -158,7 +158,7 @@ class OrganizationsController < ApplicationController
   # POST /organizations/:id/switch
   # 현재 작업 중인 조직을 전환합니다.
   def switch
-    authorize @organization, :switch?
+    authorize! :switch, @organization
     
     if current_user.can_access?(@organization)
       # 세션에 현재 조직 정보 저장

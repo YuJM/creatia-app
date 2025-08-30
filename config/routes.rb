@@ -131,6 +131,19 @@ Rails.application.routes.draw do
           post :invite
         end
       end
+      
+      resources :roles do
+        member do
+          get :permissions
+          post :duplicate
+        end
+      end
+      
+      resources :permission_audit_logs, only: [:index, :show] do
+        collection do
+          get :export
+        end
+      end
     end
     
     # 테넌트별 리소스들

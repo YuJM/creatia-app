@@ -21,10 +21,10 @@ export default defineConfig({
       open: 'never' // 자동으로 브라우저 열지 않음
     }],
     ['json', { 
-      outputFile: 'test-results/results.json' 
+      outputFile: 'test-results/e2e-results.json' // E2E 테스트 결과를 명확하게 표시
     }],
     ['junit', { 
-      outputFile: 'test-results/junit.xml' 
+      outputFile: 'test-results/e2e-junit.xml' // JUnit 형식 (CI/CD 연동용)
     }],
     ['list'], // 콘솔에 진행 상황 표시
   ],

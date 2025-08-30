@@ -95,6 +95,7 @@ GEM
     business_time (0.13.0)
       activesupport (>= 3.2.0)
       tzinfo
+    cancancan (3.6.1)
     capybara (3.40.0)
       addressable
       matrix
@@ -357,8 +358,6 @@ GEM
     public_suffix (6.0.2)
     puma (6.6.1)
       nio4r (~> 2.0)
-    pundit (2.5.0)
-      activesupport (>= 3.0.0)
     pundit-matchers (3.1.2)
       rspec-core (~> 3.12)
       rspec-expectations (~> 3.12)
@@ -588,6 +587,7 @@ DEPENDENCIES
   brakeman
   browser (~> 6.0)
   business_time (~> 0.13.0)
+  cancancan (~> 3.6)
   capybara
   chronic (~> 0.10.2)
   database_cleaner-active_record
@@ -619,7 +619,6 @@ DEPENDENCIES
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)
-  pundit (~> 2.4)
   pundit-matchers (~> 3.1)
   rails (~> 8.0.2)
   rails-controller-testing

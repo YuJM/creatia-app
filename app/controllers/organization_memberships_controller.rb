@@ -8,10 +8,10 @@ class OrganizationMembershipsController < ApplicationController
   # GET /organization_memberships
   # 현재 조직의 멤버십 목록을 반환합니다.
   def index
-    @memberships = policy_scope(OrganizationMembership)
+    @memberships = OrganizationMembership.accessible_by(current_ability)
                      .where(organization: current_organization)
                      .includes(:user, :organization)
-    authorize OrganizationMembership
+    authorize! :index, OrganizationMembership
     
     render_serialized(
       OrganizationMembershipSerializer,
@@ -23,7 +23,7 @@ class OrganizationMembershipsController < ApplicationController
   # GET /organization_memberships/:id
   # 특정 멤버십의 상세 정보를 반환합니다.
   def show
-    authorize @membership
+    authorize! :show, @membership
     
     render_serialized(
       OrganizationMembershipSerializer,
@@ -35,7 +35,7 @@ class OrganizationMembershipsController < ApplicationController
   # 새로운 멤버를 조직에 초대합니다.
   def create
     @membership = current_organization.organization_memberships.build(membership_params)
-    authorize @membership
+    authorize! :create, @membership
     
     # 이메일로 사용자 찾기
     user = User.find_by(email: params[:email])
@@ -59,11 +59,11 @@ class OrganizationMembershipsController < ApplicationController
   # PATCH/PUT /organization_memberships/:id
   # 멤버십 정보를 업데이트합니다 (주로 역할 변경).
   def update
-    authorize @membership
+    authorize! :update, @membership
     
     # 소유자 역할 변경시 특별 처리
     if params[:organization_membership][:role] == 'owner'
-      unless policy(@membership).change_role?
+      unless can?(:change_role, @membership)
         return render_error("소유자 역할을 변경할 권한이 없습니다.", status: :forbidden)
       end
     end
@@ -78,7 +78,7 @@ class OrganizationMembershipsController < ApplicationController
   # DELETE /organization_memberships/:id
   # 멤버를 조직에서 제거합니다.
   def destroy
-    authorize @membership
+    authorize! :destroy, @membership
     
     # 자신이 소유자인 경우 탈퇴 방지
     if @membership.owner? && @membership.user == current_user
@@ -98,7 +98,7 @@ class OrganizationMembershipsController < ApplicationController
   # 멤버십을 활성화/비활성화합니다.
   def toggle_active
     @membership = current_organization.organization_memberships.find(params[:id])
-    authorize @membership, :toggle_active?
+    authorize! :toggle_active, @membership
     
     @membership.update!(active: !@membership.active)
     
@@ -108,7 +108,7 @@ class OrganizationMembershipsController < ApplicationController
   # POST /organization_memberships/invite
   # 이메일로 멤버를 초대합니다.
   def invite
-    authorize OrganizationMembership, :create?
+    authorize! :create, OrganizationMembership
     
     email = params[:email]
     role = params[:role] || 'member'
@@ -156,6 +156,6 @@ class OrganizationMembershipsController < ApplicationController
   end
   
   def membership_params
-    params.require(:organization_membership).permit(:role, :active)
+    params.require(:organization_membership).permit(:role, :role_id, :active)
   end
 end

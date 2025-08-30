@@ -90,6 +90,11 @@ RSpec.configure do |config|
   # FactoryBot 설정
   config.include FactoryBot::Syntax::Methods
   
+  # Set locale to English for tests
+  config.before(:each) do
+    I18n.locale = :en
+  end
+  
   # Configure Capybara for system tests with Caddy
   config.before(:each, type: :system) do
     # Use test domain for Capybara tests to work with Caddy reverse proxy

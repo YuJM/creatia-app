@@ -3,9 +3,6 @@
 class Api::V1::AuthController < ApplicationController
   before_action :authenticate_user!
   
-  # API 컨트롤러에서는 Pundit verification을 우회
-  after_action :verify_authorized, except: [:me, :login, :logout]
-  
   # GET /api/v1/auth/me
   def me
     user = current_user

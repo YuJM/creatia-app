@@ -30,7 +30,8 @@ gem "devise-i18n", "~> 1.12"
 gem "rails-i18n", "~> 8.0"
 
 # Authorization
-gem "pundit", "~> 2.4"
+# gem "pundit", "~> 2.4"  # Replaced with CanCanCan for dynamic RBAC
+gem "cancancan", "~> 3.6"
 
 # JWT for secure cross-domain authentication
 gem "jwt", "~> 2.7"

@@ -2,6 +2,7 @@ class OrganizationMembership < ApplicationRecord
   # Associations
   belongs_to :user
   belongs_to :organization
+  belongs_to :role_object, class_name: 'Role', foreign_key: 'role_id', optional: true
   
   # Constants
   ROLES = %w[owner admin member viewer].freeze

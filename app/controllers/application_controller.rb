@@ -1,6 +1,4 @@
 class ApplicationController < ActionController::Base
-  include Pundit::Authorization
-  
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
   
@@ -120,12 +118,11 @@ class ApplicationController < ActionController::Base
     request.env['warden']
   end
   
-  # Pundit authorization check - don't run on Devise or system controllers
-  after_action :verify_authorized, unless: :skip_pundit?
-  after_action :verify_policy_scoped, unless: :skip_pundit?, if: -> { action_name == 'index' }
+  # CanCanCan authorization check
+  check_authorization unless: :skip_authorization?
   
-  # Pundit exception handling
-  rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
+  # CanCanCan exception handling
+  rescue_from CanCan::AccessDenied, with: :access_denied
   rescue_from ActsAsTenant::Errors::NoTenantSet, with: :tenant_not_found
   
   protected
@@ -149,6 +146,11 @@ class ApplicationController < ActionController::Base
     current_membership&.role
   end
   helper_method :current_role
+  
+  # CanCanCan을 위한 current_ability 메서드
+  def current_ability
+    @current_ability ||= Ability.new(current_user, current_organization)
+  end
   
   # 테넌트 컨텍스트 정보 반환
   def tenant_context
@@ -271,23 +273,23 @@ class ApplicationController < ActionController::Base
            status: options[:status] || :unprocessable_entity
   end
   
-  def user_not_authorized(exception)
+  def access_denied(exception)
     # 무권한 접근 감사 로그
-    record = exception.record if exception.respond_to?(:record)
-    policy_class = exception.policy.class if exception.respond_to?(:policy)
-    action = exception.query if exception.respond_to?(:query)
-    
-    SecurityAuditService.log_unauthorized_access(
-      current_user, 
-      record || policy_class, 
-      request, 
-      action
-    )
+    if current_user && current_organization
+      PermissionAuditLog.log_denial(
+        user: current_user,
+        organization: current_organization,
+        action: exception.action,
+        resource: exception.subject,
+        context: { message: exception.message },
+        request: request
+      )
+    end
     
     if request.format.json?
-      render json: { error: "이 작업을 수행할 권한이 없습니다." }, status: :forbidden
+      render json: { error: exception.message || "이 작업을 수행할 권한이 없습니다." }, status: :forbidden
     else
-      flash[:alert] = "이 작업을 수행할 권한이 없습니다."
+      flash[:alert] = exception.message || "이 작업을 수행할 권한이 없습니다."
       redirect_to(request.referrer || root_path, allow_other_host: true)
     end
   end
@@ -315,7 +317,7 @@ class ApplicationController < ActionController::Base
     end
   end
   
-  def skip_pundit?
+  def skip_authorization?
     devise_controller? || 
     params[:controller] =~ /(^(rails_)?admin)|(^pages$)/ || 
     params[:controller] == 'users/omniauth_callbacks' ||

@@ -6,7 +6,7 @@ class TasksController < TenantBaseController
   # GET /tasks
   # 현재 조직의 태스크 목록을 반환합니다.
   def index
-    @tasks = policy_scope(Task).includes(:assigned_user, :organization)
+    @tasks = Task.accessible_by(current_ability).includes(:assigned_user, :organization)
     
     # 필터링
     @tasks = @tasks.by_status(params[:status]) if params[:status].present?
@@ -31,7 +31,7 @@ class TasksController < TenantBaseController
       @tasks = @tasks.ordered
     end
     
-    authorize Task
+    authorize! :index, Task
     
     render_serialized(
       TaskSerializer,
@@ -46,7 +46,7 @@ class TasksController < TenantBaseController
   # GET /tasks/:id
   # 특정 태스크의 상세 정보를 반환합니다.
   def show
-    authorize @task
+    authorize! :show, @task
     
     # Task 기본 정보와 함께 메트릭도 함께 로딩
     @task_metrics = TaskMetrics.new(
@@ -87,7 +87,7 @@ class TasksController < TenantBaseController
     else
       # 일반 Task 생성 (GitHub 연동 없음)
       @task = build_tenant_resource(Task, task_params)
-      authorize @task
+      authorize! :create, @task
       
       if @task.save
         handle_task_creation_success(@task)
@@ -100,7 +100,7 @@ class TasksController < TenantBaseController
   # PATCH/PUT /tasks/:id
   # 태스크 정보를 업데이트합니다.
   def update
-    authorize @task
+    authorize! :update, @task
     
     if @task.update(task_params)
       render_serialized(TaskSerializer, @task)
@@ -112,7 +112,7 @@ class TasksController < TenantBaseController
   # DELETE /tasks/:id
   # 태스크를 삭제합니다.
   def destroy
-    authorize @task
+    authorize! :destroy, @task
     
     if @task.destroy
       render_serialized(SuccessSerializer, { message: "태스크가 삭제되었습니다." })
@@ -124,7 +124,7 @@ class TasksController < TenantBaseController
   # PATCH /tasks/:id/assign
   # 태스크를 사용자에게 할당합니다.
   def assign
-    authorize @task, :assign?
+    authorize! :assign, @task
     
     if params[:assigned_user_id].present?
       user = User.find(params[:assigned_user_id])
@@ -152,7 +152,7 @@ class TasksController < TenantBaseController
   # PATCH /tasks/:id/status
   # 태스크의 상태를 변경합니다.
   def change_status
-    authorize @task, :change_status?
+    authorize! :update, @task
     
     new_status = params[:status]
     unless Task::STATUSES.include?(new_status)
@@ -171,7 +171,7 @@ class TasksController < TenantBaseController
   # PATCH /tasks/:id/reorder
   # 태스크의 위치를 변경합니다 (칸반 보드용).
   def reorder
-    authorize @task, :reorder?
+    authorize! :update, @task
     
     new_position = params[:position].to_i
     new_status = params[:status] || @task.status
@@ -191,9 +191,9 @@ class TasksController < TenantBaseController
   # GET /tasks/stats
   # 태스크 통계를 반환합니다.
   def stats
-    authorize Task, :index?
+    authorize! :index, Task
     
-    tasks = policy_scope(Task)
+    tasks = Task.accessible_by(current_ability)
     
     stats = {
       total: tasks.count,
@@ -222,7 +222,7 @@ class TasksController < TenantBaseController
   # GET /tasks/:id/metrics
   # 특정 태스크의 메트릭 정보를 반환합니다.
   def metrics
-    authorize @task
+    authorize! :show, @task
     
     @task_metrics = TaskMetrics.new(
       estimated_hours: @task.estimated_hours,
@@ -254,7 +254,7 @@ class TasksController < TenantBaseController
   private
   
   def set_task
-    @task = policy_scope(Task).find(params[:id])
+    @task = Task.accessible_by(current_ability).find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render_error("태스크를 찾을 수 없습니다.", status: :not_found)
   end
