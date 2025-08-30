@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_29_125640) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_30_011553) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -114,9 +114,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_29_125640) do
     t.uuid "team_id"
     t.uuid "service_id"
     t.uuid "assignee_id"
+    t.uuid "created_by_id"
     t.index ["assigned_user_type", "assigned_user_id"], name: "index_tasks_on_assigned_user"
     t.index ["assignee_id"], name: "index_tasks_on_assignee_id"
     t.index ["completed_at"], name: "index_tasks_on_completed_at"
+    t.index ["created_by_id"], name: "index_tasks_on_created_by_id"
     t.index ["deadline", "completed_at"], name: "index_tasks_on_deadline_and_completed"
     t.index ["deadline"], name: "index_tasks_on_deadline"
     t.index ["organization_id", "assigned_user_id", "assigned_user_type"], name: "idx_on_organization_id_assigned_user_id_assigned_us_0cf40f5b5d"
@@ -131,12 +133,25 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_29_125640) do
     t.index ["team_id"], name: "index_tasks_on_team_id"
   end
 
+  create_table "team_members", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "team_id", null: false
+    t.uuid "user_id", null: false
+    t.string "role", default: "member", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["team_id", "user_id"], name: "index_team_members_on_team_id_and_user_id", unique: true
+    t.index ["team_id"], name: "index_team_members_on_team_id"
+    t.index ["user_id"], name: "index_team_members_on_user_id"
+  end
+
   create_table "teams", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "organization_id", null: false
     t.string "name"
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "lead_id"
+    t.index ["lead_id"], name: "index_teams_on_lead_id"
     t.index ["organization_id"], name: "index_teams_on_organization_id"
   end
 
@@ -177,5 +192,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_29_125640) do
   add_foreign_key "tasks", "sprints"
   add_foreign_key "tasks", "teams"
   add_foreign_key "tasks", "users", column: "assignee_id"
+  add_foreign_key "tasks", "users", column: "created_by_id"
+  add_foreign_key "team_members", "teams"
+  add_foreign_key "team_members", "users"
   add_foreign_key "teams", "organizations"
 end

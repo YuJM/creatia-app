@@ -13,6 +13,7 @@ class Task < ApplicationRecord
   belongs_to :team, optional: true
   belongs_to :service, optional: true
   belongs_to :assignee, class_name: 'User', optional: true
+  belongs_to :created_by, class_name: 'User', optional: true
   has_many :pomodoro_sessions, dependent: :destroy
   
   # Constants

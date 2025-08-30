@@ -8,6 +8,7 @@ FactoryBot.define do
     association :service
     assigned_user { nil }
     assignee { nil }
+    created_by { nil }
     team { nil }
     due_date { nil }
     position { 0 }
@@ -43,6 +44,10 @@ FactoryBot.define do
     trait :overdue do
       due_date { 1.day.ago }
       status { 'todo' }
+    end
+    
+    trait :with_creator do
+      association :created_by, factory: :user
     end
   end
 end

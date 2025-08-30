@@ -1,13 +1,30 @@
 # frozen_string_literal: true
 
 class TaskPolicy < ApplicationPolicy
+  def index?
+    return false if viewer?
+    organization_member?
+  end
+  
   def show?
-    organization_member? && (assigned_to_user? || team_member?)
+    return false unless organization_member?
+    return true if organization_admin?
+    assigned_to_user? || team_member? || task_owner?
   end
   
   def update?
     return false if viewer?
     assigned_to_user? || task_owner? || organization_admin?
+  end
+  
+  def complete?
+    return false if viewer?
+    assigned_to_user? || task_owner?
+  end
+  
+  def start_pomodoro?
+    return false if viewer?
+    assigned_to_user?
   end
   
   def destroy?
@@ -18,26 +35,22 @@ class TaskPolicy < ApplicationPolicy
     organization_admin? || team_lead? || task_owner?
   end
   
-  def complete?
-    assigned_to_user? || task_owner?
-  end
-  
-  def start_pomodoro?
-    assigned_to_user?
-  end
   
   class Scope < ApplicationPolicy::Scope
     def resolve
+      return scope.none unless user && organization
+      
       if organization_admin?
         # Admin은 모든 Task 조회 가능
         scope.joins(:service).where(services: { organization_id: organization.id })
-      elsif user
+      elsif organization.role_for(user)
         # 일반 사용자는 자신이 할당받았거나 팀 내 Task만 조회
+        team_ids = user.team_ids.presence || [-1]  # -1은 절대 매칭되지 않는 값
         scope.joins(:service)
              .where(services: { organization_id: organization.id })
              .where('tasks.assignee_id = ? OR tasks.team_id IN (?)', 
                     user.id, 
-                    user.team_ids)
+                    team_ids)
       else
         scope.none
       end
@@ -59,9 +72,8 @@ class TaskPolicy < ApplicationPolicy
   end
   
   def task_owner?
-    # TODO: Add created_by field to tasks table
-    # For now, return false
-    false
+    return false unless user && record
+    record.created_by_id == user.id
   end
   
   def team_member?

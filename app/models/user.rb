@@ -12,6 +12,8 @@ class User < ApplicationRecord
   # Multi-tenant associations
   has_many :organization_memberships, dependent: :destroy
   has_many :organizations, through: :organization_memberships
+  has_many :team_members, dependent: :destroy
+  has_many :teams, through: :team_members
   
   # Role helper methods
   def admin?
@@ -56,8 +58,7 @@ class User < ApplicationRecord
   end
   
   def team_ids
-    # TODO: Implement when team_members association is added
-    []
+    teams.pluck(:id)
   end
   
   def owned_organizations

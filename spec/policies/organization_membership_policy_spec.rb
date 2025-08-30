@@ -118,8 +118,8 @@ RSpec.describe OrganizationMembershipPolicy, type: :policy do
     context "managing another owner" do
       let(:membership) { create(:organization_membership, :owner, organization: organization, user: target_user) }
 
-      it { is_expected.to permit_actions([:index, :show, :update, :change_role]) }
-      it { is_expected.to forbid_actions([:destroy, :toggle_active]) }
+      it { is_expected.to permit_actions([:index, :show]) }
+      it { is_expected.to forbid_actions([:destroy, :toggle_active, :change_role, :update]) }
     end
 
     context "managing their own membership" do

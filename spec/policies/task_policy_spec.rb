@@ -61,13 +61,12 @@ RSpec.describe TaskPolicy, type: :policy do
       it { is_expected.to forbid_actions([:destroy, :assign]) }
     end
 
-    # TODO: Re-enable when created_by field is added to tasks table
-    # context "when creator of the task" do
-    #   let(:task) { create(:task, service: service, created_by: user) }
+    context "when creator of the task" do
+      let(:task) { create(:task, service: service, created_by: user) }
 
-    #   it { is_expected.to permit_actions([:index, :show, :create, :update, :destroy, :complete, :assign]) }
-    #   it { is_expected.to forbid_action(:start_pomodoro) }
-    # end
+      it { is_expected.to permit_actions([:index, :show, :create, :update, :destroy, :complete, :assign]) }
+      it { is_expected.to forbid_action(:start_pomodoro) }
+    end
 
     context "when team member of the task" do
       let(:team) { create(:team, organization: organization) }
@@ -110,13 +109,12 @@ RSpec.describe TaskPolicy, type: :policy do
       it { is_expected.to permit_all_actions }
     end
 
-    # TODO: Re-enable when created_by field is added to tasks table
-    # context "when creator of the task" do
-    #   let(:task) { create(:task, service: service, created_by: user) }
+    context "when creator of the task" do
+      let(:task) { create(:task, service: service, created_by: user) }
 
-    #   it { is_expected.to permit_actions([:index, :show, :create, :update, :destroy, :assign, :complete]) }
-    #   it { is_expected.to forbid_action(:start_pomodoro) }
-    # end
+      it { is_expected.to permit_actions([:index, :show, :create, :update, :destroy, :assign, :complete]) }
+      it { is_expected.to forbid_action(:start_pomodoro) }
+    end
   end
 
   context "when user is the owner of the organization" do
@@ -150,7 +148,11 @@ RSpec.describe TaskPolicy, type: :policy do
     # Tasks from another organization
     let(:other_org) { create(:organization) }
     let(:other_service) { create(:service, organization: other_org) }
-    let!(:other_org_task) { create(:task, service: other_service) }
+    let!(:other_org_task) do
+      ActsAsTenant.with_tenant(other_org) do
+        create(:task, service: other_service)
+      end
+    end
 
     context "when user is nil" do
       let(:user) { nil }
@@ -267,18 +269,17 @@ RSpec.describe TaskPolicy, type: :policy do
         end
       end
 
-      # TODO: Re-enable when created_by field is added to tasks table
-      # context "when user created the task but is not assigned" do
-      #   let(:task) { create(:task, service: service, created_by: user, assignee: create(:user)) }
+      context "when user created the task but is not assigned" do
+        let(:task) { create(:task, service: service, created_by: user, assignee: create(:user)) }
 
-      #   it "allows completing the task" do
-      #     expect(subject.complete?).to be true
-      #   end
+        it "allows completing the task" do
+          expect(subject.complete?).to be true
+        end
 
-      #   it "denies starting a pomodoro session" do
-      #     expect(subject.start_pomodoro?).to be false
-      #   end
-      # end
+        it "denies starting a pomodoro session" do
+          expect(subject.start_pomodoro?).to be false
+        end
+      end
 
       context "when user is admin but not assigned" do
         let!(:membership) { create(:organization_membership, :admin, organization: organization, user: user) }

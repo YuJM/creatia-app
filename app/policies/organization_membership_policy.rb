@@ -17,9 +17,9 @@ class OrganizationMembershipPolicy < ApplicationPolicy
     # 자신의 멤버십은 제한적으로 수정 가능 (예: 알림 설정)
     # 다른 사람의 멤버십은 관리자만 수정 가능
     return true if own_membership? && can_update_own_membership?
-    # Owner는 다른 owner도 수정 가능
-    return true if owner?
-    return false if target_is_owner?
+    # Owner는 다른 owner를 수정할 수 없음
+    return false if target_is_owner? && !own_membership?
+    # 관리자나 소유자만 수정 가능
     admin?
   end
 
@@ -33,14 +33,11 @@ class OrganizationMembershipPolicy < ApplicationPolicy
 
   # 역할 변경
   def change_role?
-    # 자신의 역할은 변경 불가 (ただし、ownerが他のownerのロールを変更するのは可能)
-    if own_membership?
-      return false
-    end
-    # 소유자는 다른 멤버(owner 포함)의 역할을 변경할 수 있음
-    return true if owner?
-    # 관리자는 소유자가 아닌 멤버의 역할 변경 가능
+    # 자신의 역할은 변경 불가
+    return false if own_membership?
+    # Owner도 다른 owner의 역할은 변경 불가
     return false if target_is_owner?
+    # 소유자나 관리자만 다른 멤버의 역할 변경 가능
     admin?
   end
 
@@ -66,6 +63,11 @@ class OrganizationMembershipPolicy < ApplicationPolicy
     # 실제 구현에서는 context나 params를 통해 확인
     false # 기본값
   end
+  
+  def changing_owner_role?
+    # Owner의 역할을 변경하려는지 확인
+    target_is_owner? && record.respond_to?(:role_was) && record.role_was == 'owner'
+  end
 
   def can_update_own_membership?
     # 자신의 멤버십에서 수정 가능한 항목들 (예: 알림 설정 등)
@@ -75,15 +77,21 @@ class OrganizationMembershipPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      return scope.none unless user && organization
+      return scope.none unless user
+      return scope.none unless organization
 
       # 관리자는 모든 멤버십을 볼 수 있음
-      if user && organization && %w[owner admin].include?(organization.role_for(user))
+      if %w[owner admin].include?(organization.role_for(user))
         return scope.where(organization: organization)
       end
 
       # 일반 멤버는 활성화된 멤버십만 볼 수 있음
-      scope.where(organization: organization, active: true)
+      if organization.role_for(user)
+        return scope.where(organization: organization, active: true)
+      end
+      
+      # 멤버가 아닌 경우 아무것도 볼 수 없음
+      scope.none
     end
     
     private
