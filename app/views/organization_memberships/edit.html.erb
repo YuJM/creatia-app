@@ -1,0 +1,158 @@
+<div class="px-4 sm:px-6 lg:px-8">
+  <div class="sm:flex sm:items-center">
+    <div class="sm:flex-auto">
+      <h1 class="text-2xl font-semibold text-gray-900">멤버 정보 수정</h1>
+      <p class="mt-2 text-sm text-gray-700">
+        <%= @membership.user.name %>님의 역할과 권한을 수정합니다.
+      </p>
+    </div>
+  </div>
+
+  <div class="mt-8 bg-white shadow sm:rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+      <%= form_with model: [@organization, @membership], local: true, data: { turbo: false } do |form| %>
+        <% if @membership.errors.any? %>
+          <div class="rounded-md bg-red-50 p-4 mb-6">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">
+                  <%= pluralize(@membership.errors.count, "error") %> 발생:
+                </h3>
+                <div class="mt-2 text-sm text-red-700">
+                  <ul class="list-disc list-inside">
+                    <% @membership.errors.full_messages.each do |message| %>
+                      <li><%= message %></li>
+                    <% end %>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+        <!-- Member Info (Read-only) -->
+        <div class="space-y-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              사용자
+            </label>
+            <div class="mt-1">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 h-10 w-10">
+                  <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                    <span class="text-gray-600 font-medium text-sm">
+                      <%= @membership.user.name.first.upcase %>
+                    </span>
+                  </div>
+                </div>
+                <div class="ml-4">
+                  <div class="text-sm font-medium text-gray-900">
+                    <%= @membership.user.name %>
+                  </div>
+                  <div class="text-sm text-gray-500">
+                    <%= @membership.user.email %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Role Selection -->
+          <div>
+            <%= form.label :role_id, "역할", class: "block text-sm font-medium text-gray-700" %>
+            <div class="mt-1">
+              <%= form.select :role_id,
+                              options_for_select(
+                                @organization.roles.pluck(:name, :id),
+                                @membership.role_id
+                              ),
+                              {},
+                              class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md",
+                              data: { 
+                                controller: "role-selector",
+                                action: "change->role-selector#updatePermissions"
+                              } %>
+            </div>
+            <p class="mt-2 text-sm text-gray-500">
+              역할을 변경하면 해당 역할의 권한이 자동으로 적용됩니다.
+            </p>
+          </div>
+
+          <!-- Permission Preview -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3">
+              권한 미리보기
+            </label>
+            <div id="permission-preview" class="bg-gray-50 rounded-lg p-4">
+              <% if @membership.role.permissions.any? %>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <% @membership.role.permissions.group_by(&:resource_type).each do |resource_type, permissions| %>
+                    <div>
+                      <h4 class="text-sm font-medium text-gray-900 mb-2"><%= resource_type %></h4>
+                      <div class="space-y-1">
+                        <% permissions.each do |permission| %>
+                          <div class="flex items-center text-sm">
+                            <svg class="flex-shrink-0 h-4 w-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="text-gray-700"><%= permission.action.humanize %></span>
+                          </div>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              <% else %>
+                <p class="text-sm text-gray-500">선택한 역할에 설정된 권한이 없습니다.</p>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Additional Settings -->
+          <div class="space-y-4">
+            <div class="relative flex items-start">
+              <div class="flex items-center h-5">
+                <%= form.check_box :send_notification, 
+                                   class: "focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded",
+                                   checked: true %>
+              </div>
+              <div class="ml-3 text-sm">
+                <%= form.label :send_notification, "변경 사항을 사용자에게 알림", class: "font-medium text-gray-700" %>
+                <p class="text-gray-500">이메일로 역할 변경 알림을 발송합니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="mt-6 flex items-center justify-end space-x-3">
+          <%= link_to "취소",
+                      organization_organization_membership_path(@organization, @membership),
+                      class: "inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+          <%= form.submit "저장",
+                          class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Stimulus controller for role selection and permission preview
+  document.addEventListener('DOMContentLoaded', function() {
+    const roleSelector = document.querySelector('[data-controller="role-selector"]');
+    if (roleSelector) {
+      roleSelector.addEventListener('change', function(e) {
+        // This would normally fetch permissions via AJAX
+        // For now, we'll just show a loading state
+        const preview = document.getElementById('permission-preview');
+        preview.innerHTML = '<p class="text-sm text-gray-500">권한 정보를 불러오는 중...</p>';
+      });
+    }
+  });
+</script>

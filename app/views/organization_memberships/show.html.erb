@@ -1,0 +1,113 @@
+<div class="px-4 sm:px-6 lg:px-8">
+  <div class="sm:flex sm:items-center">
+    <div class="sm:flex-auto">
+      <h1 class="text-2xl font-semibold text-gray-900">멤버 상세 정보</h1>
+      <p class="mt-2 text-sm text-gray-700">
+        <%= @membership.user.name %>님의 조직 멤버십 정보입니다.
+      </p>
+    </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none space-x-2">
+      <%= link_to "편집",
+                  edit_organization_organization_membership_path(@organization, @membership),
+                  class: "inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+      <%= link_to "목록으로",
+                  organization_organization_memberships_path(@organization),
+                  class: "inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+    </div>
+  </div>
+
+  <!-- Member Information Card -->
+  <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">
+        기본 정보
+      </h3>
+    </div>
+    <div class="border-t border-gray-200">
+      <dl>
+        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">이름</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+            <%= @membership.user.name %>
+          </dd>
+        </div>
+        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">이메일</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+            <%= @membership.user.email %>
+          </dd>
+        </div>
+        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">역할</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+              <%= @membership.role.name %>
+            </span>
+          </dd>
+        </div>
+        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">가입일</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+            <%= @membership.created_at.strftime("%Y년 %m월 %d일") %>
+          </dd>
+        </div>
+        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <dt class="text-sm font-medium text-gray-500">마지막 로그인</dt>
+          <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+            <% if @membership.user.last_sign_in_at %>
+              <%= @membership.user.last_sign_in_at.strftime("%Y년 %m월 %d일 %H:%M") %>
+            <% else %>
+              아직 로그인하지 않음
+            <% end %>
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <!-- Permissions Card -->
+  <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">
+        권한 정보
+      </h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">
+        <%= @membership.role.name %> 역할이 가진 권한 목록입니다.
+      </p>
+    </div>
+    <div class="border-t border-gray-200">
+      <div class="px-4 py-5 sm:px-6">
+        <% if @membership.role.permissions.any? %>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <% @membership.role.permissions.each do |permission| %>
+              <div class="flex items-center">
+                <svg class="flex-shrink-0 h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <span class="ml-2 text-sm text-gray-900">
+                  <%= permission.action.humanize %> <%= permission.resource_type %>
+                </span>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-gray-500">이 역할에는 설정된 권한이 없습니다.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">
+        최근 활동
+      </h3>
+    </div>
+    <div class="border-t border-gray-200">
+      <div class="px-4 py-5 sm:px-6">
+        <p class="text-sm text-gray-500">활동 기록이 여기에 표시됩니다.</p>
+      </div>
+    </div>
+  </div>
+</div>

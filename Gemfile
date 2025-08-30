@@ -48,6 +48,9 @@ gem "hashie", "~> 5.0"
 # Multi-tenancy
 gem "acts_as_tenant", "~> 1.0"
 
+# Pagination
+gem "kaminari", "~> 1.2"
+
 # OAuth authentication
 gem "omniauth", "~> 2.1"
 gem "omniauth-google-oauth2", "~> 1.2"

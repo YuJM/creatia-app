@@ -123,7 +123,8 @@ Rails.application.routes.draw do
     
     # 현재 조직 정보
     resource :organization, only: [:show, :edit, :update] do
-      resources :organization_memberships, path: 'members', except: [:new] do
+      # 멤버십은 Web 네임스페이스로 이동
+      resources :organization_memberships, path: 'members', controller: 'web/organization_memberships' do
         member do
           patch :toggle_active
         end
@@ -146,18 +147,29 @@ Rails.application.routes.draw do
       end
     end
     
-    # 테넌트별 리소스들
-    resources :tasks do
-      member do
-        patch :assign
-        patch :change_status, path: 'status'
-        patch :reorder
-        get :metrics  # 새로 추가
+    # Web 인터페이스 라우트
+    namespace :web do
+      resources :tasks do
+        member do
+          patch :assign
+          patch :change_status, path: 'status'
+          patch :reorder
+          get :metrics
+        end
+        collection do
+          get :stats
+        end
       end
-      collection do
-        get :stats
+      
+      resources :organization_memberships, path: 'members' do
+        member do
+          patch :toggle_active
+        end
       end
     end
+    
+    # 기존 라우트를 Web으로 리다이렉트 (하위 호환성)
+    resources :tasks, controller: 'web/tasks'
     
     # 추후 추가될 테넌트별 리소스들
     # resources :projects
@@ -219,8 +231,30 @@ Rails.application.routes.draw do
         
         # 조직 API
         resources :organizations do
-          resources :tasks
-          resources :organization_memberships, path: 'members'
+          # 중첩된 리소스는 사용하지 않고 current_organization 사용
+        end
+        
+        # Task API
+        resources :tasks do
+          member do
+            patch :assign
+            patch 'status', to: 'tasks#change_status'
+            patch :reorder
+            get :metrics
+          end
+          collection do
+            get :stats
+          end
+        end
+        
+        # Organization Membership API
+        resources :organization_memberships, path: 'members' do
+          member do
+            patch :toggle_active
+          end
+          collection do
+            post :invite
+          end
         end
       end
     end

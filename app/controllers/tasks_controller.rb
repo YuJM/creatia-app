@@ -67,6 +67,18 @@ class TasksController < TenantBaseController
     )
   end
   
+  # GET /tasks/new
+  # 새 태스크 생성 폼을 표시합니다.
+  def new
+    @task = build_tenant_resource(Task)
+    authorize! :new, @task
+    
+    respond_to do |format|
+      format.html
+      format.json { render_serialized(TaskSerializer, @task) }
+    end
+  end
+
   # POST /tasks
   # 새로운 태스크를 생성합니다.
   def create

@@ -105,6 +105,11 @@ class Ability
       can :read, OrganizationMembership, active: true
       can :read, User
       
+      # Member는 audit log와 role 관리에 접근할 수 없음
+      cannot :read, PermissionAuditLog
+      cannot :manage, Role
+      cannot :read, Role
+      
       # Task 관련 권한
       can :create, Task
       can :update, Task, assignee_id: @user.id

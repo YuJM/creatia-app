@@ -1,0 +1,168 @@
+<div class="px-4 sm:px-6 lg:px-8">
+  <div class="sm:flex sm:items-center">
+    <div class="sm:flex-auto">
+      <h1 class="text-2xl font-semibold text-gray-900">태스크</h1>
+      <p class="mt-2 text-sm text-gray-700">
+        프로젝트의 모든 태스크를 관리합니다.
+      </p>
+    </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+      <%= link_to "새 태스크", 
+                  new_task_path,
+                  class: "inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto",
+                  data: { turbo_frame: "modal" } %>
+    </div>
+  </div>
+
+  <!-- Task Metrics -->
+  <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-4">
+    <%= render TaskMetricsCardComponent.new(
+      total_tasks: @tasks.count,
+      completed_tasks: @tasks.where(status: 'completed').count,
+      in_progress_tasks: @tasks.where(status: 'in_progress').count,
+      overdue_tasks: @tasks.where('due_date < ? AND status != ?', Date.current, 'completed').count
+    ) %>
+  </div>
+
+  <!-- Filters -->
+  <div class="mt-8 bg-white shadow sm:rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+      <%= form_with url: tasks_path, method: :get, local: true, class: "space-y-4" do |f| %>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <div>
+            <%= f.label :status, "상태", class: "block text-sm font-medium text-gray-700" %>
+            <%= f.select :status,
+                         options_for_select([
+                           ["전체", ""],
+                           ["대기중", "pending"],
+                           ["진행중", "in_progress"],
+                           ["완료", "completed"],
+                           ["보류", "on_hold"]
+                         ], params[:status]),
+                         {},
+                         class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" %>
+          </div>
+          
+          <div>
+            <%= f.label :priority, "우선순위", class: "block text-sm font-medium text-gray-700" %>
+            <%= f.select :priority,
+                         options_for_select([
+                           ["전체", ""],
+                           ["높음", "high"],
+                           ["중간", "medium"],
+                           ["낮음", "low"]
+                         ], params[:priority]),
+                         {},
+                         class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" %>
+          </div>
+          
+          <div>
+            <%= f.label :assignee_id, "담당자", class: "block text-sm font-medium text-gray-700" %>
+            <%= f.select :assignee_id,
+                         options_for_select(
+                           [["전체", ""]] + User.all.pluck(:name, :id),
+                           params[:assignee_id]
+                         ),
+                         {},
+                         class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" %>
+          </div>
+          
+          <div>
+            <%= f.label :search, "검색", class: "block text-sm font-medium text-gray-700" %>
+            <%= f.text_field :search,
+                             value: params[:search],
+                             placeholder: "태스크 제목 검색",
+                             class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" %>
+          </div>
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+          <%= link_to "초기화",
+                      tasks_path,
+                      class: "inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+          <%= f.submit "필터 적용",
+                       class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Tasks List -->
+  <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-md">
+    <ul role="list" class="divide-y divide-gray-200">
+      <% @tasks.each do |task| %>
+        <li>
+          <%= link_to task_path(task), class: "block hover:bg-gray-50" do %>
+            <div class="px-4 py-4 sm:px-6">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <p class="text-sm font-medium text-indigo-600 truncate">
+                    #<%= task.id %>
+                  </p>
+                  <p class="ml-2 text-sm font-medium text-gray-900 truncate">
+                    <%= task.title %>
+                  </p>
+                </div>
+                <div class="ml-2 flex-shrink-0 flex">
+                  <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                     <%= task.status == 'completed' ? 'bg-green-100 text-green-800' : 
+                         task.status == 'in_progress' ? 'bg-blue-100 text-blue-800' : 
+                         'bg-gray-100 text-gray-800' %>">
+                    <%= task.status.humanize %>
+                  </p>
+                </div>
+              </div>
+              <div class="mt-2 sm:flex sm:justify-between">
+                <div class="sm:flex">
+                  <p class="flex items-center text-sm text-gray-500">
+                    <% if task.assignee.present? %>
+                      <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                      </svg>
+                      <%= task.assignee.name %>
+                    <% else %>
+                      <span class="text-gray-400">담당자 없음</span>
+                    <% end %>
+                  </p>
+                  <% if task.due_date.present? %>
+                    <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                      <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                      </svg>
+                      <%= task.due_date.strftime("%Y-%m-%d") %>
+                    </p>
+                  <% end %>
+                </div>
+                <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                  <% if task.priority == 'high' %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                      높음
+                    </span>
+                  <% elsif task.priority == 'medium' %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                      중간
+                    </span>
+                  <% else %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                      낮음
+                    </span>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <!-- Pagination -->
+  <% if @tasks.respond_to?(:current_page) %>
+    <div class="mt-4 flex justify-center">
+      <%= paginate @tasks %>
+    </div>
+  <% end %>
+</div>
+
+<!-- Modal Frame -->
+<%= turbo_frame_tag "modal" %>

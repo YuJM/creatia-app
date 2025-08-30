@@ -1,0 +1,194 @@
+<div class="px-4 sm:px-6 lg:px-8">
+  <div class="sm:flex sm:items-center">
+    <div class="sm:flex-auto">
+      <h1 class="text-2xl font-semibold text-gray-900">
+        #<%= @task.id %> <%= @task.title %>
+      </h1>
+      <p class="mt-2 text-sm text-gray-700">
+        생성일: <%= @task.created_at.strftime("%Y년 %m월 %d일") %>
+      </p>
+    </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none space-x-2">
+      <%= link_to "편집",
+                  edit_task_path(@task),
+                  class: "inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+      <%= link_to "목록으로",
+                  tasks_path,
+                  class: "inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
+    </div>
+  </div>
+
+  <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Description -->
+      <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            설명
+          </h3>
+        </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+          <div class="prose max-w-none">
+            <%= simple_format(@task.description) || content_tag(:p, "설명이 없습니다.", class: "text-gray-500") %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity -->
+      <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            활동 내역
+          </h3>
+        </div>
+        <div class="border-t border-gray-200">
+          <div class="px-4 py-5 sm:px-6">
+            <!-- Comments Section -->
+            <div class="flow-root">
+              <ul role="list" class="-mb-8">
+                <!-- Sample activity items -->
+                <li>
+                  <div class="relative pb-8">
+                    <span class="absolute top-5 left-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                    <div class="relative flex items-start space-x-3">
+                      <div class="relative">
+                        <div class="h-10 w-10 rounded-full bg-gray-400 flex items-center justify-center ring-8 ring-white">
+                          <svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <div>
+                          <div class="text-sm">
+                            <span class="font-medium text-gray-900">태스크 생성됨</span>
+                          </div>
+                          <p class="mt-0.5 text-sm text-gray-500">
+                            <%= @task.created_at.strftime("%Y-%m-%d %H:%M") %>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Comment Form -->
+            <div class="mt-6">
+              <%= form_with url: "#", local: true, class: "space-y-4" do |form| %>
+                <div>
+                  <%= form.text_area :comment,
+                                     rows: 3,
+                                     class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md",
+                                     placeholder: "댓글을 입력하세요..." %>
+                </div>
+                <div class="flex justify-end">
+                  <%= form.submit "댓글 작성",
+                                  class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="lg:col-span-1 space-y-6">
+      <!-- Task Details -->
+      <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            태스크 정보
+          </h3>
+        </div>
+        <div class="border-t border-gray-200">
+          <dl>
+            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt class="text-sm font-medium text-gray-500">상태</dt>
+              <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                       <%= @task.status == 'completed' ? 'bg-green-100 text-green-800' : 
+                           @task.status == 'in_progress' ? 'bg-blue-100 text-blue-800' : 
+                           'bg-gray-100 text-gray-800' %>">
+                  <%= @task.status.humanize %>
+                </span>
+              </dd>
+            </div>
+            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt class="text-sm font-medium text-gray-500">우선순위</dt>
+              <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                       <%= @task.priority == 'high' ? 'bg-red-100 text-red-800' :
+                           @task.priority == 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                           'bg-gray-100 text-gray-800' %>">
+                  <%= @task.priority.humanize %>
+                </span>
+              </dd>
+            </div>
+            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt class="text-sm font-medium text-gray-500">담당자</dt>
+              <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <%= @task.assignee&.name || "미할당" %>
+              </dd>
+            </div>
+            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt class="text-sm font-medium text-gray-500">마감일</dt>
+              <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <%= @task.due_date&.strftime("%Y-%m-%d") || "설정 안됨" %>
+              </dd>
+            </div>
+            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt class="text-sm font-medium text-gray-500">예상 시간</dt>
+              <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <%= @task.estimated_hours ? "#{@task.estimated_hours}시간" : "설정 안됨" %>
+              </dd>
+            </div>
+            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt class="text-sm font-medium text-gray-500">스프린트</dt>
+              <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <%= @task.sprint&.name || "없음" %>
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <% if @task.tags.present? %>
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">
+              태그
+            </h3>
+          </div>
+          <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+            <div class="flex flex-wrap gap-2">
+              <% @task.tags.split(',').each do |tag| %>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                  <%= tag.strip %>
+                </span>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Related Tasks -->
+      <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            관련 태스크
+          </h3>
+        </div>
+        <div class="border-t border-gray-200">
+          <div class="px-4 py-5 sm:px-6">
+            <p class="text-sm text-gray-500">관련 태스크가 없습니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
