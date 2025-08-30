@@ -1,0 +1,454 @@
+<% content_for :title, "Design System" %>
+
+<div class="min-h-screen bg-background">
+  <!-- Header -->
+  <header class="border-b border-border bg-card">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <h1 class="text-2xl font-bold text-foreground">Creatia Design System</h1>
+        
+        <!-- Theme Toggle -->
+        <%= render Ui::ThemeToggleComponent.new(show_text: true, variant: :outline) %>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Introduction -->
+    <div class="mb-12">
+      <%= render Ui::CardComponent.new(padding: :lg) do %>
+        <div class="text-center">
+          <h2 class="text-3xl font-bold text-foreground mb-4">Design System Overview</h2>
+          <p class="text-lg text-muted-foreground max-w-3xl mx-auto">
+            A comprehensive, accessible, and performant UI component library built for Rails 8 
+            with Tailwind CSS, ViewComponents, and Stimulus controllers.
+          </p>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Alert Container for Examples -->
+    <div id="alerts-container" class="mb-8"></div>
+
+    <!-- Color Palette -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-foreground mb-8">Color System</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Primary Colors -->
+        <div>
+          <h3 class="text-lg font-semibold text-foreground mb-4">Primary</h3>
+          <div class="space-y-2">
+            <% (1..9).each do |shade| %>
+              <% shade_value = shade == 1 ? 50 : shade * 100 %>
+              <div class="flex items-center">
+                <div class="w-12 h-8 rounded bg-primary-<%= shade_value %> mr-3"></div>
+                <span class="text-sm text-muted-foreground">primary-<%= shade_value %></span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <!-- Success Colors -->
+        <div>
+          <h3 class="text-lg font-semibold text-foreground mb-4">Success</h3>
+          <div class="space-y-2">
+            <% (1..9).each do |shade| %>
+              <% shade_value = shade == 1 ? 50 : shade * 100 %>
+              <div class="flex items-center">
+                <div class="w-12 h-8 rounded bg-success-<%= shade_value %> mr-3"></div>
+                <span class="text-sm text-muted-foreground">success-<%= shade_value %></span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <!-- Warning Colors -->
+        <div>
+          <h3 class="text-lg font-semibold text-foreground mb-4">Warning</h3>
+          <div class="space-y-2">
+            <% (1..9).each do |shade| %>
+              <% shade_value = shade == 1 ? 50 : shade * 100 %>
+              <div class="flex items-center">
+                <div class="w-12 h-8 rounded bg-warning-<%= shade_value %> mr-3"></div>
+                <span class="text-sm text-muted-foreground">warning-<%= shade_value %></span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Typography -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-foreground mb-8">Typography</h2>
+      
+      <%= render Ui::CardComponent.new do %>
+        <div class="space-y-6">
+          <div class="text-display-2xl">Display 2XL</div>
+          <div class="text-display-xl">Display XL</div>
+          <div class="text-display-lg">Display Large</div>
+          <div class="text-4xl font-bold">Heading 1</div>
+          <div class="text-3xl font-bold">Heading 2</div>
+          <div class="text-2xl font-bold">Heading 3</div>
+          <div class="text-xl font-semibold">Heading 4</div>
+          <div class="text-lg font-medium">Heading 5</div>
+          <div class="text-base">Body Text</div>
+          <div class="text-sm text-muted-foreground">Small Text</div>
+          <div class="text-xs text-muted-foreground">Extra Small Text</div>
+        </div>
+      <% end %>
+    </section>
+
+    <!-- Buttons -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-foreground mb-8">Buttons</h2>
+      
+      <%= render Ui::CardComponent.new do %>
+        <div class="space-y-8">
+          <!-- Button Variants -->
+          <div>
+            <h3 class="text-lg font-semibold text-foreground mb-4">Variants</h3>
+            <div class="flex flex-wrap gap-4">
+              <%= render Ui::ButtonComponent.new(variant: :default) { "Default" } %>
+              <%= render Ui::ButtonComponent.new(variant: :secondary) { "Secondary" } %>
+              <%= render Ui::ButtonComponent.new(variant: :accent) { "Accent" } %>
+              <%= render Ui::ButtonComponent.new(variant: :success) { "Success" } %>
+              <%= render Ui::ButtonComponent.new(variant: :warning) { "Warning" } %>
+              <%= render Ui::ButtonComponent.new(variant: :danger) { "Danger" } %>
+              <%= render Ui::ButtonComponent.new(variant: :outline) { "Outline" } %>
+              <%= render Ui::ButtonComponent.new(variant: :ghost) { "Ghost" } %>
+              <%= render Ui::ButtonComponent.new(variant: :link) { "Link" } %>
+            </div>
+          </div>
+
+          <!-- Button Sizes -->
+          <div>
+            <h3 class="text-lg font-semibold text-foreground mb-4">Sizes</h3>
+            <div class="flex flex-wrap items-center gap-4">
+              <%= render Ui::ButtonComponent.new(size: :sm) { "Small" } %>
+              <%= render Ui::ButtonComponent.new(size: :default) { "Default" } %>
+              <%= render Ui::ButtonComponent.new(size: :lg) { "Large" } %>
+              <%= render Ui::ButtonComponent.new(size: :xl) { "Extra Large" } %>
+            </div>
+          </div>
+
+          <!-- Buttons with Icons -->
+          <div>
+            <h3 class="text-lg font-semibold text-foreground mb-4">With Icons</h3>
+            <div class="flex flex-wrap gap-4">
+              <%= render Ui::ButtonComponent.new(icon: :plus) { "Add Item" } %>
+              <%= render Ui::ButtonComponent.new(icon: :edit, variant: :secondary) { "Edit" } %>
+              <%= render Ui::ButtonComponent.new(icon: :trash, variant: :danger) { "Delete" } %>
+              <%= render Ui::ButtonComponent.new(icon: :download, variant: :outline) { "Download" } %>
+              <%= render Ui::ButtonComponent.new(size: :icon, icon: :settings, variant: :ghost) %>
+            </div>
+          </div>
+
+          <!-- Button States -->
+          <div>
+            <h3 class="text-lg font-semibold text-foreground mb-4">States</h3>
+            <div class="flex flex-wrap gap-4">
+              <%= render Ui::ButtonComponent.new { "Default" } %>
+              <%= render Ui::ButtonComponent.new(loading: true) { "Loading" } %>
+              <%= render Ui::ButtonComponent.new(disabled: true) { "Disabled" } %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </section>
+
+    <!-- Form Inputs -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-foreground mb-8">Form Inputs</h2>
+      
+      <%= render Ui::CardComponent.new do %>
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <%= render Ui::InputComponent.new(
+              label: "Default Input",
+              placeholder: "Enter some text...",
+              name: "default_input"
+            ) %>
+
+            <%= render Ui::InputComponent.new(
+              label: "Email Address",
+              type: "email",
+              placeholder: "you@example.com",
+              prefix: :email,
+              name: "email_input"
+            ) %>
+
+            <%= render Ui::InputComponent.new(
+              label: "Search",
+              placeholder: "Search...",
+              prefix: :search,
+              name: "search_input"
+            ) %>
+
+            <%= render Ui::InputComponent.new(
+              label: "Required Field",
+              placeholder: "This field is required",
+              required: true,
+              name: "required_input"
+            ) %>
+
+            <%= render Ui::InputComponent.new(
+              label: "With Error",
+              placeholder: "Invalid input",
+              error: "This field contains an error",
+              name: "error_input"
+            ) %>
+
+            <%= render Ui::InputComponent.new(
+              label: "With Help Text",
+              placeholder: "Enter your username",
+              help_text: "Must be unique and at least 3 characters",
+              name: "help_input"
+            ) %>
+          </div>
+
+          <!-- Input Sizes -->
+          <div>
+            <h3 class="text-lg font-semibold text-foreground mb-4">Sizes</h3>
+            <div class="space-y-4">
+              <%= render Ui::InputComponent.new(
+                label: "Small Input",
+                size: :sm,
+                placeholder: "Small size",
+                name: "small_input"
+              ) %>
+              
+              <%= render Ui::InputComponent.new(
+                label: "Default Input",
+                size: :default,
+                placeholder: "Default size",
+                name: "default_input_size"
+              ) %>
+              
+              <%= render Ui::InputComponent.new(
+                label: "Large Input",
+                size: :lg,
+                placeholder: "Large size",
+                name: "large_input"
+              ) %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </section>
+
+    <!-- Alerts -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-foreground mb-8">Alerts</h2>
+      
+      <%= render Ui::CardComponent.new do %>
+        <div class="space-y-6">
+          <div>
+            <h3 class="text-lg font-semibold text-foreground mb-4">Alert Types</h3>
+            <div class="space-y-4">
+              <%= render AlertComponent.new(type: :info, title: "Information") do %>
+                This is an informational alert with some details.
+              <% end %>
+
+              <%= render AlertComponent.new(type: :success, title: "Success!") do %>
+                Your action was completed successfully.
+              <% end %>
+
+              <%= render AlertComponent.new(type: :warning, title: "Warning") do %>
+                Please review this warning message.
+              <% end %>
+
+              <%= render AlertComponent.new(type: :error, title: "Error") do %>
+                An error occurred while processing your request.
+              <% end %>
+
+              <%= render AlertComponent.new(type: :info, dismissable: true, title: "Dismissable Alert") do %>
+                This alert can be dismissed by clicking the close button.
+              <% end %>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-lg font-semibold text-foreground mb-4">Programmatic Alerts</h3>
+            <div class="flex flex-wrap gap-4">
+              <button onclick="AlertController.info('This is an info alert!', { autoHide: true })" 
+                      class="btn bg-primary text-white hover:bg-primary-600">
+                Show Info Alert
+              </button>
+              <button onclick="AlertController.success('Success! Operation completed.', { autoHide: true })" 
+                      class="btn bg-success text-white hover:bg-success-600">
+                Show Success Alert
+              </button>
+              <button onclick="AlertController.warning('Warning: Please check your input.', { autoHide: true })" 
+                      class="btn bg-warning text-white hover:bg-warning-600">
+                Show Warning Alert
+              </button>
+              <button onclick="AlertController.error('Error: Something went wrong.', { autoHide: true })" 
+                      class="btn bg-danger text-white hover:bg-danger-600">
+                Show Error Alert
+              </button>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </section>
+
+    <!-- Cards -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-foreground mb-8">Cards</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <%= render Ui::CardComponent.new(variant: :default) do %>
+          <h3 class="text-lg font-semibold text-foreground mb-2">Default Card</h3>
+          <p class="text-muted-foreground">This is a default card with standard styling and shadow.</p>
+        <% end %>
+
+        <%= render Ui::CardComponent.new(variant: :elevated, hover: true) do %>
+          <h3 class="text-lg font-semibold text-foreground mb-2">Elevated Card</h3>
+          <p class="text-muted-foreground">This card has elevated shadow and hover effects.</p>
+        <% end %>
+
+        <%= render Ui::CardComponent.new(variant: :outlined, clickable: true) do %>
+          <h3 class="text-lg font-semibold text-foreground mb-2">Outlined Card</h3>
+          <p class="text-muted-foreground">This card has a border instead of shadow and is clickable.</p>
+        <% end %>
+
+        <%= render Ui::CardComponent.new(variant: :ghost, padding: :lg) do %>
+          <h3 class="text-lg font-semibold text-foreground mb-2">Ghost Card</h3>
+          <p class="text-muted-foreground">This card has no background or shadow with large padding.</p>
+        <% end %>
+      </div>
+    </section>
+
+    <!-- Modals -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-foreground mb-8">Modals</h2>
+      
+      <%= render Ui::CardComponent.new do %>
+        <div class="space-y-4">
+          <p class="text-muted-foreground">Modals are implemented with Stimulus controllers for accessibility and keyboard navigation.</p>
+          
+          <div class="flex flex-wrap gap-4">
+            <button 
+              onclick="document.getElementById('example-modal').querySelector('[data-controller*=modal]').dispatchEvent(new CustomEvent('modal:open'))"
+              class="btn bg-primary text-white hover:bg-primary-600">
+              Open Modal
+            </button>
+          </div>
+        </div>
+      <% end %>
+      
+      <!-- Example Modal -->
+      <div id="example-modal">
+        <%= render Ui::ModalComponent.new(
+          title: "Example Modal",
+          closable: true,
+          backdrop_close: true
+        ) do %>
+          <p class="text-muted-foreground mb-4">
+            This is an example modal with proper accessibility features including focus management, 
+            keyboard navigation, and ARIA attributes.
+          </p>
+          
+          <p class="text-sm text-muted-foreground">
+            You can close this modal by clicking the X button, pressing Escape, 
+            or clicking outside the modal area.
+          </p>
+          
+          <% content_for :modal_footer do %>
+            <%= render Ui::ButtonComponent.new(variant: :outline, data: { action: "click->modal#close" }) { "Cancel" } %>
+            <%= render Ui::ButtonComponent.new { "Save Changes" } %>
+          <% end %>
+        <% end %>
+      </div>
+    </section>
+
+    <!-- Tooltips -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-foreground mb-8">Tooltips</h2>
+      
+      <%= render Ui::CardComponent.new do %>
+        <div class="space-y-6">
+          <p class="text-muted-foreground">Hover over or focus on the elements below to see tooltips:</p>
+          
+          <div class="flex flex-wrap gap-4">
+            <button 
+              class="btn bg-primary text-white hover:bg-primary-600"
+              data-controller="tooltip"
+              data-tooltip-text-value="This is a tooltip on top"
+              data-tooltip-placement-value="top">
+              Tooltip Top
+            </button>
+            
+            <button 
+              class="btn bg-secondary text-white hover:bg-secondary-600"
+              data-controller="tooltip"
+              data-tooltip-text-value="This is a tooltip on the right"
+              data-tooltip-placement-value="right">
+              Tooltip Right
+            </button>
+            
+            <button 
+              class="btn bg-accent text-white hover:bg-accent-600"
+              data-controller="tooltip"
+              data-tooltip-text-value="This is a tooltip on the bottom"
+              data-tooltip-placement-value="bottom">
+              Tooltip Bottom
+            </button>
+            
+            <button 
+              class="btn bg-success text-white hover:bg-success-600"
+              data-controller="tooltip"
+              data-tooltip-text-value="This is a tooltip on the left"
+              data-tooltip-placement-value="left">
+              Tooltip Left
+            </button>
+          </div>
+        </div>
+      <% end %>
+    </section>
+
+    <!-- Accessibility Features -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-foreground mb-8">Accessibility Features</h2>
+      
+      <%= render Ui::CardComponent.new do %>
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold text-foreground">WCAG 2.1 AA Compliance</h3>
+          
+          <ul class="list-disc list-inside space-y-2 text-muted-foreground">
+            <li>Proper color contrast ratios for all color combinations</li>
+            <li>Keyboard navigation support for all interactive elements</li>
+            <li>Screen reader compatibility with proper ARIA attributes</li>
+            <li>Focus management for modals and complex components</li>
+            <li>Semantic HTML structure throughout all components</li>
+            <li>Alternative text for decorative and informative icons</li>
+            <li>Consistent focus indicators that meet contrast requirements</li>
+          </ul>
+          
+          <div class="mt-6">
+            <h4 class="font-semibold text-foreground mb-2">Keyboard Shortcuts</h4>
+            <ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+              <li><kbd class="px-2 py-1 bg-muted rounded">Tab</kbd> - Navigate forward through focusable elements</li>
+              <li><kbd class="px-2 py-1 bg-muted rounded">Shift+Tab</kbd> - Navigate backward through focusable elements</li>
+              <li><kbd class="px-2 py-1 bg-muted rounded">Escape</kbd> - Close modals, tooltips, and dropdowns</li>
+              <li><kbd class="px-2 py-1 bg-muted rounded">Enter/Space</kbd> - Activate buttons and interactive elements</li>
+              <li><kbd class="px-2 py-1 bg-muted rounded">Arrow Keys</kbd> - Navigate within dropdown menus</li>
+            </ul>
+          </div>
+        </div>
+      <% end %>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-border pt-8">
+      <%= render Ui::CardComponent.new(variant: :ghost) do %>
+        <div class="text-center text-muted-foreground">
+          <p>Built with Rails 8, Tailwind CSS, ViewComponent, and Stimulus</p>
+          <p class="text-sm mt-2">Designed for accessibility, performance, and maintainability</p>
+        </div>
+      <% end %>
+    </footer>
+  </div>
+</div>

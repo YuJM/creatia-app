@@ -1,14 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html class="h-full">
   <head>
     <%= render 'layouts/head' %>
   </head>
 
-  <body class="min-h-screen" id="layout-application" data-layout="application">
-    <%= render 'layouts/flash_messages' %>
-    
-    <main class="container mx-auto mt-28 px-5 flex">
-      <%= yield %>
-    </main>
+  <body class="h-full bg-background text-foreground antialiased" id="layout-application" data-layout="application">
+    <div class="min-h-full">
+      <!-- Navigation -->
+      <%= render 'layouts/navbar' if user_signed_in? %>
+      
+      <!-- Flash messages -->
+      <div class="relative z-40">
+        <%= render 'layouts/flash_messages' %>
+      </div>
+      
+      <!-- Main content -->
+      <main class="<%= user_signed_in? ? 'lg:pl-72' : '' %>">
+        <div class="px-4 py-6 sm:px-6 lg:px-8">
+          <%= yield %>
+        </div>
+      </main>
+    </div>
   </body>
 </html>

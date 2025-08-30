@@ -1,43 +1,125 @@
-<div class="container mx-auto px-4 py-8 max-w-2xl">
-  <h1 class="text-3xl font-bold mb-8">New Organization</h1>
-
-  <%= form_with(model: @organization, local: true) do |form| %>
-    <% if @organization.errors.any? %>
-      <%= render AlertComponent.new(type: :error, title: "Please fix the following errors:") do %>
-        <ul class="list-disc list-inside">
-          <% @organization.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
-          <% end %>
-        </ul>
+<div class="min-h-screen bg-background">
+  <div class="container mx-auto px-6 py-12 max-w-3xl">
+    <!-- Back Link -->
+    <div class="mb-8">
+      <%= link_to web_organizations_path, 
+          class: "inline-flex items-center text-muted-foreground hover:text-foreground transition-colors" do %>
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Back to Organizations
       <% end %>
-    <% end %>
-
-    <div class="bg-white rounded-lg shadow p-6">
-      <div class="mb-6">
-        <%= form.label :name, class: "block text-sm font-medium text-gray-700 mb-2" %>
-        <%= form.text_field :name, class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500", placeholder: "Enter organization name" %>
-      </div>
-
-      <div class="mb-6">
-        <%= form.label :subdomain, class: "block text-sm font-medium text-gray-700 mb-2" %>
-        <%= form.text_field :subdomain, class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500", placeholder: "subdomain" %>
-        <p class="mt-1 text-sm text-gray-500">This will be your organization's URL: <strong>subdomain</strong>.creatia.local</p>
-      </div>
-
-      <div class="mb-6">
-        <%= form.label :description, class: "block text-sm font-medium text-gray-700 mb-2" %>
-        <%= form.text_area :description, rows: 4, class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500", placeholder: "Brief description of your organization" %>
-      </div>
-
-      <div class="mb-6">
-        <%= form.label :plan, class: "block text-sm font-medium text-gray-700 mb-2" %>
-        <%= form.select :plan, options_for_select([['Free', 'free'], ['Team', 'team'], ['Enterprise', 'enterprise']], @organization.plan || 'free'), {}, class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500" %>
-      </div>
-
-      <div class="flex justify-end space-x-4">
-        <%= link_to "Cancel", web_organizations_path, class: "px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300" %>
-        <%= form.submit "Create Organization", class: "px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" %>
-      </div>
     </div>
-  <% end %>
+
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold text-foreground tracking-tight">Create Organization</h1>
+      <p class="mt-2 text-muted-foreground">Set up a new workspace for your team</p>
+    </div>
+
+    <%= form_with(model: @organization, local: true) do |form| %>
+      <% if @organization.errors.any? %>
+        <div class="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <div class="flex">
+            <svg class="w-5 h-5 text-destructive mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <div>
+              <h3 class="text-sm font-medium text-destructive">Please fix the following errors:</h3>
+              <ul class="mt-2 text-sm text-destructive/90 space-y-1">
+                <% @organization.errors.full_messages.each do |message| %>
+                  <li>• <%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="bg-card border border-border rounded-xl shadow-sm">
+        <div class="p-8">
+          <!-- Organization Name -->
+          <div class="mb-6">
+            <%= form.label :name, class: "block text-sm font-medium text-foreground mb-2" %>
+            <%= form.text_field :name, 
+                class: "w-full px-4 py-3 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all", 
+                placeholder: "Enter organization name" %>
+          </div>
+
+          <!-- Subdomain -->
+          <div class="mb-6">
+            <%= form.label :subdomain, class: "block text-sm font-medium text-foreground mb-2" %>
+            <div class="relative">
+              <%= form.text_field :subdomain, 
+                  class: "w-full px-4 py-3 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all", 
+                  placeholder: "your-company" %>
+              <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                <span class="text-muted-foreground">.creatia.local</span>
+              </div>
+            </div>
+            <p class="mt-2 text-sm text-muted-foreground">
+              This will be your organization's unique URL identifier
+            </p>
+          </div>
+
+          <!-- Description -->
+          <div class="mb-6">
+            <%= form.label :description, class: "block text-sm font-medium text-foreground mb-2" %>
+            <%= form.text_area :description, 
+                rows: 4, 
+                class: "w-full px-4 py-3 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none", 
+                placeholder: "Tell us about your organization..." %>
+          </div>
+
+          <!-- Plan Selection -->
+          <div class="mb-8">
+            <%= form.label :plan, class: "block text-sm font-medium text-foreground mb-3" %>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <% [
+                ['free', 'Free', 'Perfect for small teams', '0'],
+                ['team', 'Team', 'For growing organizations', '29'],
+                ['enterprise', 'Enterprise', 'Advanced features & support', 'Custom']
+              ].each do |value, label, description, price| %>
+                <label class="relative flex cursor-pointer">
+                  <%= form.radio_button :plan, value, 
+                      class: "peer sr-only",
+                      checked: (@organization.plan || 'free') == value %>
+                  <div class="w-full p-4 bg-background border-2 rounded-lg transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:border-primary/50">
+                    <div class="flex items-start justify-between mb-2">
+                      <div>
+                        <h4 class="font-medium text-foreground"><%= label %></h4>
+                        <p class="text-xs text-muted-foreground mt-1"><%= description %></p>
+                      </div>
+                      <div class="peer-checked:block hidden">
+                        <svg class="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="text-lg font-semibold text-foreground">
+                      <% if price == 'Custom' %>
+                        <%= price %>
+                      <% else %>
+                        $<%= price %><span class="text-sm font-normal text-muted-foreground">/mo</span>
+                      <% end %>
+                    </div>
+                  </div>
+                </label>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="px-8 py-6 bg-muted/30 border-t border-border rounded-b-xl">
+          <div class="flex justify-end space-x-4">
+            <%= link_to "Cancel", web_organizations_path, 
+                class: "px-6 py-3 text-muted-foreground bg-background border border-border rounded-lg hover:bg-muted/50 transition-all" %>
+            <%= form.submit "Create Organization", 
+                class: "px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all shadow-sm hover:shadow-md active:scale-95 cursor-pointer" %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
 </div>

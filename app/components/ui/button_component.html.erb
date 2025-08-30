@@ -1,0 +1,33 @@
+<% if html_options[:href] %>
+  <%= link_to html_options[:href], button_attributes do %>
+    <% if loading %>
+      <%= loading_spinner %>
+    <% elsif show_icon? && icon_left? %>
+      <%= icon_svg %>
+    <% end %>
+    
+    <% if content.present? %>
+      <%= content %>
+    <% end %>
+    
+    <% if show_icon? && !icon_left? %>
+      <%= icon_svg %>
+    <% end %>
+  <% end %>
+<% else %>
+  <button <%= button_attributes.map { |k, v| v == true ? k : "#{k}=\"#{v}\"" }.join(' ').html_safe %>>
+    <% if loading %>
+      <%= loading_spinner %>
+    <% elsif show_icon? && icon_left? %>
+      <%= icon_svg %>
+    <% end %>
+    
+    <% if content.present? %>
+      <%= content %>
+    <% end %>
+    
+    <% if show_icon? && !icon_left? %>
+      <%= icon_svg %>
+    <% end %>
+  </button>
+<% end %>

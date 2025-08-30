@@ -1,0 +1,36 @@
+<div <%= modal_attributes.map { |k, v| v == true ? k : "#{k}=\"#{v}\"" }.join(' ').html_safe %>>
+  <div class="<%= content_classes %>">
+    <% if render_header? %>
+      <div class="<%= header_classes %>">
+        <% if title.present? %>
+          <h3 id="<%= title_id %>" class="<%= title_classes %>">
+            <%= title %>
+          </h3>
+        <% end %>
+        
+        <% if closable %>
+          <button
+            type="button"
+            class="<%= close_button_classes %>"
+            data-action="click->modal#close"
+            aria-label="Close modal"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="<%= body_classes %>">
+      <%= content %>
+    </div>
+
+    <% if render_footer? %>
+      <div class="<%= footer_classes %>">
+        <%= content_for :modal_footer %>
+      </div>
+    <% end %>
+  </div>
+</div>

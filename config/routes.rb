@@ -53,6 +53,9 @@ Rails.application.routes.draw do
     
     get "pages/home"
     
+    # Design System Showcase (development only)
+    get "design_system", to: "design_system#index" if Rails.env.development?
+    
     # 조직 관리 (전역) - Web 네임스페이스
     namespace :web do
       resources :organizations, only: [:index, :new, :create, :show, :update, :destroy] do

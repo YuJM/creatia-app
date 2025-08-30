@@ -1,0 +1,3 @@
+<div <%= card_attributes.map { |k, v| v == true ? k : "#{k}=\"#{v}\"" }.join(' ').html_safe %>>
+  <%= content %>
+</div>

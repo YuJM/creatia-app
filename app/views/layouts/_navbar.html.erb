@@ -1,0 +1,224 @@
+<!-- Desktop Sidebar -->
+<div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+  <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-card border-r border-border px-6 pb-4">
+    <!-- Logo and Organization Info -->
+    <div class="flex h-16 shrink-0 items-center">
+      <%= link_to root_path, class: "flex items-center gap-3" do %>
+        <div class="h-10 w-10 bg-gradient-to-r from-primary to-accent rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
+          <span class="text-white text-xl font-bold">C</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-lg font-semibold text-foreground">Creatia</span>
+          <% if ActsAsTenant.current_tenant %>
+            <span class="text-xs text-muted-foreground truncate max-w-32">
+              <%= ActsAsTenant.current_tenant.name %>
+            </span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex flex-1 flex-col">
+      <ul role="list" class="flex flex-1 flex-col gap-y-7">
+        <li>
+          <ul role="list" class="-mx-2 space-y-1">
+            <!-- Dashboard -->
+            <li>
+              <%= link_to dashboard_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(dashboard_path)}" do %>
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h2a2 2 0 012 2v6H8V5z"></path>
+                </svg>
+                Dashboard
+              <% end %>
+            </li>
+
+            <!-- Tasks -->
+            <li>
+              <%= link_to web_tasks_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(web_tasks_path)}" do %>
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+                Tasks
+                <% if defined?(@tasks_count) && @tasks_count > 0 %>
+                  <span class="ml-auto bg-primary/10 text-primary rounded-full px-2 py-1 text-xs font-medium">
+                    <%= @tasks_count %>
+                  </span>
+                <% end %>
+              <% end %>
+            </li>
+
+            <!-- Organizations -->
+            <li>
+              <%= link_to web_organizations_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(web_organizations_path)}" do %>
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                Organizations
+              <% end %>
+            </li>
+
+            <!-- Members (if current organization) -->
+            <% if ActsAsTenant.current_tenant %>
+              <li>
+                <%= link_to organization_organization_memberships_path(ActsAsTenant.current_tenant), class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors" do %>
+                  <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                  </svg>
+                  Members
+                <% end %>
+              </li>
+            <% end %>
+
+            <!-- Permission Audit Logs -->
+            <li>
+              <%= link_to web_permission_audit_logs_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors" do %>
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Audit Logs
+              <% end %>
+            </li>
+          </ul>
+        </li>
+
+        <!-- Settings Section -->
+        <li class="mt-auto">
+          <div class="text-xs font-semibold leading-6 text-muted-foreground mb-2">Settings</div>
+          <ul role="list" class="-mx-2 space-y-1">
+            <li>
+              <%= link_to settings_organization_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors" do %>
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Organization
+              <% end %>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- User Profile -->
+    <div class="flex items-center gap-x-4 px-2 py-3 border-t border-border">
+      <div class="h-8 w-8 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center">
+        <span class="text-xs font-medium text-white">
+          <%= current_user.email.first.upcase %>
+        </span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-medium text-foreground truncate">
+          <%= current_user.email %>
+        </div>
+      </div>
+      
+      <!-- Theme Toggle -->
+      <%= render Ui::ThemeToggleComponent.new %>
+      
+      <!-- User Menu -->
+      <div class="relative" data-controller="dropdown">
+        <button type="button" 
+                class="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                data-action="click->dropdown#toggle"
+                aria-expanded="false"
+                aria-haspopup="true">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+          </svg>
+        </button>
+
+        <div class="hidden absolute right-0 bottom-12 z-10 mt-2 w-48 origin-bottom-right rounded-md bg-card shadow-hard border border-border py-1"
+             data-dropdown-target="menu">
+          <%= link_to edit_main_user_user_registration_path, class: "block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors" do %>
+            <svg class="h-4 w-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            Profile Settings
+          <% end %>
+          <%= button_to destroy_main_user_user_session_path, 
+              method: :delete, 
+              data: { turbo: false },
+              class: "block w-full text-left px-4 py-2 text-sm text-destructive hover:bg-muted transition-colors" do %>
+            <svg class="h-4 w-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+            Sign out
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile menu -->
+<div class="lg:hidden">
+  <!-- Mobile menu button -->
+  <div class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card px-4 shadow-sm sm:gap-x-6 sm:px-6">
+    <button type="button" class="-m-2.5 p-2.5 text-muted-foreground lg:hidden" data-controller="mobile-menu" data-action="click->mobile-menu#toggle">
+      <span class="sr-only">Open sidebar</span>
+      <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+    </button>
+
+    <!-- Logo for mobile -->
+    <div class="flex-1 flex items-center gap-x-3">
+      <div class="h-8 w-8 bg-gradient-to-r from-primary to-accent rounded-lg flex items-center justify-center shadow">
+        <span class="text-white text-lg font-bold">C</span>
+      </div>
+      <div>
+        <span class="text-lg font-semibold text-foreground">Creatia</span>
+      </div>
+    </div>
+
+    <!-- User avatar -->
+    <div class="h-8 w-8 rounded-full bg-gradient-to-r from-primary-400 to-accent-400 flex items-center justify-center">
+      <span class="text-sm font-medium text-white">
+        <%= current_user.email.first.upcase %>
+      </span>
+    </div>
+  </div>
+
+  <!-- Mobile menu overlay -->
+  <div class="relative z-50 lg:hidden hidden" data-mobile-menu-target="overlay" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-background/80 backdrop-blur-sm"></div>
+    <div class="fixed inset-0 flex">
+      <div class="relative mr-16 flex w-full max-w-xs flex-1">
+        <div class="absolute left-full top-0 flex w-16 justify-center pt-5">
+          <button type="button" class="-m-2.5 p-2.5" data-action="click->mobile-menu#close">
+            <span class="sr-only">Close sidebar</span>
+            <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-card px-6 pb-4">
+          <!-- Same content as desktop sidebar -->
+          <div class="flex h-16 shrink-0 items-center">
+            <%= link_to root_path, class: "flex items-center gap-3" do %>
+              <div class="h-10 w-10 bg-gradient-to-r from-primary-500 to-accent-500 rounded-xl flex items-center justify-center shadow-lg">
+                <span class="text-white text-xl font-bold">C</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-lg font-semibold text-foreground">Creatia</span>
+                <% if ActsAsTenant.current_tenant %>
+                  <span class="text-xs text-muted-foreground truncate max-w-32">
+                    <%= ActsAsTenant.current_tenant.name %>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+
+          <nav class="flex flex-1 flex-col">
+            <!-- Same navigation content as desktop -->
+            <!-- (Include the same navigation structure here) -->
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

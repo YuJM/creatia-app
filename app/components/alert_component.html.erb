@@ -1,14 +1,38 @@
-<div class="<%= container_class %> relative">
-  <% if title %>
-    <h4 class="<%= text_class %> font-semibold mb-2"><%= title %></h4>
-  <% end %>
-  <p class="<%= text_class %>">
-    <%= content %>
-  </p>
-  <% if dismissable %>
-    <button type="button" class="absolute top-2 right-2 <%= text_class %> hover:opacity-75" 
-            onclick="this.parentElement.style.display='none'">
-      <span aria-hidden="true">&times;</span>
-    </button>
-  <% end %>
+<div class="<%= container_classes %>" role="alert">
+  <div class="flex">
+    <% if show_icon? %>
+      <div class="<%= icon_classes %>">
+        <svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<%= icon_path %>"></path>
+        </svg>
+      </div>
+    <% end %>
+    
+    <div class="<%= show_icon? ? 'ml-3' : '' %> flex-1 min-w-0">
+      <% if title.present? %>
+        <h3 class="<%= title_classes %>">
+          <%= title %>
+        </h3>
+      <% end %>
+      
+      <div class="<%= title.present? ? content_classes : '' %>">
+        <%= content %>
+      </div>
+    </div>
+    
+    <% if dismissable %>
+      <div class="ml-auto pl-3">
+        <button
+          type="button"
+          class="<%= dismiss_button_classes %>"
+          data-action="click->alert#dismiss"
+          aria-label="Dismiss alert"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    <% end %>
+  </div>
 </div>
