@@ -16,12 +16,81 @@
 
   <!-- Task Metrics -->
   <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-4">
-    <%= render TaskMetricsCardComponent.new(
-      total_tasks: @tasks.count,
-      completed_tasks: @tasks.where(status: 'completed').count,
-      in_progress_tasks: @tasks.where(status: 'in_progress').count,
-      overdue_tasks: @tasks.where('due_date < ? AND status != ?', Date.current, 'completed').count
-    ) %>
+    <!-- Total Tasks -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">전체 작업</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @tasks.count %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completed Tasks -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <svg class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">완료</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @tasks.where(status: 'completed').count %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- In Progress Tasks -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <svg class="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">진행 중</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @tasks.where(status: 'in_progress').count %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overdue Tasks -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <svg class="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">지연</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @tasks.where('due_date < ? AND status != ?', Date.current, 'completed').count %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Filters -->
