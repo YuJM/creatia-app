@@ -61,3 +61,7 @@
 # MongoDB local data volumes
 /docker/mongodb/data/
 /docker/mongodb/backups/
+
+res/
+.serena/
+.playwright-mcp/

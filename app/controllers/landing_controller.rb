@@ -7,5 +7,6 @@ class LandingController < ApplicationController
   def index
     # user_signed_in?가 있으면 대시보드로 리다이렉트
     # 없으면 랜딩 페이지 표시
+    render 'index_short'
   end
 end

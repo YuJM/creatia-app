@@ -1,0 +1,158 @@
+<!-- Modern Ultra-Clean Landing Page - 2025 Premium Design -->
+
+<!-- Hero Section - Maximum Impact with Minimal Elements -->
+<section class="relative min-h-[100dvh] flex items-center justify-center overflow-hidden">
+  <!-- Dynamic Background -->
+  <div class="absolute inset-0">
+    <div class="absolute inset-0 bg-gradient-to-br from-background via-background to-background"></div>
+    <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-br from-primary/5 via-accent/5 to-transparent rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-accent/5 via-primary/5 to-transparent rounded-full blur-3xl"></div>
+  </div>
+  
+  <div class="relative z-10 max-w-7xl mx-auto px-8 sm:px-12 lg:px-16 text-center">
+    <!-- Badge -->
+    <div class="inline-flex items-center gap-4 px-6 py-3 mb-12 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full border border-primary/20">
+      <span class="flex h-2 w-2 relative">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+      </span>
+      <span class="text-base font-medium text-foreground">10,000+ 팀이 사용 중</span>
+    </div>
+    
+    <!-- Main Headline -->
+    <h1 class="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight mb-8">
+      <span class="block text-foreground">일의 미래를</span>
+      <span class="block mt-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-300% animate-gradient">
+        다시 정의하다
+      </span>
+    </h1>
+    
+    <!-- Subheadline -->
+    <p class="text-xl sm:text-2xl lg:text-3xl text-muted-foreground mb-16 max-w-3xl mx-auto leading-relaxed font-light">
+      AI와 함께 더 빠르게, 더 똑똑하게 일하세요
+    </p>
+    
+    <!-- CTA Buttons -->
+    <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
+      <%= link_to new_main_user_user_registration_path,
+          class: "px-10 py-5 bg-primary text-primary-foreground text-lg font-semibold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-primary/90",
+          data: { turbo: false } do %>
+        무료 시작하기 →
+      <% end %>
+      
+      <button class="px-10 py-5 text-lg font-medium text-foreground/80 hover:text-foreground transition-colors">
+        데모 영상 보기
+      </button>
+    </div>
+  </div>
+  
+  <!-- Floating Elements -->
+  <div class="absolute top-20 left-20 w-4 h-4 bg-primary rounded-full animate-pulse"></div>
+  <div class="absolute bottom-20 right-20 w-6 h-6 bg-accent rounded-full animate-pulse animation-delay-1000"></div>
+  <div class="absolute top-1/3 right-1/4 w-3 h-3 bg-success rounded-full animate-pulse animation-delay-2000"></div>
+</section>
+
+
+<!-- Features - Bento Grid Style -->
+<section class="py-32">
+  <div class="max-w-7xl mx-auto px-8 sm:px-12 lg:px-16">
+    <!-- Section Header -->
+    <div class="text-center mb-20">
+      <h2 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
+        핵심 기능
+      </h2>
+      <p class="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto">
+        복잡한 업무를 단순하게
+      </p>
+    </div>
+    
+    <!-- Bento Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <!-- Large Feature -->
+      <div class="lg:col-span-2 lg:row-span-2 group relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-10 lg:p-12 hover:from-primary/15 hover:to-primary/5 transition-all duration-500">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+        <div class="relative z-10">
+          <div class="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center mb-8">
+            <span class="text-3xl">✨</span>
+          </div>
+          <h3 class="text-2xl lg:text-3xl font-bold text-foreground mb-4">AI 자동화</h3>
+          <p class="text-lg text-muted-foreground leading-relaxed">
+            반복 작업을 학습하고 자동으로 처리합니다. 
+            당신은 더 중요한 일에 집중하세요.
+          </p>
+        </div>
+      </div>
+      
+      <!-- Medium Feature 1 -->
+      <div class="lg:col-span-2 group relative overflow-hidden rounded-3xl bg-gradient-to-br from-accent/10 via-accent/5 to-transparent p-10 hover:from-accent/15 hover:to-accent/5 transition-all duration-500">
+        <div class="w-14 h-14 bg-accent/20 rounded-2xl flex items-center justify-center mb-6">
+          <span class="text-2xl">📊</span>
+        </div>
+        <h3 class="text-xl lg:text-2xl font-bold text-foreground mb-3">실시간 분석</h3>
+        <p class="text-base lg:text-lg text-muted-foreground">팀 성과를 한눈에 파악하세요</p>
+      </div>
+      
+      <!-- Small Feature 1 -->
+      <div class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-success/10 via-success/5 to-transparent p-10 hover:from-success/15 hover:to-success/5 transition-all duration-500">
+        <div class="w-14 h-14 bg-success/20 rounded-2xl flex items-center justify-center mb-6">
+          <span class="text-2xl">🔒</span>
+        </div>
+        <h3 class="text-xl lg:text-2xl font-bold text-foreground mb-3">보안</h3>
+        <p class="text-base lg:text-lg text-muted-foreground">엔터프라이즈급 보안</p>
+      </div>
+      
+      <!-- Small Feature 2 -->
+      <div class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-warning/10 via-warning/5 to-transparent p-10 hover:from-warning/15 hover:to-warning/5 transition-all duration-500">
+        <div class="w-14 h-14 bg-warning/20 rounded-2xl flex items-center justify-center mb-6">
+          <span class="text-2xl">⚡</span>
+        </div>
+        <h3 class="text-xl lg:text-2xl font-bold text-foreground mb-3">빠른 속도</h3>
+        <p class="text-base lg:text-lg text-muted-foreground">즉각적인 응답과 처리</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="py-12 border-t border-border/10">
+  <div class="max-w-7xl mx-auto px-8 text-center">
+    <p class="text-base text-muted-foreground">
+      © 2024 Creatia · 
+      <a href="#" class="hover:text-foreground transition-colors">Privacy</a> · 
+      <a href="#" class="hover:text-foreground transition-colors">Terms</a>
+    </p>
+  </div>
+</footer>
+
+<style>
+  @keyframes gradient {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  
+  .animate-gradient {
+    background-size: 300% 300%;
+    animation: gradient 5s ease infinite;
+  }
+  
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animation-delay-1000 {
+    animation-delay: 1000ms;
+  }
+  
+  .animation-delay-2000 {
+    animation-delay: 2000ms;
+  }
+  
+  .bg-300\% {
+    background-size: 300% 300%;
+  }
+</style>
