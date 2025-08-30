@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class OrganizationsController < ApplicationController
+  layout 'application'
   before_action :authenticate_user!
   before_action :set_organization, only: [:show, :update, :destroy, :switch]
   

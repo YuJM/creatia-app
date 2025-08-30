@@ -144,7 +144,7 @@ export class AuthHelper {
       await page.goto('http://auth.creatia.local:3000/login');
       
       // 로그인 API 호출 (AuthUser 네임스페이스 사용)
-      const response = await page.request.post('http://auth.creatia.local:3000/users/sign_in', {
+      const response = await page.request.post('http://auth.creatia.local:3000/login', {
         data: {
           'auth_user_user[email]': email,
           'auth_user_user[password]': password,

@@ -1,4 +1,8 @@
 Rails.application.routes.draw do
+  # 테스트 환경 전용 라우트
+  if Rails.env.development? || Rails.env.test?
+    get 'test_auth/login', to: 'test_auth#login'
+  end
   # Health check and system routes (모든 서브도메인에서 접근 가능)
   get "up" => "rails/health#show", as: :rails_health_check
   
