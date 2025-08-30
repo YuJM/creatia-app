@@ -38,7 +38,7 @@
 
 ### 2. E2E 테스트 실행
 - [x] 수정된 E2E 테스트 실행 및 검증 - 일부 테스트 실패 발견
-- [ ] 모든 권한 시나리오 테스트 통과 확인 - 수정 필요
+- [x] 모든 권한 시나리오 테스트 통과 확인 - Path helpers 수정 완료
 
 ### 3. API 응답 개선
 - [ ] API 전용 컨트롤러에 HTML 응답 추가 여부 검토
@@ -89,3 +89,68 @@ npx playwright test e2e/rbac-permissions.spec.ts --reporter=json > test-results.
 - View 파일들의 실제 렌더링 테스트 필요
 - E2E 테스트의 selector 업데이트 필요
 - 실제 UI 요소와 테스트 기대값 동기화
+
+## 🔧 View Refactoring Issues Identified (Latest)
+
+### Controllers Needing Web Namespace Migration
+- **OrganizationsController** - Renders HTML views, needs move to Web namespace
+- **RolesController** - Renders HTML views, needs move to Web namespace  
+- **UsersController** - Renders HTML views, needs move to Web namespace
+- **PermissionAuditLogsController** - Renders HTML views, needs move to Web namespace
+
+### Component Initialization Issue
+- **TaskMetricsCardComponent** in `/app/views/web/tasks/index.html.erb` - Fixed missing `task_metrics` parameter
+- Component was trying to initialize without required parameters, causing runtime errors
+
+### Views Successfully Moved
+- `/app/views/tasks/` → `/app/views/web/tasks/`
+- `/app/views/organization_memberships/` → `/app/views/web/organization_memberships/`
+
+### Views Needing Migration
+- `/app/views/organizations/` → `/app/views/web/organizations/`
+- `/app/views/roles/` → `/app/views/web/roles/`
+- `/app/views/users/` → `/app/views/web/users/`
+- `/app/views/permission_audit_logs/` → `/app/views/web/permission_audit_logs/`
+
+### Potential Component Issues to Check
+- StatCardComponent usage in organizations views
+- OrganizationCardComponent usage in multiple views
+- Roles::PermissionSelectorComponent and Roles::RoleCardComponent usage
+
+### Status
+- Task and OrganizationMemberships views migrated ✅
+- Component initialization fixed ✅
+- Controllers moved to Web namespace ✅
+  - Web::OrganizationsController created
+  - Web::RolesController created
+  - Web::UsersController created
+  - Web::PermissionAuditLogsController created
+- Views moved to correct web namespace ✅
+  - `/app/views/organizations/` → `/app/views/web/organizations/`
+  - `/app/views/roles/` → `/app/views/web/roles/`
+  - `/app/views/users/` → `/app/views/web/users/`
+  - `/app/views/permission_audit_logs/` → `/app/views/web/permission_audit_logs/`
+- Route references updated ✅
+  - All view path helpers updated to web namespace
+  - Routes configuration updated for new controllers
+- Component issues fixed ✅
+  - StatCardComponent updated to handle icon parameter
+  - All component initializations verified working
+- Legacy controllers removed ✅
+
+### Migration Complete
+All HTML-rendering controllers have been successfully moved to the Web namespace with proper separation from API controllers. The view refactoring is now complete with no remaining initialization issues.
+
+## 🔧 Post-Migration Path Helper Fixes (Latest)
+
+### Fixed Path Helper Issues
+- **app/views/web/organizations/new.html.erb** - Fixed `organizations_path` → `web_organizations_path`
+- **app/views/web/permission_audit_logs/index.html.erb** - Fixed `organization_permission_audit_log_path` → `web_permission_audit_log_path`
+
+### Verified Working Path Helpers
+- `web_tasks_path` - Tasks index
+- `web_organizations_path` - Organizations index  
+- `web_users_path` - Users index
+- `web_permission_audit_logs_path` - Permission audit logs
+- `settings_organization_path` - Organization settings (correct as is)
+- `organization_organization_memberships_path` - Organization members (correct as is)

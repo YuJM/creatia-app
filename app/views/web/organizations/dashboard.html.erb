@@ -9,7 +9,7 @@
         title: "Tasks",
         value: Task.count,
         color: "blue",
-        link: tasks_path,
+        link: web_tasks_path,
         link_text: "View Tasks"
       ) %>
       
@@ -31,7 +31,7 @@
   <% else %>
     <%= render AlertComponent.new(type: :warning) do %>
       <p>No organization selected. Please select an organization to continue.</p>
-      <%= link_to "Select Organization", organizations_path, 
+      <%= link_to "Select Organization", web_organizations_path, 
           class: "bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4 inline-block" %>
     <% end %>
   <% end %>

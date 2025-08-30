@@ -53,15 +53,17 @@ Rails.application.routes.draw do
     
     get "pages/home"
     
-    # 조직 관리 (전역)
-    resources :organizations, only: [:index, :new, :create, :show, :update, :destroy] do
-      member do
-        post :switch
+    # 조직 관리 (전역) - Web 네임스페이스
+    namespace :web do
+      resources :organizations, only: [:index, :new, :create, :show, :update, :destroy] do
+        member do
+          post :switch
+        end
       end
+      
+      # 사용자 관리 (전역)
+      resources :users, only: [:index, :show, :edit, :update, :destroy]
     end
-    
-    # 사용자 관리 (전역)
-    resources :users, only: [:index, :show, :edit, :update, :destroy]
     
     # 메인 랜딩 페이지
     root "landing#index"
@@ -122,8 +124,8 @@ Rails.application.routes.draw do
     end
     
     # 조직 대시보드
-    root "organizations#dashboard", as: :tenant_root
-    get 'dashboard', to: 'organizations#dashboard'
+    root "web/organizations#dashboard", as: :tenant_root
+    get 'dashboard', to: 'web/organizations#dashboard'
     
     # 현재 조직 정보
     resource :organization, only: [:show, :edit, :update] do
@@ -137,6 +139,11 @@ Rails.application.routes.draw do
         end
       end
       
+      # 이제 Web 네임스페이스로 이동
+    end
+    
+    # Web 인터페이스 라우트 확장
+    namespace :web do
       resources :roles do
         member do
           get :permissions

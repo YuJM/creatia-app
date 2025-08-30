@@ -2,7 +2,7 @@
   <div class="flex justify-between items-center mb-8">
     <h1 class="text-3xl font-bold">Organizations</h1>
     <% if policy(Organization).create? %>
-      <%= link_to "New Organization", new_organization_path, class: "bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" %>
+      <%= link_to "New Organization", new_web_organization_path, class: "bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" %>
     <% end %>
   </div>
 
@@ -10,7 +10,7 @@
     <% @organizations.each do |org| %>
       <%= render OrganizationCardComponent.new(
         organization: org,
-        action_path: switch_organization_path(org),
+        action_path: switch_web_organization_path(org),
         action_method: :post
       ) %>
     <% end %>
@@ -20,7 +20,7 @@
         <%= render AlertComponent.new(type: :info) do %>
           <div class="text-center py-8">
             <p class="mb-4">No organizations found.</p>
-            <%= link_to "Create your first organization", new_organization_path, 
+            <%= link_to "Create your first organization", new_web_organization_path, 
                 class: "bg-green-500 text-white px-6 py-3 rounded hover:bg-green-600" %>
           </div>
         <% end %>

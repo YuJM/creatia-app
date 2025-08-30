@@ -8,7 +8,7 @@
     </div>
     <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
       <%= link_to "새 태스크", 
-                  new_task_path,
+                  new_web_task_path,
                   class: "inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto",
                   data: { turbo_frame: "modal" } %>
     </div>
@@ -96,7 +96,7 @@
   <!-- Filters -->
   <div class="mt-8 bg-white shadow sm:rounded-lg">
     <div class="px-4 py-5 sm:p-6">
-      <%= form_with url: tasks_path, method: :get, local: true, class: "space-y-4" do |f| %>
+      <%= form_with url: web_tasks_path, method: :get, local: true, class: "space-y-4" do |f| %>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <div>
             <%= f.label :status, "상태", class: "block text-sm font-medium text-gray-700" %>
@@ -147,7 +147,7 @@
         
         <div class="flex justify-end space-x-3">
           <%= link_to "초기화",
-                      tasks_path,
+                      web_tasks_path,
                       class: "inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
           <%= f.submit "필터 적용",
                        class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
@@ -161,7 +161,7 @@
     <ul role="list" class="divide-y divide-gray-200">
       <% @tasks.each do |task| %>
         <li>
-          <%= link_to task_path(task), class: "block hover:bg-gray-50" do %>
+          <%= link_to web_task_path(task), class: "block hover:bg-gray-50" do %>
             <div class="px-4 py-4 sm:px-6">
               <div class="flex items-center justify-between">
                 <div class="flex items-center">

@@ -1,5 +1,16 @@
 <div class="bg-white rounded-lg shadow p-6">
-  <h3 class="text-lg font-semibold mb-2"><%= title %></h3>
+  <div class="flex items-center mb-2">
+    <% if icon %>
+      <div class="w-8 h-8 mr-3 text-<%= color %>-500">
+        <!-- Icon placeholder - you can use Heroicons or any icon library here -->
+        <svg class="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
+          <!-- Generic icon - replace with specific icon based on icon name -->
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" />
+        </svg>
+      </div>
+    <% end %>
+    <h3 class="text-lg font-semibold"><%= title %></h3>
+  </div>
   <p class="<%= value_class %>"><%= value %></p>
   <% if link && link_text %>
     <%= link_to link_text, link, class: "text-blue-500 hover:underline mt-2 inline-block" %>
