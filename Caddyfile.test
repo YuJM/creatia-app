@@ -13,7 +13,7 @@
 # 127.0.0.1 unauthorized.localhost.test
 
 # Main domain (www or no subdomain)
-http://localhost.test:8080, http://www.localhost.test:8080 {
+http://localhost.test, http://www.localhost.test {
     reverse_proxy localhost:3000 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote}
@@ -24,7 +24,7 @@ http://localhost.test:8080, http://www.localhost.test:8080 {
 }
 
 # Auth subdomain (authentication service)
-http://auth.localhost.test:8080 {
+http://auth.localhost.test {
     reverse_proxy localhost:3000 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote}
@@ -35,7 +35,7 @@ http://auth.localhost.test:8080 {
 }
 
 # API subdomain
-http://api.localhost.test:8080 {
+http://api.localhost.test {
     reverse_proxy localhost:3000 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote}
@@ -46,7 +46,7 @@ http://api.localhost.test:8080 {
 }
 
 # Admin subdomain
-http://admin.localhost.test:8080 {
+http://admin.localhost.test {
     reverse_proxy localhost:3000 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote}
@@ -57,7 +57,7 @@ http://admin.localhost.test:8080 {
 }
 
 # Wildcard for organization subdomains
-http://*.localhost.test:8080 {
+http://*.localhost.test {
     reverse_proxy localhost:3000 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote}

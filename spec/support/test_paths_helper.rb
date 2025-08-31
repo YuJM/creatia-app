@@ -4,23 +4,23 @@
 module TestPathsHelper
   # When using Caddy proxy, use these methods
   def test_base_url
-    'http://localhost.test:8080'
+    'http://localhost.test'
   end
   
   def auth_base_url
-    'http://auth.localhost.test:8080'
+    'http://auth.localhost.test'
   end
   
   def api_base_url
-    'http://api.localhost.test:8080'
+    'http://api.localhost.test'
   end
   
   def admin_base_url
-    'http://admin.localhost.test:8080'
+    'http://admin.localhost.test'
   end
   
   def org_base_url(subdomain)
-    "http://#{subdomain}.localhost.test:8080"
+    "http://#{subdomain}.localhost.test"
   end
   
   # Main domain paths

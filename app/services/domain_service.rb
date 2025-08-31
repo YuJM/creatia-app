@@ -181,17 +181,19 @@ class DomainService
     end
     
     def port
-      @port ||= if Rails.env.test? && use_caddy_proxy?
-        ':8080'  # Caddy proxy port for tests
+      @port ||= if use_caddy_proxy?
+        nil  # No port needed when using Caddy proxy (uses port 80)
       elsif Rails.env.development?
-        ':3000'
+        ':3000'  # Direct Rails server access without Caddy
       else
         nil
       end
     end
     
     def include_port?
-      (Rails.env.development? || (Rails.env.test? && use_caddy_proxy?)) && !base_domain.include?(':')
+      # Caddy proxy를 사용하면 포트 없음 (80 사용)
+      # Caddy proxy를 사용하지 않고 개발 환경이면 포트 3000 포함
+      !use_caddy_proxy? && Rails.env.development? && !base_domain.include?(':')
     end
     
     def use_caddy_proxy?

@@ -23,13 +23,17 @@
           <div class="flex items-center space-x-4">
             <% if user_signed_in? %>
               <%= link_to "대시보드", root_path, class: "text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors" %>
-              <%= button_to "로그아웃", destroy_main_user_user_session_path, 
+              <%= link_to "로그아웃", AppRoutes::Auth.logout_url, 
                   method: :delete, 
                   data: { turbo: false },
                   class: "bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm font-medium transition-all" %>
             <% else %>
-              <%= link_to "로그인", new_main_user_user_session_path, class: "text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors" %>
-              <%= link_to "회원가입", new_main_user_user_registration_path, class: "bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm font-medium transition-all shadow-sm hover:shadow-md" %>
+              <%= link_to "로그인", AppRoutes::Auth.login_url, 
+                  data: { turbo: false },
+                  class: "text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors" %>
+              <%= link_to "회원가입", AppRoutes::Auth.register_url, 
+                  data: { turbo: false },
+                  class: "bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm font-medium transition-all shadow-sm hover:shadow-md" %>
             <% end %>
           </div>
         </div>

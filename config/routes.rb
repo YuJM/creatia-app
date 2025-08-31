@@ -39,17 +39,14 @@ Rails.application.routes.draw do
   # 메인 도메인 라우팅 (www 또는 서브도메인 없음)
   # =============================================================================
   constraints subdomain: /^(www)?$/ do
-    devise_for :users, path_names: {
-      sign_in: 'login',
-      sign_out: 'logout',
-      sign_up: 'register'
-    }, as: :main_user, skip: [:omniauth_callbacks], controllers: {
-      sessions: 'users/sessions',
-      registrations: 'users/registrations',
-      passwords: 'users/passwords',
-      confirmations: 'users/confirmations',
-      unlocks: 'users/unlocks'
-    }
+    # 메인 도메인에서는 registration과 session 라우트를 모두 skip
+    # SSO를 위해 모든 인증은 auth 서브도메인에서 처리
+    devise_for :users, as: :main_user, skip: [:sessions, :registrations, :passwords, :confirmations, :unlocks, :omniauth_callbacks]
+    
+    # 필요한 경우 로그아웃만 메인 도메인에서 처리 가능하도록
+    devise_scope :user do
+      delete 'logout', to: redirect { |_params, request| DomainService.auth_url('logout') }
+    end
     
     get "pages/home"
     

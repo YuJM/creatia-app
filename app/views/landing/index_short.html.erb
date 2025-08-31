@@ -34,15 +34,17 @@
     
     <!-- CTA Buttons -->
     <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
-      <%= link_to new_main_user_user_registration_path,
+      <%= link_to AppRoutes::Auth.register_url,
           class: "px-10 py-5 bg-primary text-primary-foreground text-lg font-semibold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-primary/90",
           data: { turbo: false } do %>
         무료 시작하기 →
       <% end %>
       
-      <button class="px-10 py-5 text-lg font-medium text-foreground/80 hover:text-foreground transition-colors">
-        데모 영상 보기
-      </button>
+      <%= link_to AppRoutes::Auth.login_url,
+          class: "px-10 py-5 text-lg font-medium text-foreground/80 hover:text-foreground transition-colors",
+          data: { turbo: false } do %>
+        로그인
+      <% end %>
     </div>
   </div>
   

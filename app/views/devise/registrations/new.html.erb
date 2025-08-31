@@ -135,13 +135,11 @@
     <% end %>
 
     <!-- Sign In Link -->
-    <% if devise_mapping.sign_in_after_sign_up? %>
-      <div class="text-center">
-        <span class="text-sm text-muted-foreground">
-          Already have an account?
-          <%= link_to "Sign in", new_session_path(resource_name), class: "font-medium text-primary hover:text-primary/80 transition-colors" %>
-        </span>
-      </div>
-    <% end %>
+    <div class="text-center">
+      <span class="text-sm text-muted-foreground">
+        Already have an account?
+        <%= link_to "Sign in", new_session_path(resource_name), class: "font-medium text-primary hover:text-primary/80 transition-colors" %>
+      </span>
+    </div>
   </div>
 </div>
