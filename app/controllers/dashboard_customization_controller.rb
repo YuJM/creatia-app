@@ -63,9 +63,9 @@ class DashboardCustomizationController < ApplicationController
   end
 
   def preview
-    preview_layout = params[:layout] || 'default'
-    preview_widgets = parse_widget_params(params[:widgets])
-    preview_theme = params[:theme] || 'light'
+    preview_layout = dashboard_params[:layout] || 'default'
+    preview_widgets = parse_widget_params(dashboard_params[:widgets])
+    preview_theme = dashboard_params[:theme] || 'light'
 
     @preview_data = generate_preview_data(preview_layout, preview_widgets, preview_theme)
 
@@ -343,30 +343,30 @@ class DashboardCustomizationController < ApplicationController
   end
 
   def update_dashboard_layout
-    if params[:layout].present?
-      @user_dashboard.layout = params[:layout]
+    if dashboard_params[:layout].present?
+      @user_dashboard.layout = dashboard_params[:layout]
     end
   end
 
   def update_widget_configurations
-    if params[:widgets].present?
-      widgets_params = parse_widget_params(params[:widgets])
+    if dashboard_params[:widgets].present?
+      widgets_params = parse_widget_params(dashboard_params[:widgets])
       @user_dashboard.widget_configurations = widgets_params
     end
   end
 
   def update_user_preferences
-    if params[:preferences].present?
+    if dashboard_params[:preferences].present?
       current_prefs = @user_dashboard.preferences || default_preferences
-      new_prefs = current_prefs.deep_merge(params[:preferences].to_unsafe_h)
+      new_prefs = current_prefs.deep_merge(dashboard_params[:preferences])
       @user_dashboard.preferences = new_prefs
     end
   end
 
   def update_theme_settings
-    if params[:theme_settings].present?
+    if dashboard_params[:theme_settings].present?
       current_theme = @user_dashboard.theme_settings || default_theme_settings
-      new_theme = current_theme.deep_merge(params[:theme_settings].to_unsafe_h)
+      new_theme = current_theme.deep_merge(dashboard_params[:theme_settings])
       @user_dashboard.theme_settings = new_theme
     end
   end
@@ -433,8 +433,8 @@ class DashboardCustomizationController < ApplicationController
   end
 
   def add_widget
-    widget_id = params[:widget_id]
-    widget_config = params[:config] || {}
+    widget_id = widget_params[:widget_id]
+    widget_config = widget_params[:config] || {}
     
     unless @available_widgets.key?(widget_id.to_sym)
       return render_serialized(DashboardCustomizationSerializer, { success: false, error: '존재하지 않는 위젯입니다' }, status: :unprocessable_entity)
@@ -454,7 +454,7 @@ class DashboardCustomizationController < ApplicationController
   end
 
   def remove_widget
-    widget_id = params[:widget_id]
+    widget_id = widget_params[:widget_id]
     current_widgets = @user_dashboard.widget_configurations || {}
     
     if current_widgets.key?(widget_id)
@@ -469,8 +469,8 @@ class DashboardCustomizationController < ApplicationController
   end
 
   def update_widget_position
-    widget_id = params[:widget_id]
-    new_position = params[:position]
+    widget_id = widget_params[:widget_id]
+    new_position = widget_params[:position]
     
     current_widgets = @user_dashboard.widget_configurations || {}
     
@@ -527,5 +527,18 @@ class DashboardCustomizationController < ApplicationController
   def clear_dashboard_cache
     Rails.cache.delete("user_dashboard_#{current_user.id}")
     Rails.cache.delete("dashboard_widgets_#{current_user.id}")
+  end
+
+  def dashboard_params
+    params.permit(:layout, :theme, 
+                  widgets: {},
+                  preferences: [:theme, :density, :animations, :auto_refresh, :refresh_interval, :language,
+                               notifications: [:email, :browser, :sound]],
+                  theme_settings: [:primary_color, :secondary_color, :accent_color, :background_color, 
+                                   :surface_color, :text_color, :border_radius, :shadows])
+  end
+
+  def widget_params
+    params.permit(:widget_id, :position, :config => {})
   end
 end

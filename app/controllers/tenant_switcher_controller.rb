@@ -33,7 +33,7 @@ class TenantSwitcherController < ApplicationController
   # POST /tenant_switcher/switch
   # 지정된 조직으로 전환합니다.
   def switch
-    subdomain = params[:subdomain]
+    subdomain = switcher_params[:subdomain]
     
     unless subdomain.present?
       return render_serialized(TenantSwitcherSerializer, {
@@ -104,7 +104,7 @@ class TenantSwitcherController < ApplicationController
   # GET /tenant_switcher/history
   # 최근 전환 이력을 반환합니다.
   def history
-    limit = params[:limit]&.to_i || 10
+    limit = history_params[:limit]&.to_i || 10
     history = @tenant_switcher.recent_switch_history(limit)
     
     render_serialized(TenantSwitcherSerializer, {
@@ -152,7 +152,7 @@ class TenantSwitcherController < ApplicationController
   # POST /tenant_switcher/validate_access
   # 특정 조직에 대한 접근 권한을 확인합니다.
   def validate_access
-    subdomain = params[:subdomain]
+    subdomain = switcher_params[:subdomain]
     
     unless subdomain.present?
       return render_serialized(TenantSwitcherSerializer, {
@@ -193,7 +193,7 @@ class TenantSwitcherController < ApplicationController
   # PUT /tenant_switcher/update_preferences
   # 사용자의 조직 전환 관련 설정을 업데이트합니다.
   def update_preferences
-    preferences = params[:preferences] || {}
+    preferences = preferences_params[:preferences] || {}
     
     # 세션에 사용자 설정 저장
     session[:switcher_preferences] = {
@@ -214,5 +214,17 @@ class TenantSwitcherController < ApplicationController
   
   def set_tenant_switcher
     @tenant_switcher = TenantSwitcher.new(current_user, session)
+  end
+
+  def switcher_params
+    params.permit(:subdomain)
+  end
+
+  def history_params
+    params.permit(:limit)
+  end
+
+  def preferences_params
+    params.permit(preferences: [:show_member_count, :sort_by, :show_recent_first, :quick_switch_count])
   end
 end
