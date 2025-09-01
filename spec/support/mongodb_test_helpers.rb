@@ -90,7 +90,7 @@ RSpec.configure do |config|
     end
   end
   
-  config.after(:each) do
+  config.after(:each) do |example|
     if defined?(Mongoid) && example.metadata[:type] == :model
       # 각 테스트 후 MongoDB 정리 (모델 테스트만)
       [

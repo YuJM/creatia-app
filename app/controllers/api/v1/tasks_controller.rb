@@ -8,6 +8,7 @@ module API
     class TasksController < ApplicationController
       include Dry::Monads[:result, :maybe]
       include Inject['repositories.task']
+      include SnapshotPreloadable
       
       before_action :authenticate_user!
       before_action :set_organization
@@ -19,7 +20,11 @@ module API
         
         if schema_result.success?
           result = @task_service.list(schema_result.to_h)
-          handle_service_result(result) { |tasks| render_tasks_collection(tasks) }
+          handle_service_result(result) do |tasks|
+            # 스냅샷 배치 프리로딩
+            tasks_with_snapshots = preload_snapshots_for(tasks)
+            render_tasks_collection(tasks_with_snapshots)
+          end
         else
           render_validation_errors(schema_result.errors)
         end
@@ -78,7 +83,7 @@ module API
           return render json: { error: '유효하지 않은 상태값입니다' }, status: :bad_request
         end
         
-        result = @task_service.change_status(params[:id], new_status, status_change_context)
+        result = @task_service.change_status(params[:id], new_status)
         handle_service_result(result) { |task| render_task(task) }
       end
       
@@ -86,7 +91,7 @@ module API
       def assign
         assignee_id = params[:assignee_id]
         
-        result = @task_service.assign(params[:id], assignee_id, assignment_context)
+        result = @task_service.assign(params[:id], assignee_id)
         handle_service_result(result) { |task| render_task(task) }
       end
       
@@ -112,19 +117,19 @@ module API
           return render_validation_errors(schema_result.errors)
         end
         
-        result = task_repository.reorder(
+        result = @task_service.reorder(
           params[:id],
           schema_result[:position],
           schema_result[:status]
         )
         
-        handle_service_result(result) { |task| render_task(Dto::EnhancedTaskDto.from_model(task)) }
+        handle_service_result(result) { |task| render_task(task) }
       end
       
       # GET /api/v1/tasks/statistics
       def statistics
-        result = @task_service.statistics
-        handle_service_result(result) { |stats| render json: stats.as_json }
+        result = @task_service.dashboard_summary
+        handle_service_result(result) { |stats| render json: stats }
       end
       
       # POST /api/v1/tasks/:id/time_tracking
@@ -148,9 +153,9 @@ module API
       end
       
       def set_task_service
-        @task_service = RefactoredTaskService.new(
+        @task_service = TaskService.new(
           @organization,
-          current_user: current_user
+          current_user
         )
       end
       
@@ -219,7 +224,7 @@ module API
         case action
         when 'update_status'
           new_status = bulk_params[:status]
-          task_repository.bulk_update_status(task_ids, new_status, @organization.id)
+          @task_service.bulk_update_status(task_ids, new_status)
         when 'assign'
           assignee_id = bulk_params[:assignee_id]
           # 벌크 할당 로직 구현

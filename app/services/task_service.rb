@@ -1,209 +1,200 @@
 # frozen_string_literal: true
 
 # Task 관련 비즈니스 로직을 처리하는 Service
+# 조회는 TaskQueryService로 위임하고 CRUD 작업에 집중
 class TaskService
   include Dry::Monads[:result, :do]
-  
-  pattr_initialize [:organization!, :user]
-  
-  # Task 목록 조회
+
+  pattr_initialize [ :organization!, :user ]
+
+  def initialize(organization, user = nil)
+    @organization = organization
+    @user = user
+    @query_service = TaskQueryService.new(organization)
+    @repository = TaskRepository.new
+  end
+
+  # Task 목록 조회 (TaskQueryService로 위임)
   def list(filters = {})
-    scope = Task.where(organization_id: organization.id.to_s)
-    
-    # 필터 적용
-    scope = apply_filters(scope, filters)
-    
-    # 정렬 적용
-    scope = apply_sorting(scope, filters[:sort_by])
-    
-    # 페이지네이션 적용
-    page = filters[:page] || 1
-    per_page = filters[:per_page] || 25
-    paginated_scope = scope.page(page).per(per_page)
-    
-    # DTO로 변환
-    tasks = paginated_scope.map { |task| Dto::TaskDto.from_model(task) }
-    
-    # 페이지네이션 메타데이터와 함께 반환
-    result = {
-      tasks: tasks,
-      pagination: {
-        current_page: paginated_scope.current_page,
-        total_pages: paginated_scope.total_pages,
-        total_count: paginated_scope.total_count,
-        per_page: per_page
-      }
-    }
-    
-    Success(result)
+    @query_service.list_with_users(filters)
   end
-  
-  # 단일 Task 조회
+
+  # 단일 Task 조회 (TaskQueryService로 위임)
   def find(task_id)
-    task = Task.where(organization_id: organization.id.to_s, _id: task_id).first
-    
-    return Failure(:not_found) unless task
-    
-    Success(Dto::TaskDto.from_model(task))
+    @query_service.find_with_user(task_id)
   end
-  
+
+  # Sprint별 Task 조회 (TaskQueryService로 위임)
+  def list_for_sprint(sprint_id, include_completed = false)
+    @query_service.list_for_sprint(sprint_id, include_completed)
+  end
+
+  # 사용자별 할당된 Task 조회 (TaskQueryService로 위임)
+  def list_for_assignee(user_id, filters = {})
+    @query_service.list_for_assignee(user_id, filters)
+  end
+
+  # 대시보드 요약 (TaskQueryService로 위임)
+  def dashboard_summary
+    @query_service.dashboard_summary
+  end
+
   # Task 생성
   def create(params)
-    task = Task.new(
-      params.merge(
-        organization_id: organization.id.to_s,
-        created_by_id: user.id.to_s
+    begin
+      task_params = params.merge(
+        organization_id: @organization.id.to_s,
+        created_by_id: @user&.id&.to_s
       )
-    )
-    
-    if task.save
-      Success(Dto::TaskDto.from_model(task))
-    else
-      Failure(task.errors)
+
+      result = @repository.create(task_params)
+
+      case result
+      when Success
+        task = result.value!
+
+        # User 스냅샷 동기화 스케줄링
+        schedule_user_snapshot_sync(task)
+
+        # 생성된 Task를 DTO로 변환하여 반환
+        @query_service.find_with_user(task.id.to_s)
+      when Failure
+        result
+      end
+    rescue Mongoid::Errors::Validations => e
+      Failure([:validation_error, e.record.errors.to_h])
+    rescue ActiveRecord::RecordNotFound => e
+      Failure([:not_found, e.message])
+    rescue => e
+      Rails.logger.error "[TaskService] Task 생성 실패: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
+      Failure([:creation_failed, e.message])
     end
   end
-  
+
   # Task 수정
   def update(task_id, params)
-    task = Task.where(organization_id: organization.id, _id: task_id).first
-    
-    return Failure(:not_found) unless task
-    
-    if task.update(params)
-      Success(Dto::TaskDto.from_model(task))
-    else
-      Failure(task.errors)
+    begin
+      # User 관련 필드 변경 감지
+      old_assignee_id = nil
+      old_reviewer_id = nil
+
+      if params.key?(:assignee_id) || params.key?(:reviewer_id)
+        task_result = @repository.find(task_id)
+        return task_result unless task_result.success?
+
+        old_task = task_result.value!
+        old_assignee_id = old_task.assignee_id
+        old_reviewer_id = old_task.reviewer_id
+      end
+
+      # Repository를 통한 업데이트
+      result = @repository.update(task_id, params)
+
+      case result
+      when Success
+        task = result.value!
+
+        # User 할당이 변경된 경우 스냅샷 동기화
+        if params.key?(:assignee_id) && params[:assignee_id] != old_assignee_id
+          schedule_user_snapshot_sync(task, :assignee)
+        end
+
+        if params.key?(:reviewer_id) && params[:reviewer_id] != old_reviewer_id
+          schedule_user_snapshot_sync(task, :reviewer)
+        end
+
+        # 업데이트된 Task를 DTO로 변환하여 반환
+        @query_service.find_with_user(task.id.to_s)
+      when Failure
+        result
+      end
+    rescue Mongoid::Errors::Validations => e
+      Failure([:validation_error, e.record.errors.to_h])
+    rescue ActiveRecord::RecordNotFound => e
+      Failure([:not_found, e.message])
+    rescue => e
+      Rails.logger.error "[TaskService] Task 수정 실패: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
+      Failure([:update_failed, e.message])
     end
   end
-  
+
   # Task 삭제
   def destroy(task_id)
-    task = Task.where(organization_id: organization.id.to_s, _id: task_id).first
-    
-    return Failure(:not_found) unless task
-    
-    if task.destroy
-      Success(true)
-    else
-      Failure(task.errors)
-    end
+    @repository.delete(task_id)
   end
-  
+
   # Task 상태 변경
   def change_status(task_id, new_status)
-    task = Task.where(organization_id: organization.id.to_s, _id: task_id).first
-    
-    return Failure(:not_found) unless task
-    return Failure(:invalid_status) unless Task::STATUSES.include?(new_status)
-    
-    task.status = new_status
-    
-    if task.save
-      Success(Dto::TaskDto.from_model(task))
-    else
-      Failure(task.errors)
-    end
+    update(task_id, { status: new_status })
   end
-  
+
   # Task 할당
   def assign(task_id, assignee_id)
-    task = Task.where(organization_id: organization.id.to_s, _id: task_id).first
-    
-    return Failure(:not_found) unless task
-    
+    # 할당자 유효성 검증
     if assignee_id.present?
-      assignee = User.cached_find(assignee_id)
+      assignee = User.find_by(id: assignee_id)
       return Failure(:invalid_assignee) unless assignee
-      return Failure(:not_member) unless assignee.member_of?(organization)
+      return Failure(:not_member) unless assignee.member_of?(@organization)
     end
-    
-    task.assignee_id = assignee_id
-    
-    if task.save
-      Success(Dto::TaskDto.from_model(task))
-    else
-      Failure(task.errors)
-    end
+
+    update(task_id, { assignee_id: assignee_id })
   end
-  
-  # Task 통계
-  def statistics
-    tasks = Task.where(organization_id: organization.id.to_s)
-    
-    stats = {
-      total: tasks.count,
-      by_status: {
-        todo: tasks.where(status: 'todo').count,
-        in_progress: tasks.where(status: 'in_progress').count,
-        review: tasks.where(status: 'review').count,
-        done: tasks.where(status: 'done').count
-      },
-      by_priority: {
-        urgent: tasks.where(priority: 'urgent').count,
-        high: tasks.where(priority: 'high').count,
-        medium: tasks.where(priority: 'medium').count,
-        low: tasks.where(priority: 'low').count
-      },
-      overdue: tasks.where(:due_date.lt => Date.current, :status.ne => 'done').count,
-      unassigned: tasks.where(assignee_id: nil).count
-    }
-    
-    Success(Dto::TaskStatisticsDto.new(stats))
+
+  # 대량 Task 상태 변경
+  def bulk_update_status(task_ids, new_status)
+    @repository.bulk_update_status(task_ids, new_status, @organization.id.to_s)
   end
-  
+
+  # Task 재정렬
+  def reorder(task_id, new_position, status = nil)
+    @repository.reorder(task_id, new_position, status)
+  end
+
   # 사용 가능한 Sprint 목록
   def available_sprints
-    Sprint.where(organization_id: organization.id, status: ['planned', 'active'])
+    Sprint.where(organization_id: @organization.id, status: [ "planned", "active" ])
           .map { |sprint| Dto::SprintDto.from_model(sprint) }
   end
-  
-  # 사용 가능한 담당자 목록
+
+  # 사용 가능한 담당자 목록 (UserDataResolver 활용)
   def available_assignees
-    organization.users.map do |user|
-      {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        avatar_url: user.avatar_url
-      }
-    end
+    user_ids = @organization.users.pluck(:id)
+    return [] if user_ids.empty?
+
+    user_resolver = UserDataResolver.new
+    resolved_users = user_resolver.resolve_users_batch(user_ids.map(&:to_s))
+
+    resolved_users.values
   end
-  
+
   private
-  
-  def apply_filters(scope, filters)
-    scope = scope.where(status: filters[:status]) if filters[:status].present?
-    scope = scope.where(priority: filters[:priority]) if filters[:priority].present?
-    scope = scope.where(assignee_id: filters[:assignee_id]) if filters[:assignee_id].present?
-    scope = scope.where(sprint_id: filters[:sprint_id]) if filters[:sprint_id].present?
-    scope = scope.where(assignee_id: nil) if filters[:unassigned] == 'true'
-    
-    if filters[:overdue] == 'true'
-      scope = scope.where(:due_date.lt => Date.current, :status.ne => 'done')
+
+  # User 스냅샷 동기화 스케줄링
+  def schedule_user_snapshot_sync(task, role_type = nil)
+    return unless task
+
+    sync_jobs = []
+
+    if role_type.nil? || role_type == :assignee
+      if task.assignee_id.present?
+        sync_jobs << { task_id: task.id.to_s, user_id: task.assignee_id, role: "assignee" }
+      end
     end
-    
-    if filters[:due_soon] == 'true'
-      scope = scope.where(
-        :due_date.gte => Date.current,
-        :due_date.lte => 7.days.from_now
+
+    if role_type.nil? || role_type == :reviewer
+      if task.reviewer_id.present?
+        sync_jobs << { task_id: task.id.to_s, user_id: task.reviewer_id, role: "reviewer" }
+      end
+    end
+
+    sync_jobs.each do |job_data|
+      UserSnapshotSyncJob.perform_later(
+        job_data[:task_id],
+        job_data[:user_id],
+        job_data[:role]
       )
     end
-    
-    scope
-  end
-  
-  def apply_sorting(scope, sort_by)
-    case sort_by
-    when 'priority'
-      scope.order_by(priority_score: :desc, created_at: :desc)
-    when 'due_date'
-      scope.order_by(due_date: :asc, created_at: :desc)
-    when 'created'
-      scope.order_by(created_at: :desc)
-    when 'updated'
-      scope.order_by(updated_at: :desc)
-    else
-      scope.order_by(position: :asc, created_at: :desc)
-    end
+
+    Rails.logger.info "[TaskService] #{sync_jobs.size}개 User 스냅샷 동기화 예약" if sync_jobs.any?
   end
 end

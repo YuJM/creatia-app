@@ -85,14 +85,29 @@ module UserCacheable
   end
 
   included do
-    # 사용자 정보 업데이트 시 캐시 무효화
+    # 사용자 정보 업데이트 시 캐시 무효화 및 MongoDB 동기화
     after_update :invalidate_user_cache
     after_destroy :invalidate_user_cache
+    after_update :sync_mongodb_data, if: :should_sync_mongodb?
     
     private
     
     def invalidate_user_cache
       self.class.invalidate_cache(id)
+    end
+    
+    # MongoDB 동기화가 필요한 속성 변경 감지
+    def should_sync_mongodb?
+      # 표시용 속성이 변경된 경우만 동기화
+      display_attributes = %w[name email avatar_url role]
+      changed_display_attrs = changes.keys & display_attributes
+      changed_display_attrs.any?
+    end
+    
+    # MongoDB 문서의 사용자 데이터 동기화 스케줄링
+    def sync_mongodb_data
+      changed_attrs = changes.keys & %w[name email avatar_url role]
+      CrossDbSyncService.sync_user_changes(id, changed_attrs)
     end
   end
 end

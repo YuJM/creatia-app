@@ -4,17 +4,22 @@ FactoryBot.define do
     description { Faker::Lorem.paragraph }
     status { 'todo' }
     priority { 'medium' }
-    association :organization
-    association :service
-    assigned_user { nil }
-    assignee { nil }
-    created_by { nil }
-    team { nil }
+    task_type { 'feature' }
+    organization_id { create(:organization).id.to_s }
+    service_id { create(:service).id.to_s }
+    assignee_id { nil }
+    reviewer_id { nil }
+    team_id { nil }
     due_date { nil }
     position { 0 }
+    estimated_hours { nil }
+    actual_hours { 0.0 }
+    remaining_hours { nil }
+    tags { [] }
+    labels { [] }
     
     trait :with_assignee do
-      association :assigned_user, factory: :user
+      assignee_id { create(:user).id.to_s }
     end
     
     trait :high_priority do
@@ -47,7 +52,7 @@ FactoryBot.define do
     end
     
     trait :with_creator do
-      association :created_by, factory: :user
+      created_by_id { create(:user).id.to_s }
     end
   end
 end

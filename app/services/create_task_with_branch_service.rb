@@ -10,7 +10,11 @@ class CreateTaskWithBranchService
   include AttrExtras::Memoize
   include Dry::Monads[:result, :do]
   
-  pattr_initialize [:task_params!, :user!, :service!]
+  extend Dry::Initializer
+  
+  param :task_params
+  param :user
+  param :service
   
   def call
     validated_params = yield validate_params

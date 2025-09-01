@@ -4,7 +4,7 @@ require 'dry-monads'
 
 # Repository 베이스 클래스
 class BaseRepository
-  include Dry::Monads[:result, :maybe]
+  include Dry::Monads[:result, :maybe, :try]
 
   # MongoDB와 ActiveRecord 모두 지원하는 추상화 레이어
   def find(id)

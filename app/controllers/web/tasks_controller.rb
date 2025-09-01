@@ -14,11 +14,17 @@ module Web
       if result.success?
         data = result.value!
         @tasks = data[:tasks]
+        @metadata = data[:metadata]
+        @statistics = data[:stats]
+        
+        # Kaminari를 위한 페이지네이션 처리
+        page = (filter_params[:page] || 1).to_i
+        per_page = (filter_params[:per_page] || 50).to_i
+        
         @paginated_tasks = Kaminari.paginate_array(
           @tasks,
-          total_count: data[:pagination][:total_count]
-        ).page(data[:pagination][:current_page]).per(data[:pagination][:per_page])
-        @statistics = @task_service.statistics.value!
+          total_count: @metadata[:total_count]
+        ).page(page).per(per_page)
       else
         flash[:alert] = "Failed to load tasks"
         @tasks = []
@@ -42,13 +48,9 @@ module Web
       @task_dto = Dto::TaskDto.new(
         id: '',
         title: '',
-        description: '',
         status: 'todo',
         priority: 'medium',
-        organization_id: current_organization.id,
-        assignee_id: nil,
-        due_date: nil,
-        tags: []
+        organization_id: current_organization.id.to_s
       )
       
       @available_sprints = @task_service.available_sprints
@@ -76,7 +78,7 @@ module Web
       else
         @task_dto = Dto::TaskDto.new(task_params.merge(
           id: '',
-          organization_id: current_organization.id
+          organization_id: current_organization.id.to_s
         ))
         @available_sprints = @task_service.available_sprints
         @available_assignees = @task_service.available_assignees
@@ -145,8 +147,8 @@ module Web
     
     def initialize_service
       @task_service = TaskService.new(
-        organization: current_organization,
-        user: current_user
+        current_organization,
+        current_user
       )
     end
     
