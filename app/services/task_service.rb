@@ -316,12 +316,12 @@ class TaskService
     
     def get_assignee_name(assignee_id)
       return nil unless assignee_id
-      User.find_by(id: assignee_id)&.name
+      User.cached_basic_info(assignee_id)&.dig(:name)
     end
     
     def get_user_name(user_id)
       return nil unless user_id
-      User.find_by(id: user_id)&.name || 'Unknown User'
+      User.cached_basic_info(user_id)&.dig(:name) || 'Unknown User'
     end
     
     def extract_mentions(content)

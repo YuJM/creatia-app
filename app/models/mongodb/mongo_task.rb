@@ -3,6 +3,7 @@ module Mongodb
   class MongoTask
     include Mongoid::Document
     include Mongoid::Timestamps
+    include PostgresReference
     
     # MongoDB 컬렉션 이름 설정
     store_in collection: "tasks"

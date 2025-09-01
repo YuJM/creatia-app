@@ -22,6 +22,12 @@ default: &default
   port: <%= ENV.fetch("DATABASE_PORT", 5432) %>
   username: <%= ENV["DATABASE_USERNAME"] %>
   password: <%= ENV["DATABASE_PASSWORD"] %>
+  # PostgreSQL 캐싱 최적화
+  prepared_statements: true
+  statement_limit: 1000
+  idle_timeout: 300
+  checkout_timeout: 5
+  reaping_frequency: 10
 
 
 development:
