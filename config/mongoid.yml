@@ -3,16 +3,22 @@ development:
   clients:
     # Defines the default client. (required)
     default:
-      # Mongoid can connect to a URI accepted by the driver:
-      uri: <%= ENV['MONGODB_URI'] || 'mongodb://localhost:27017/creatia_app_development' %>
+      # Database for execution data (Milestones, Sprints, Tasks)
+      # Admin 계정 사용 (컬렉션 생성 권한 필요)
+      uri: mongodb://admin:admin123@localhost:27017/creatia_execution_dev?authSource=admin
       
-      # Alternatively define the parameters separately:
-      # database: creatia_app_development
-      # hosts:
-      #   - localhost:27017
       options:
         # Force direct connection mode (no replica set)
         connect: :direct
+        # Write concern
+        write_concern:
+          w: 1
+          j: false
+        # Read preference
+        read:
+          mode: :primary
+        # Retry writes
+        retry_writes: true
         # Note that all options listed below are Ruby driver client options (the mongo gem).
         # Please refer to the driver documentation of the version of the mongo gem you are using
         # for the most up-to-date list of options.
@@ -144,7 +150,10 @@ development:
 
     # Raise an error when performing a #find and the document is not found.
     # (default: true)
-    raise_not_found_error: true
+    raise_not_found_error: false
+    
+    # Return stored times as UTC
+    use_utc: false
 
 test:
   clients:
