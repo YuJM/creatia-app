@@ -1,5 +1,5 @@
-<div <%= wrapper_attributes.map { |k, v| v == true ? k : "#{k}=\"#{v}\"" }.join(' ').html_safe %>>
-  <button <%= button_attributes.map { |k, v| v == true ? k : "#{k}=\"#{v}\"" }.join(' ').html_safe %>>
+<div <%= tag.attributes(wrapper_attributes) %>>
+  <button <%= tag.attributes(button_attributes) %>>
     <span data-theme-target="icon">
       <!-- Default system icon -->
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

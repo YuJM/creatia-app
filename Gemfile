@@ -144,3 +144,5 @@ group :test do
 end
 
 gem "tailwindcss-ruby", "~> 4.1"
+
+gem "rails_icons", "~> 1.4"

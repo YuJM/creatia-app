@@ -21,7 +21,7 @@
       </div>
     <% end %>
     
-    <input <%= input_attributes.map { |k, v| v == true ? k : "#{k}=\"#{v}\"" }.join(' ').html_safe %> />
+    <input <%= tag.attributes(input_attributes) %> />
     
     <% if suffix.present? %>
       <div class="<%= prefix_suffix_classes_for_element %> right-0">

@@ -1,4 +1,4 @@
-<div <%= modal_attributes.map { |k, v| v == true ? k : "#{k}=\"#{v}\"" }.join(' ').html_safe %>>
+<div <%= tag.attributes(modal_attributes) %>>
   <div class="<%= content_classes %>">
     <% if render_header? %>
       <div class="<%= header_classes %>">

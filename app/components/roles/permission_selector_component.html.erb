@@ -4,9 +4,7 @@
       <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center justify-between">
           <div class="flex items-center">
-            <svg class="h-5 w-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <%= resource_icon(resource).html_safe %>
-            </svg>
+            <%= icon resource_icon(resource), class: "h-5 w-5 text-gray-500 mr-2" %>
             <h4 class="text-sm font-medium text-gray-900">
               <%= resource %>
             </h4>

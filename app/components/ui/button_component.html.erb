@@ -15,7 +15,7 @@
     <% end %>
   <% end %>
 <% else %>
-  <button <%= button_attributes.map { |k, v| v == true ? k : "#{k}=\"#{v}\"" }.join(' ').html_safe %>>
+  <button <%= tag.attributes(button_attributes) %>>
     <% if loading %>
       <%= loading_spinner %>
     <% elsif show_icon? && icon_left? %>
