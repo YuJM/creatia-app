@@ -99,7 +99,7 @@ module Mongodb
     
     # ===== Instance Methods =====
     def author
-      @author ||= User.find_by(id: author_id) if author_id
+      @author ||= User.cached_find( author_id) if author_id
     end
     
     def commentable

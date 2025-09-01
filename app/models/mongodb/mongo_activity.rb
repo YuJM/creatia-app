@@ -151,7 +151,7 @@ module Mongodb
     
     # ===== Instance Methods =====
     def actor
-      @actor ||= User.find_by(id: actor_id) if actor_id
+      @actor ||= User.cached_find( actor_id) if actor_id
     end
     
     def target
@@ -193,7 +193,7 @@ module Mongodb
             "status from #{from} to #{to}"
           when 'assignee_id'
             if to
-              assignee = User.find_by(id: to)
+              assignee = User.cached_find( to)
               "assigned to #{assignee&.name || 'Unknown'}"
             else
               "unassigned"

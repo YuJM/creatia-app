@@ -314,15 +314,15 @@ module Mongodb
     
     # PostgreSQL associations
     def assignee
-      @assignee ||= User.find_by(id: assignee_id) if assignee_id
+      @assignee ||= User.cached_find(assignee_id) if assignee_id
     end
     
     def reviewer
-      @reviewer ||= User.find_by(id: reviewer_id) if reviewer_id
+      @reviewer ||= User.cached_find(reviewer_id) if reviewer_id
     end
     
     def created_by
-      @created_by ||= User.find_by(id: created_by_id) if created_by_id
+      @created_by ||= User.cached_find(created_by_id) if created_by_id
     end
     
     def organization
