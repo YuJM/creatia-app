@@ -6,17 +6,17 @@ module Web
     before_action :set_sprint, only: [:show, :edit, :update, :destroy, :burndown, :board]
     
     def index
-      @sprints = Mongodb::MongoSprint
+      @sprints = Sprint
         .where(service_id: @service.id)
         .order_by(sprint_number: :desc)
         .page(params[:page])
       
       # 사용자 정보 프리로드
-      Mongodb::MongoSprint.preload_users(@sprints)
+      Sprint.preload_users(@sprints)
     end
     
     def show
-      @tasks = Mongodb::MongoTask.in_sprint(@sprint.id)
+      @tasks = Task.in_sprint(@sprint.id)
       
       # 태스크 통계
       @stats = {
@@ -31,11 +31,11 @@ module Web
       }
       
       # 사용자 정보 프리로드
-      Mongodb::MongoTask.preload_users(@tasks)
+      Task.preload_users(@tasks)
     end
     
     def new
-      @sprint = Mongodb::MongoSprint.new(
+      @sprint = Sprint.new(
         service_id: @service.id,
         organization_id: @service.organization_id,
         start_date: Date.current.beginning_of_week,
@@ -84,7 +84,7 @@ module Web
         'done' => []
       }
       
-      tasks = Mongodb::MongoTask.in_sprint(@sprint.id)
+      tasks = Task.in_sprint(@sprint.id)
       tasks.each do |task|
         status = task.status
         @tasks_by_status[status] ||= []
@@ -109,7 +109,7 @@ module Web
     
     # Sprint 시작
     def start
-      @sprint = Mongodb::MongoSprint.find(params[:id])
+      @sprint = Sprint.find(params[:id])
       
       if SprintService.start_sprint(@sprint.id)
         redirect_to web_service_sprint_path(@service, @sprint),
@@ -122,7 +122,7 @@ module Web
     
     # Sprint 완료
     def complete
-      @sprint = Mongodb::MongoSprint.find(params[:id])
+      @sprint = Sprint.find(params[:id])
       
       if SprintService.complete_sprint(@sprint.id)
         redirect_to web_service_sprint_path(@service, @sprint),
@@ -140,7 +140,7 @@ module Web
     end
     
     def set_sprint
-      @sprint = Mongodb::MongoSprint.find(params[:id])
+      @sprint = Sprint.find(params[:id])
       
       # 권한 체크
       unless @sprint.service_id == @service.id.to_s

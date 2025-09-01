@@ -80,7 +80,7 @@ class UserCacheService
       cache_key = "permissions/#{user_id}/#{org_id}"
       
       Rails.cache.fetch(cache_key, expires_in: 30.minutes) do
-        user = User.find_by(id: user_id)
+        user = User.cached_find( user_id)
         org = Organization.find_by(id: org_id)
         
         return nil unless user && org
@@ -99,7 +99,7 @@ class UserCacheService
     def warm_cache_for_sprint(sprint)
       # Sprint에 관련된 모든 사용자 정보 미리 로드
       task_ids = sprint.task_ids
-      tasks = Mongodb::MongoTask.where(:_id.in => task_ids)
+      tasks = Task.where(:_id.in => task_ids)
       
       user_ids = tasks.flat_map do |task|
         [task.assignee_id, task.reviewer_id, task.created_by_id].compact
@@ -114,9 +114,9 @@ class UserCacheService
     def extract_user_ids(documents)
       documents.flat_map do |doc|
         case doc
-        when Mongodb::MongoTask
+        when Task
           [doc.assignee_id, doc.reviewer_id, doc.created_by_id, *doc.participants].compact
-        when Mongodb::MongoSprint
+        when Sprint
           # Sprint 관련 사용자 추출
           []
         when Mongodb::MongoComment

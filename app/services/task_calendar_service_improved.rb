@@ -34,7 +34,7 @@ class TaskCalendarServiceImproved
   end
   
   def add_tasks(calendar)
-    tasks_scope.find_each do |task|
+    tasks_scope.each do |task|
       event = build_task_event(task)
       calendar.add_event(event)
     end
@@ -45,7 +45,10 @@ class TaskCalendarServiceImproved
   end
   
   def add_sprints(calendar)
-    Sprint.current.find_each do |sprint|
+    Sprint.where(
+      organization_id: organization.id,
+      status: 'active'
+    ).each do |sprint|
       add_sprint_events(calendar, sprint)
     end
     
@@ -67,7 +70,10 @@ class TaskCalendarServiceImproved
   
   memo_wise
   def tasks_scope
-    scope = user.assigned_tasks.includes(:sprint, :epic, :service)
+    scope = Task.where(
+      organization_id: organization.id,
+      assignee_id: user.id
+    )
     scope = scope.where(sprint_id: filters[:sprint_id]) if filters&.dig(:sprint_id)
     scope = scope.where(service_id: filters[:service_id]) if filters&.dig(:service_id)
     scope

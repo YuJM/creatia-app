@@ -99,17 +99,13 @@ module Web
       
       authorize! :show, current_organization
       
-      # 대시보드에서 필요한 데이터들
+      # Service 레이어를 통해 대시보드 데이터 준비
       @organization = current_organization
-      @recent_tasks = ::Task.accessible_by(current_ability).includes(:assigned_user)
-                                       .order(updated_at: :desc)
-                                       .limit(10)
-      @task_stats = {
-        total: ::Task.accessible_by(current_ability).count,
-        todo: ::Task.accessible_by(current_ability).todo.count,
-        in_progress: ::Task.accessible_by(current_ability).in_progress.count,
-        done: ::Task.accessible_by(current_ability).done.count
-      }
+      dashboard_service = DashboardService.new(
+        organization: current_organization,
+        user: current_user
+      )
+      @dashboard_metrics = dashboard_service.metrics
       
       render :dashboard
     end

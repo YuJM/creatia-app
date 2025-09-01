@@ -8,7 +8,7 @@ class SprintService
       service = Service.find(params[:service_id])
       
       # MongoDB: Sprint 실행 데이터 생성
-      sprint = Mongodb::MongoSprint.create!(
+      sprint = Sprint.create!(
         organization_id: service.organization_id,
         service_id: service.id,
         name: params[:name],
@@ -31,10 +31,10 @@ class SprintService
     end
     
     def add_task_to_sprint(sprint_id, task_params)
-      sprint = Mongodb::MongoSprint.find(sprint_id)
+      sprint = Sprint.find(sprint_id)
       
       # 독립 Task 생성
-      task = Mongodb::MongoTask.create!(
+      task = Task.create!(
         organization_id: sprint.organization_id,
         service_id: sprint.service_id,
         sprint_id: sprint_id,
@@ -42,7 +42,7 @@ class SprintService
         title: task_params[:title],
         description: task_params[:description],
         assignee_id: task_params[:assignee_id],
-        assignee_name: User.find_by(id: task_params[:assignee_id])&.name,
+        assignee_name: User.cached_find( task_params[:assignee_id])&.name,
         story_points: task_params[:story_points],
         priority: task_params[:priority] || 'medium',
         status: 'todo',
@@ -60,14 +60,14 @@ class SprintService
     end
     
     def update_task_status(task_id, new_status, user_id = nil)
-      task = Mongodb::MongoTask.find(task_id)
+      task = Task.find(task_id)
       
       old_status = task.status
       task.update_status(new_status, user_id || Current.user&.id)
       
       # Sprint 메트릭 업데이트
       if task.sprint_id.present?
-        sprint = Mongodb::MongoSprint.find(task.sprint_id)
+        sprint = Sprint.find(task.sprint_id)
         sprint.update_task_counts
         update_burndown_data(sprint)
       end
@@ -86,7 +86,7 @@ class SprintService
     end
     
     def start_sprint(sprint_id)
-      sprint = Mongodb::MongoSprint.find(sprint_id)
+      sprint = Sprint.find(sprint_id)
       
       return false unless sprint.status == 'planning'
       return false unless sprint.start_date <= Date.current
@@ -107,7 +107,7 @@ class SprintService
     end
     
     def complete_sprint(sprint_id)
-      sprint = Mongodb::MongoSprint.find(sprint_id)
+      sprint = Sprint.find(sprint_id)
       
       return false unless sprint.status == 'active'
       
@@ -132,7 +132,7 @@ class SprintService
     end
     
     def update_daily_standup(sprint_id, standup_data)
-      sprint = Mongodb::MongoSprint.find(sprint_id)
+      sprint = Sprint.find(sprint_id)
       
       today_standup = {
         date: Date.current,
@@ -159,7 +159,7 @@ class SprintService
     end
     
     def get_burndown_data(sprint_id)
-      sprint = Mongodb::MongoSprint.find(sprint_id)
+      sprint = Sprint.find(sprint_id)
       
       # 이상적인 번다운 라인
       ideal_line = sprint.burndown_ideal_line
@@ -180,7 +180,7 @@ class SprintService
     private
     
     def next_sprint_number(service_id)
-      last_sprint = Mongodb::MongoSprint
+      last_sprint = Sprint
         .where(service_id: service_id)
         .order_by(sprint_number: :desc)
         .first
@@ -193,7 +193,7 @@ class SprintService
       prefix = service.task_prefix || "TASK"
       
       # 해당 서비스의 마지막 태스크 번호 찾기
-      last_task = Mongodb::MongoTask
+      last_task = Task
         .where(service_id: service_id)
         .where(task_id: /^#{prefix}-\d+$/)
         .order_by(created_at: :desc)
@@ -240,7 +240,7 @@ class SprintService
     end
     
     def update_burndown_data(sprint)
-      tasks = Mongodb::MongoTask.in_sprint(sprint.id)
+      tasks = Task.in_sprint(sprint.id)
       
       today_data = {
         date: Date.current,
@@ -267,12 +267,12 @@ class SprintService
     end
     
     def calculate_actual_velocity(sprint)
-      tasks = Mongodb::MongoTask.in_sprint(sprint.id)
+      tasks = Task.in_sprint(sprint.id)
       tasks.completed.sum(:story_points) || 0
     end
     
     def calculate_actual_burndown(sprint)
-      tasks = Mongodb::MongoTask.in_sprint(sprint.id)
+      tasks = Task.in_sprint(sprint.id)
       burndown = []
       
       (sprint.start_date..Date.current).each do |date|
@@ -302,7 +302,7 @@ class SprintService
     end
     
     def handle_incomplete_tasks(sprint)
-      incomplete_tasks = Mongodb::MongoTask
+      incomplete_tasks = Task
         .in_sprint(sprint.id)
         .where(:status.ne => 'done')
       
@@ -323,7 +323,7 @@ class SprintService
     end
     
     def prepare_retrospective_data(sprint)
-      tasks = Mongodb::MongoTask.in_sprint(sprint.id)
+      tasks = Task.in_sprint(sprint.id)
       
       sprint.retrospective = {
         date: Time.current,

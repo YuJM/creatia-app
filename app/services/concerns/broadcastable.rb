@@ -93,7 +93,7 @@ module Broadcastable
         action: 'task_assigned',
         task_id: task.id.to_s,
         assignee_id: assignee_id,
-        assignee_name: User.find_by(id: assignee_id)&.name
+        assignee_name: User.cached_find(assignee_id)&.name
       }
     )
 

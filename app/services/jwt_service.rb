@@ -71,7 +71,7 @@ class JwtService
       return nil unless payload
       
       # 추가 검증: 사용자가 실제로 존재하는지 확인
-      user = User.find_by(id: payload[:user_id])
+      user = User.cached_find( payload[:user_id])
       return nil unless user
       
       payload.merge(user: user)
@@ -97,7 +97,7 @@ class JwtService
       payload = decode(refresh_token)
       return nil unless payload && payload[:type] == 'refresh'
       
-      user = User.find_by(id: payload[:user_id])
+      user = User.cached_find( payload[:user_id])
       return nil unless user
       
       generate_sso_token(user)
