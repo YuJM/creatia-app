@@ -1,357 +1,209 @@
-# app/services/task_service.rb
+# frozen_string_literal: true
+
+# Task 관련 비즈니스 로직을 처리하는 Service
 class TaskService
-  extend Broadcastable
+  include Dry::Monads[:result, :do]
   
-  class << self
-    def create_task(params)
-      # Service 확인
-      service = Service.find(params[:service_id])
-      
-      # Task 생성
-      task = Mongodb::MongoTask.create!(
-        organization_id: service.organization_id,
-        service_id: service.id,
-        task_id: generate_task_id(service.id),
-        title: params[:title],
-        description: params[:description],
-        task_type: params[:task_type] || 'feature',
-        assignee_id: params[:assignee_id],
-        assignee_name: get_assignee_name(params[:assignee_id]),
-        priority: params[:priority] || 'medium',
-        status: params[:status] || 'backlog',
-        story_points: params[:story_points],
-        original_estimate_hours: params[:estimate_hours],
-        due_date: params[:due_date],
-        labels: params[:labels] || [],
-        epic_id: params[:epic_id],
-        sprint_id: params[:sprint_id],
-        milestone_id: params[:milestone_id]
+  pattr_initialize [:organization!, :user]
+  
+  # Task 목록 조회
+  def list(filters = {})
+    scope = Task.where(organization_id: organization.id.to_s)
+    
+    # 필터 적용
+    scope = apply_filters(scope, filters)
+    
+    # 정렬 적용
+    scope = apply_sorting(scope, filters[:sort_by])
+    
+    # 페이지네이션 적용
+    page = filters[:page] || 1
+    per_page = filters[:per_page] || 25
+    paginated_scope = scope.page(page).per(per_page)
+    
+    # DTO로 변환
+    tasks = paginated_scope.map { |task| Dto::TaskDto.from_model(task) }
+    
+    # 페이지네이션 메타데이터와 함께 반환
+    result = {
+      tasks: tasks,
+      pagination: {
+        current_page: paginated_scope.current_page,
+        total_pages: paginated_scope.total_pages,
+        total_count: paginated_scope.total_count,
+        per_page: per_page
+      }
+    }
+    
+    Success(result)
+  end
+  
+  # 단일 Task 조회
+  def find(task_id)
+    task = Task.where(organization_id: organization.id.to_s, _id: task_id).first
+    
+    return Failure(:not_found) unless task
+    
+    Success(Dto::TaskDto.from_model(task))
+  end
+  
+  # Task 생성
+  def create(params)
+    task = Task.new(
+      params.merge(
+        organization_id: organization.id.to_s,
+        created_by_id: user.id.to_s
       )
-      
-      # Sprint에 추가 (if sprint_id provided)
-      if params[:sprint_id].present?
-        sprint = Mongodb::MongoSprint.find(params[:sprint_id])
-        sprint.add_task(task)
-      end
-      
-      # 활동 로그
-      log_task_activity(task, 'created')
-      
-      # 실시간 알림
-      broadcast_task_created(task)
-      
-      task
+    )
+    
+    if task.save
+      Success(Dto::TaskDto.from_model(task))
+    else
+      Failure(task.errors)
+    end
+  end
+  
+  # Task 수정
+  def update(task_id, params)
+    task = Task.where(organization_id: organization.id, _id: task_id).first
+    
+    return Failure(:not_found) unless task
+    
+    if task.update(params)
+      Success(Dto::TaskDto.from_model(task))
+    else
+      Failure(task.errors)
+    end
+  end
+  
+  # Task 삭제
+  def destroy(task_id)
+    task = Task.where(organization_id: organization.id.to_s, _id: task_id).first
+    
+    return Failure(:not_found) unless task
+    
+    if task.destroy
+      Success(true)
+    else
+      Failure(task.errors)
+    end
+  end
+  
+  # Task 상태 변경
+  def change_status(task_id, new_status)
+    task = Task.where(organization_id: organization.id.to_s, _id: task_id).first
+    
+    return Failure(:not_found) unless task
+    return Failure(:invalid_status) unless Task::STATUSES.include?(new_status)
+    
+    task.status = new_status
+    
+    if task.save
+      Success(Dto::TaskDto.from_model(task))
+    else
+      Failure(task.errors)
+    end
+  end
+  
+  # Task 할당
+  def assign(task_id, assignee_id)
+    task = Task.where(organization_id: organization.id.to_s, _id: task_id).first
+    
+    return Failure(:not_found) unless task
+    
+    if assignee_id.present?
+      assignee = User.cached_find(assignee_id)
+      return Failure(:invalid_assignee) unless assignee
+      return Failure(:not_member) unless assignee.member_of?(organization)
     end
     
-    def update_task(task_id, params)
-      task = Mongodb::MongoTask.find(task_id)
-      changes = {}
-      
-      # 변경 사항 추적
-      params.each do |key, value|
-        if task.respond_to?(key) && task[key] != value
-          changes[key] = [task[key], value]
-          task[key] = value
-        end
-      end
-      
-      # 특별 처리: assignee 변경
-      if params[:assignee_id].present? && params[:assignee_id] != task.assignee_id
-        task.assignee_name = get_assignee_name(params[:assignee_id])
-        task.participants << params[:assignee_id] unless task.participants.include?(params[:assignee_id])
-      end
-      
-      task.save!
-      
-      # 활동 로그
-      log_task_activity(task, 'updated', changes) if changes.any?
-      
-      # 실시간 알림
-      broadcast_task_updated(task, changes)
-      
-      task
-    end
+    task.assignee_id = assignee_id
     
-    def move_to_sprint(task_ids, sprint_id)
-      tasks = Mongodb::MongoTask.where(:_id.in => task_ids)
-      sprint = Mongodb::MongoSprint.find(sprint_id)
-      
-      moved_tasks = []
-      
-      tasks.each do |task|
-        # 이전 Sprint에서 제거
-        if task.sprint_id.present? && task.sprint_id != sprint_id
-          old_sprint = Mongodb::MongoSprint.find(task.sprint_id)
-          old_sprint.remove_task(task)
-        end
-        
-        # 새 Sprint에 추가
-        sprint.add_task(task)
-        
-        # 활동 로그
-        log_task_activity(task, 'moved_to_sprint', {
-          from_sprint: task.sprint_id,
-          to_sprint: sprint_id
-        })
-        
-        moved_tasks << task
-      end
-      
-      # 실시간 알림
-      broadcast_sprint_update(sprint)
-      
-      moved_tasks
+    if task.save
+      Success(Dto::TaskDto.from_model(task))
+    else
+      Failure(task.errors)
     end
+  end
+  
+  # Task 통계
+  def statistics
+    tasks = Task.where(organization_id: organization.id.to_s)
     
-    def assign_task(task_id, assignee_id)
-      task = Mongodb::MongoTask.find(task_id)
-      old_assignee = task.assignee_id
-      
-      task.assignee_id = assignee_id
-      task.assignee_name = get_assignee_name(assignee_id)
-      task.participants << assignee_id unless task.participants.include?(assignee_id)
-      task.save!
-      
-      # 활동 로그
-      log_task_activity(task, 'assigned', {
-        from: old_assignee,
-        to: assignee_id
-      })
-      
-      # 알림 전송
-      notify_assignee(task, assignee_id)
-      
-      # 실시간 브로드캐스트
-      broadcast_task_assigned(task, assignee_id)
-      
-      task
-    end
+    stats = {
+      total: tasks.count,
+      by_status: {
+        todo: tasks.where(status: 'todo').count,
+        in_progress: tasks.where(status: 'in_progress').count,
+        review: tasks.where(status: 'review').count,
+        done: tasks.where(status: 'done').count
+      },
+      by_priority: {
+        urgent: tasks.where(priority: 'urgent').count,
+        high: tasks.where(priority: 'high').count,
+        medium: tasks.where(priority: 'medium').count,
+        low: tasks.where(priority: 'low').count
+      },
+      overdue: tasks.where(:due_date.lt => Date.current, :status.ne => 'done').count,
+      unassigned: tasks.where(assignee_id: nil).count
+    }
     
-    def update_status(task_id, new_status, user_id = nil)
-      task = Mongodb::MongoTask.find(task_id)
-      task.update_status(new_status, user_id || Current.user&.id)
-      
-      # Sprint 메트릭 업데이트
-      if task.sprint_id.present?
-        SprintService.send(:update_burndown_data, Mongodb::MongoSprint.find(task.sprint_id))
-      end
-      
-      # 실시간 브로드캐스트
-      broadcast_task_status_changed(task)
-      
-      task
-    end
-    
-    def add_comment(task_id, comment_params)
-      task = Mongodb::MongoTask.find(task_id)
-      
-      comment = Mongodb::MongoComment.create!(
-        commentable_type: 'MongoTask',
-        commentable_id: task_id,
-        organization_id: task.organization_id,
-        author_id: comment_params[:author_id] || Current.user&.id,
-        author_name: get_user_name(comment_params[:author_id] || Current.user&.id),
-        content: comment_params[:content],
-        comment_type: comment_params[:type] || 'general',
-        mentioned_user_ids: extract_mentions(comment_params[:content])
-      )
-      
-      # Task 코멘트 카운트 업데이트
-      task.add_comment(comment.author_id, comment.content)
-      
-      # 멘션 알림
-      notify_mentioned_users(comment)
-      
-      # 실시간 브로드캐스트
-      broadcast_comment_added(task, comment)
-      
-      comment
-    end
-    
-    def add_subtask(task_id, subtask_params)
-      task = Mongodb::MongoTask.find(task_id)
-      
-      subtask = task.add_subtask(
-        subtask_params[:title],
-        subtask_params[:assignee_id]
-      )
-      
-      # 활동 로그
-      log_task_activity(task, 'subtask_added', {
-        subtask_title: subtask[:title]
-      })
-      
-      # 실시간 브로드캐스트
-      broadcast_task_updated(task, { subtasks: task.subtasks })
-      
-      subtask
-    end
-    
-    def complete_subtask(task_id, subtask_id)
-      task = Mongodb::MongoTask.find(task_id)
-      task.complete_subtask(subtask_id)
-      
-      # 활동 로그
-      log_task_activity(task, 'subtask_completed', {
-        subtask_id: subtask_id
-      })
-      
-      # 실시간 브로드캐스트
-      broadcast_task_updated(task, { 
-        subtasks: task.subtasks,
-        completion_percentage: task.completion_percentage
-      })
-      
-      task
-    end
-    
-    def block_task(task_id, reason, blocking_task_ids = [])
-      task = Mongodb::MongoTask.find(task_id)
-      
-      task.is_blocked = true
-      task.blocked_reason = reason
-      task.blocked_by_task_ids = blocking_task_ids
-      task.save!
-      
-      # 활동 로그
-      log_task_activity(task, 'blocked', {
-        reason: reason,
-        blocked_by: blocking_task_ids
-      })
-      
-      # 알림
-      notify_task_blocked(task)
-      
-      # 실시간 브로드캐스트
-      broadcast_task_blocked(task)
-      
-      task
-    end
-    
-    def unblock_task(task_id)
-      task = Mongodb::MongoTask.find(task_id)
-      
-      task.is_blocked = false
-      task.blocked_reason = nil
-      task.blocked_by_task_ids = []
-      task.save!
-      
-      # 활동 로그
-      log_task_activity(task, 'unblocked')
-      
-      # 실시간 브로드캐스트
-      broadcast_task_unblocked(task)
-      
-      task
-    end
-    
-    def bulk_update_status(task_ids, new_status, user_id = nil)
-      Mongodb::MongoTask.bulk_update_status(task_ids, new_status, user_id || Current.user&.id)
-      
-      # 실시간 브로드캐스트
-      broadcast_bulk_update(task_ids, { status: new_status })
-    end
-    
-    def search_tasks(params)
-      query = Mongodb::MongoTask.all
-      
-      # 필터링
-      query = query.where(organization_id: params[:organization_id]) if params[:organization_id]
-      query = query.where(service_id: params[:service_id]) if params[:service_id]
-      query = query.where(sprint_id: params[:sprint_id]) if params[:sprint_id]
-      query = query.where(assignee_id: params[:assignee_id]) if params[:assignee_id]
-      query = query.where(status: params[:status]) if params[:status]
-      query = query.where(priority: params[:priority]) if params[:priority]
-      query = query.where(:labels.in => params[:labels]) if params[:labels]
-      
-      # 검색어
-      if params[:search].present?
-        query = query.or(
-          { title: /#{params[:search]}/i },
-          { description: /#{params[:search]}/i },
-          { task_id: params[:search] }
-        )
-      end
-      
-      # 정렬
-      case params[:sort_by]
-      when 'priority'
-        query = query.order_by(priority: :desc, created_at: :desc)
-      when 'due_date'
-        query = query.order_by(due_date: :asc)
-      when 'story_points'
-        query = query.order_by(story_points: :desc)
-      else
-        query = query.order_by(created_at: :desc)
-      end
-      
-      # 페이지네이션
-      page = params[:page] || 1
-      per_page = params[:per_page] || 20
-      
-      query.skip((page - 1) * per_page).limit(per_page)
-    end
-    
-    def get_task_metrics(task_id)
-      task = Mongodb::MongoTask.find(task_id)
-      
+    Success(Dto::TaskStatisticsDto.new(stats))
+  end
+  
+  # 사용 가능한 Sprint 목록
+  def available_sprints
+    Sprint.where(organization_id: organization.id, status: ['planned', 'active'])
+          .map { |sprint| Dto::SprintDto.from_model(sprint) }
+  end
+  
+  # 사용 가능한 담당자 목록
+  def available_assignees
+    organization.users.map do |user|
       {
-        task_id: task.task_id,
-        cycle_time: task.cycle_time,
-        lead_time: task.lead_time,
-        time_in_status: task.time_in_status,
-        reopen_count: task.reopen_count,
-        review_cycles: task.review_cycles,
-        comment_count: task.comment_count,
-        status_changes: task.status_changes.count,
-        completion_percentage: task.completion_percentage
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatar_url: user.avatar_url
       }
     end
+  end
+  
+  private
+  
+  def apply_filters(scope, filters)
+    scope = scope.where(status: filters[:status]) if filters[:status].present?
+    scope = scope.where(priority: filters[:priority]) if filters[:priority].present?
+    scope = scope.where(assignee_id: filters[:assignee_id]) if filters[:assignee_id].present?
+    scope = scope.where(sprint_id: filters[:sprint_id]) if filters[:sprint_id].present?
+    scope = scope.where(assignee_id: nil) if filters[:unassigned] == 'true'
     
-    private
-    
-    def generate_task_id(service_id)
-      Mongodb::MongoTask.generate_task_id(service_id)
+    if filters[:overdue] == 'true'
+      scope = scope.where(:due_date.lt => Date.current, :status.ne => 'done')
     end
     
-    def get_assignee_name(assignee_id)
-      return nil unless assignee_id
-      User.cached_basic_info(assignee_id)&.dig(:name)
+    if filters[:due_soon] == 'true'
+      scope = scope.where(
+        :due_date.gte => Date.current,
+        :due_date.lte => 7.days.from_now
+      )
     end
     
-    def get_user_name(user_id)
-      return nil unless user_id
-      User.cached_basic_info(user_id)&.dig(:name) || 'Unknown User'
+    scope
+  end
+  
+  def apply_sorting(scope, sort_by)
+    case sort_by
+    when 'priority'
+      scope.order_by(priority_score: :desc, created_at: :desc)
+    when 'due_date'
+      scope.order_by(due_date: :asc, created_at: :desc)
+    when 'created'
+      scope.order_by(created_at: :desc)
+    when 'updated'
+      scope.order_by(updated_at: :desc)
+    else
+      scope.order_by(position: :asc, created_at: :desc)
     end
-    
-    def extract_mentions(content)
-      return [] unless content
-      # UUID 형식의 멘션 추출
-      content.scan(/@user_([a-f0-9\-]{36})/).flatten.uniq
-    end
-    
-    def log_task_activity(task, action, changes = {})
-      Mongodb::MongoActivity.log_task_activity(task, action, changes)
-    end
-    
-    # 알림 메서드들
-    def notify_assignee(task, assignee_id)
-      # TODO: 알림 시스템 구현
-      Rails.logger.info "Notifying assignee #{assignee_id} about task #{task.task_id}"
-    end
-    
-    def notify_mentioned_users(comment)
-      comment.mentioned_user_ids.each do |user_id|
-        # TODO: 알림 시스템 구현
-        Rails.logger.info "Notifying user #{user_id} about mention in comment"
-      end
-    end
-    
-    def notify_task_blocked(task)
-      # TODO: 알림 시스템 구현
-      Rails.logger.info "Notifying about blocked task #{task.task_id}"
-    end
-    
-    # Broadcast methods are now delegated to Broadcastable module
   end
 end

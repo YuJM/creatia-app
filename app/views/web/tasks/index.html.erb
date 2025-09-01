@@ -26,7 +26,7 @@
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Total Tasks</p>
-        <p class="text-3xl font-bold text-foreground mt-2"><%= @tasks.count %></p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.total || 0 %></p>
       </div>
       <div class="p-3 bg-primary/10 rounded-full">
         <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,7 +40,7 @@
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Completed</p>
-        <p class="text-3xl font-bold text-foreground mt-2"><%= @tasks.where(status: 'completed').count %></p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.by_status&.done || 0 %></p>
       </div>
       <div class="p-3 bg-success/10 rounded-full">
         <svg class="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,7 +54,7 @@
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">In Progress</p>
-        <p class="text-3xl font-bold text-foreground mt-2"><%= @tasks.where(status: 'in_progress').count %></p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.by_status&.in_progress || 0 %></p>
       </div>
       <div class="p-3 bg-accent/10 rounded-full">
         <svg class="h-6 w-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,7 +68,7 @@
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Overdue</p>
-        <p class="text-3xl font-bold text-foreground mt-2"><%= @tasks.where('due_date < ? AND status != ?', Date.current, 'completed').count %></p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.overdue || 0 %></p>
       </div>
       <div class="p-3 bg-destructive/10 rounded-full">
         <svg class="h-6 w-6 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -267,44 +267,23 @@
 </div>
 
 <!-- Pagination -->
-<% if @tasks.respond_to?(:current_page) && @tasks.total_pages > 1 %>
+<% if @paginated_tasks && @paginated_tasks.total_pages > 1 %>
   <div class="mt-8">
-    <nav class="flex items-center justify-between border-t border-border px-4 sm:px-0" aria-label="Pagination">
-      <div class="-mt-px flex w-0 flex-1">
-        <% unless @tasks.first_page? %>
-          <%= link_to tasks_path(page: @tasks.prev_page), class: "inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary transition-colors" do %>
-            <svg class="mr-3 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M18 10a.75.75 0 01-.75.75H4.66l2.1 1.95a.75.75 0 11-1.02 1.1l-3.5-3.25a.75.75 0 010-1.1l3.5-3.25a.75.75 0 111.02 1.1l-2.1 1.95h12.59A.75.75 0 0118 10z" clip-rule="evenodd" />
-            </svg>
-            Previous
-          <% end %>
-        <% end %>
+    <div class="flex items-center justify-between mb-4">
+      <div class="text-sm text-muted-foreground">
+        Showing 
+        <span class="font-medium"><%= @paginated_tasks.offset_value + 1 %></span>
+        to 
+        <span class="font-medium"><%= [@paginated_tasks.offset_value + @paginated_tasks.limit_value, @paginated_tasks.total_count].min %></span>
+        of 
+        <span class="font-medium"><%= @paginated_tasks.total_count %></span>
+        results
       </div>
-      
-      <div class="hidden md:-mt-px md:flex">
-        <% @tasks.total_pages.times do |i| %>
-          <% page = i + 1 %>
-          <% if page == @tasks.current_page %>
-            <span class="inline-flex items-center border-t-2 border-primary px-4 pt-4 text-sm font-medium text-primary" aria-current="page">
-              <%= page %>
-            </span>
-          <% else %>
-            <%= link_to page, tasks_path(page: page), class: "inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-border transition-colors" %>
-          <% end %>
-        <% end %>
-      </div>
-      
-      <div class="-mt-px flex w-0 flex-1 justify-end">
-        <% unless @tasks.last_page? %>
-          <%= link_to tasks_path(page: @tasks.next_page), class: "inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary transition-colors" do %>
-            Next
-            <svg class="ml-3 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M2 10a.75.75 0 01.75-.75h12.59l-2.1-1.95a.75.75 0 111.02-1.1l3.5 3.25a.75.75 0 010 1.1l-3.5 3.25a.75.75 0 11-1.02-1.1l2.1-1.95H2.75A.75.75 0 012 10z" clip-rule="evenodd" />
-            </svg>
-          <% end %>
-        <% end %>
-      </div>
-    </nav>
+    </div>
+    <%= paginate @paginated_tasks, 
+        window: 2,
+        outer_window: 1,
+        params: request.query_parameters %>
   </div>
 <% end %>
 

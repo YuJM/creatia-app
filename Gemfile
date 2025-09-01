@@ -39,17 +39,28 @@ gem "jwt", "~> 2.7"
 # Service object utilities
 gem "attr_extras", "~> 7.1"
 gem "memo_wise", "~> 1.8"
+
+# dry-rb ecosystem for functional programming
 gem "dry-monads", "~> 1.6"
 gem "dry-validation", "~> 1.10"
 gem "dry-struct", "~> 1.6"
 gem "dry-types", "~> 1.7"
+gem "dry-container", "~> 0.11"
+gem "dry-auto_inject", "~> 1.0"
+gem "dry-transaction", "~> 0.16"
+gem "dry-initializer", "~> 3.1"
+gem "dry-schema", "~> 1.13"
 gem "hashie", "~> 5.0"
+
+# Connection management and caching
+gem "connection_pool", "~> 2.4"
 
 # Multi-tenancy
 gem "acts_as_tenant", "~> 1.0"
 
 # Pagination
 gem "kaminari", "~> 1.2"
+gem "kaminari-mongoid", "~> 1.0"  # Required for Mongoid support
 
 # OAuth authentication
 gem "omniauth", "~> 2.1"
