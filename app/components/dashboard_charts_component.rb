@@ -37,7 +37,7 @@ class DashboardChartsComponent < ViewComponent::Base
     return [] unless chart_data[:workload_distribution].present?
     
     chart_data[:workload_distribution].map do |user_id, hours|
-      user = User.find_by(id: user_id)
+      user = User.cached_find(user_id)
       next unless user
       
       {

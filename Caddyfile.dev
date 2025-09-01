@@ -8,45 +8,16 @@
 # 127.0.0.1 api.creatia.local
 # 127.0.0.1 admin.creatia.local
 # 127.0.0.1 demo.creatia.local
+# 127.0.0.1 acme.creatia.local
+# 127.0.0.1 startup.creatia.local
+# 127.0.0.1 test.creatia.local
 
-# Main domain (www or no subdomain)
-http://creatia.local, http://www.creatia.local {
-    reverse_proxy localhost:3000 {
-        header_up Host {http.request.host}
-        header_up X-Real-IP {remote}
-        header_up X-Original-Host {http.request.host}
-    }
+{
+	auto_https off
 }
 
-# Auth subdomain
-http://auth.creatia.local {
-    reverse_proxy localhost:3000 {
-        header_up Host {http.request.host}
-        header_up X-Real-IP {remote}
-        header_up X-Original-Host {http.request.host}
-    }
-}
-
-# API subdomain
-http://api.creatia.local {
-    reverse_proxy localhost:3000 {
-        header_up Host {http.request.host}
-        header_up X-Real-IP {remote}
-        header_up X-Original-Host {http.request.host}
-    }
-}
-
-# Admin subdomain
-http://admin.creatia.local {
-    reverse_proxy localhost:3000 {
-        header_up Host {http.request.host}
-        header_up X-Real-IP {remote}
-        header_up X-Original-Host {http.request.host}
-    }
-}
-
-# Wildcard for organization subdomains
-http://*.creatia.local {
+# 모든 서브도메인과 메인 도메인을 와일드카드로 처리
+http://*.creatia.local, http://creatia.local {
     reverse_proxy localhost:3000 {
         header_up Host {http.request.host}
         header_up X-Real-IP {remote}

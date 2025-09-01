@@ -22,7 +22,7 @@ RSpec.describe "Application Bootstrap", type: :system do
     it "모든 모델이 올바르게 로드되어야 함" do
       expect { User.new }.not_to raise_error
       expect { Organization.new }.not_to raise_error
-      expect { Task.new }.not_to raise_error
+      expect { Mongodb::MongoTask.new }.not_to raise_error
       expect { OrganizationMembership.new }.not_to raise_error
     end
   end

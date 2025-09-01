@@ -6,7 +6,7 @@ RSpec.describe TasksController, type: :controller do
   let(:organization) { create(:organization) }
   let(:user) { create(:user) }
   let(:membership) { create(:organization_membership, user: user, organization: organization) }
-  let(:task) { create(:task, organization: organization) }
+  let(:task) { create(:mongo_task, organization: organization) }
 
   before do
     sign_in user
@@ -34,7 +34,7 @@ RSpec.describe TasksController, type: :controller do
         post :create, params: { task: task_params }
         
         expect(response).to have_http_status(:created)
-        expect(Task.last.title).to eq('테스트 작업')
+        expect(Mongodb::MongoTask.last.title).to eq('테스트 작업')
       end
     end
 

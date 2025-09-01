@@ -16,8 +16,8 @@ class ProcessGithubPushJob < ApplicationJob
     
     # Task 찾기
     # task_id는 PREFIX-UUID 형식일 수도 있고 PREFIX-NUMBER 형식일 수도 있음
-    # 모든 Task를 조회하여 task_id가 일치하는 것을 찾음
-    task = Task.joins(:service).find { |t| t.task_id == task_id }
+    # MongoDB에서 task_id로 검색
+    task = Task.where(task_id: task_id).first
     return unless task
     
     # 활동 기록 생성
@@ -42,13 +42,13 @@ class ProcessGithubPushJob < ApplicationJob
   def auto_update_task_status(task, payload)
     # 새 브랜치 생성 시 자동으로 in_progress로 변경
     if payload.is_branch_creation? && task.status == 'todo'
-      task.transition_to!('in_progress')
+      TaskService.update_status(task.id, 'in_progress')
       Rails.logger.info "Task #{task.task_id}: Status changed to in_progress (branch created)"
     end
     
     # PR 관련 키워드가 커밋 메시지에 있으면 review로 변경
     if payload.latest_commit_message&.match?(/\b(PR|pull request|review)\b/i) && task.status == 'in_progress'
-      task.transition_to!('review')
+      TaskService.update_status(task.id, 'review')
       Rails.logger.info "Task #{task.task_id}: Status changed to review (PR keyword detected)"
     end
   end

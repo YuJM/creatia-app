@@ -16,7 +16,7 @@ class SprintPlanComponent < ViewComponent::Base
     return [] unless sprint_plan.workload_distribution.present?
     
     sprint_plan.workload_distribution.map do |user_id, hours|
-      user = User.find_by(id: user_id)
+      user = User.cached_find(user_id)
       next unless user
       
       {
@@ -53,14 +53,17 @@ class SprintPlanComponent < ViewComponent::Base
   end
 
   def user_tasks_count(user)
-    sprint.tasks.where(assigned_user: user).count
+    Task.where(
+      sprint_id: sprint.id,
+      assignee_id: user.id
+    ).count
   end
 
   def critical_path_tasks
     return [] unless dependency_analysis[:critical_path]
     
     task_ids = dependency_analysis[:critical_path]
-    Task.where(id: task_ids).includes(:assigned_user).order(:position)
+    Task.where(:_id.in => task_ids).order_by(position: :asc)
   end
 
   def dependency_complexity_status
@@ -184,10 +187,10 @@ class SprintPlanComponent < ViewComponent::Base
   end
 
   def milestone_tasks
-    sprint.tasks.where.not(due_date: nil)
-                .order(:due_date)
-                .limit(5)
-                .includes(:assigned_user)
+    Task.where(
+      sprint_id: sprint.id,
+      :due_date.ne => nil
+    ).order_by(due_date: :asc).limit(5)
   end
 
   def bottleneck_users

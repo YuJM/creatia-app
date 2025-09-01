@@ -85,11 +85,11 @@ class Milestone
   end
   
   def owner
-    @owner ||= User.find_by(id: owner_id)
+    @owner ||= User.cached_find( owner_id)
   end
   
   def created_by
-    @created_by ||= User.find_by(id: created_by_id)
+    @created_by ||= User.cached_find( created_by_id)
   end
   
   # ===== Instance Methods =====

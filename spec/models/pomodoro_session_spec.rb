@@ -1,18 +1,18 @@
 require 'rails_helper'
 
-RSpec.describe PomodoroSession, type: :model do
+RSpec.describe Mongodb::MongoPomodoroSession, type: :model do
   let(:organization) { create(:organization) }
   let(:user) { create(:user) }
   let(:service) { create(:service, organization: organization) }
-  let(:task) { create(:task, assignee: user, service: service) }
-  let(:pomodoro_session) { create(:pomodoro_session, user: user, task: task) }
+  let(:task) { create(:mongo_task, assignee: user, service: service) }
+  let(:pomodoro_session) { create(:mongo_pomodoro_session, user: user, task: task) }
   
   describe 'constants' do
     it 'defines work and break durations' do
-      expect(PomodoroSession::WORK_DURATION).to eq(25.minutes)
-      expect(PomodoroSession::SHORT_BREAK).to eq(5.minutes)
-      expect(PomodoroSession::LONG_BREAK).to eq(15.minutes)
-      expect(PomodoroSession::SESSIONS_BEFORE_LONG_BREAK).to eq(4)
+      expect(Mongodb::MongoPomodoroSession::WORK_DURATION).to eq(25.minutes)
+      expect(Mongodb::MongoPomodoroSession::SHORT_BREAK).to eq(5.minutes)
+      expect(Mongodb::MongoPomodoroSession::LONG_BREAK).to eq(15.minutes)
+      expect(Mongodb::MongoPomodoroSession::SESSIONS_BEFORE_LONG_BREAK).to eq(4)
     end
   end
 
@@ -30,7 +30,7 @@ RSpec.describe PomodoroSession, type: :model do
         skip "Business hours validation not enforced" unless pomodoro_session.respond_to?(:within_business_hours?)
         
         # Test with non-business hours
-        weekend_session = build(:pomodoro_session,
+        weekend_session = build(:mongo_pomodoro_session,
           user: user,
           task: task,
           started_at: Time.parse("2024-01-06 10:00:00") # Saturday
@@ -53,27 +53,27 @@ RSpec.describe PomodoroSession, type: :model do
   describe 'scopes' do
     before do
       ActsAsTenant.with_tenant(organization) do
-        @today_session = create(:pomodoro_session,
+        @today_session = create(:mongo_pomodoro_session,
           user: user,
           task: task,
           started_at: Time.current
         )
-        @yesterday_session = create(:pomodoro_session,
+        @yesterday_session = create(:mongo_pomodoro_session,
           user: user,
           task: task,
           started_at: 1.day.ago
         )
-        @last_week_session = create(:pomodoro_session,
+        @last_week_session = create(:mongo_pomodoro_session,
           user: user,
           task: task,
           started_at: 1.week.ago
         )
-        @completed_session = create(:pomodoro_session,
+        @completed_session = create(:mongo_pomodoro_session,
           user: user,
           task: task,
           status: :completed
         )
-        @in_progress_session = create(:pomodoro_session,
+        @in_progress_session = create(:mongo_pomodoro_session,
           user: user,
           task: task,
           status: :in_progress
@@ -84,8 +84,8 @@ RSpec.describe PomodoroSession, type: :model do
     describe '.today' do
       it 'returns sessions from today' do
         ActsAsTenant.with_tenant(organization) do
-          expect(PomodoroSession.today).to include(@today_session)
-          expect(PomodoroSession.today).not_to include(@yesterday_session)
+          expect(Mongodb::MongoPomodoroSession.today).to include(@today_session)
+          expect(Mongodb::MongoPomodoroSession.today).not_to include(@yesterday_session)
         end
       end
     end
@@ -93,7 +93,7 @@ RSpec.describe PomodoroSession, type: :model do
     describe '.this_week' do
       it 'returns sessions from current week' do
         ActsAsTenant.with_tenant(organization) do
-          sessions = PomodoroSession.this_week
+          sessions = Mongodb::MongoPomodoroSession.this_week
           expect(sessions).to include(@today_session)
           # Depending on what day of the week the test runs, yesterday might be in this week
         end
@@ -103,8 +103,8 @@ RSpec.describe PomodoroSession, type: :model do
     describe '.completed' do
       it 'returns only completed sessions' do
         ActsAsTenant.with_tenant(organization) do
-          expect(PomodoroSession.completed).to include(@completed_session)
-          expect(PomodoroSession.completed).not_to include(@in_progress_session)
+          expect(Mongodb::MongoPomodoroSession.completed).to include(@completed_session)
+          expect(Mongodb::MongoPomodoroSession.completed).not_to include(@in_progress_session)
         end
       end
     end
@@ -112,8 +112,8 @@ RSpec.describe PomodoroSession, type: :model do
     describe '.in_progress' do
       it 'returns only in-progress sessions' do
         ActsAsTenant.with_tenant(organization) do
-          expect(PomodoroSession.in_progress).to include(@in_progress_session)
-          expect(PomodoroSession.in_progress).not_to include(@completed_session)
+          expect(Mongodb::MongoPomodoroSession.in_progress).to include(@in_progress_session)
+          expect(Mongodb::MongoPomodoroSession.in_progress).not_to include(@completed_session)
         end
       end
     end
@@ -122,7 +122,7 @@ RSpec.describe PomodoroSession, type: :model do
   describe '#complete!' do
     it 'marks session as completed with ended_at time' do
       ActsAsTenant.with_tenant(organization) do
-        session = create(:pomodoro_session,
+        session = create(:mongo_pomodoro_session,
           user: user,
           task: task,
           status: :in_progress
@@ -141,7 +141,7 @@ RSpec.describe PomodoroSession, type: :model do
   describe '#cancel!' do
     it 'marks session as cancelled' do
       ActsAsTenant.with_tenant(organization) do
-        session = create(:pomodoro_session,
+        session = create(:mongo_pomodoro_session,
           user: user,
           task: task,
           status: :in_progress
@@ -159,7 +159,7 @@ RSpec.describe PomodoroSession, type: :model do
   describe '#pause!' do
     it 'marks session as paused' do
       ActsAsTenant.with_tenant(organization) do
-        session = create(:pomodoro_session,
+        session = create(:mongo_pomodoro_session,
           user: user,
           task: task,
           status: :in_progress
@@ -175,7 +175,7 @@ RSpec.describe PomodoroSession, type: :model do
   describe '#resume!' do
     it 'resumes a paused session' do
       ActsAsTenant.with_tenant(organization) do
-        session = create(:pomodoro_session,
+        session = create(:mongo_pomodoro_session,
           user: user,
           task: task,
           status: :paused
@@ -192,7 +192,7 @@ RSpec.describe PomodoroSession, type: :model do
     context 'when session is in progress' do
       it 'calculates remaining time' do
         ActsAsTenant.with_tenant(organization) do
-          session = create(:pomodoro_session,
+          session = create(:mongo_pomodoro_session,
             user: user,
             task: task,
             status: :in_progress,
@@ -208,7 +208,7 @@ RSpec.describe PomodoroSession, type: :model do
     context 'when session is completed' do
       it 'returns 0' do
         ActsAsTenant.with_tenant(organization) do
-          session = create(:pomodoro_session,
+          session = create(:mongo_pomodoro_session,
             user: user,
             task: task,
             status: :completed
@@ -223,7 +223,7 @@ RSpec.describe PomodoroSession, type: :model do
   describe '#progress_percentage' do
     it 'calculates progress as percentage' do
       ActsAsTenant.with_tenant(organization) do
-        session = create(:pomodoro_session,
+        session = create(:mongo_pomodoro_session,
           user: user,
           task: task,
           status: :in_progress,
@@ -241,7 +241,7 @@ RSpec.describe PomodoroSession, type: :model do
       it 'returns true' do
         ActsAsTenant.with_tenant(organization) do
           4.times do
-            create(:pomodoro_session,
+            create(:mongo_pomodoro_session,
               user: user,
               task: task,
               status: :completed,
@@ -249,7 +249,7 @@ RSpec.describe PomodoroSession, type: :model do
             )
           end
           
-          new_session = create(:pomodoro_session,
+          new_session = create(:mongo_pomodoro_session,
             user: user,
             task: task,
             status: :in_progress
@@ -264,7 +264,7 @@ RSpec.describe PomodoroSession, type: :model do
       it 'returns false' do
         ActsAsTenant.with_tenant(organization) do
           2.times do
-            create(:pomodoro_session,
+            create(:mongo_pomodoro_session,
               user: user,
               task: task,
               status: :completed,
@@ -272,7 +272,7 @@ RSpec.describe PomodoroSession, type: :model do
             )
           end
           
-          new_session = create(:pomodoro_session,
+          new_session = create(:mongo_pomodoro_session,
             user: user,
             task: task,
             status: :in_progress
@@ -288,7 +288,7 @@ RSpec.describe PomodoroSession, type: :model do
     it 'returns count of completed sessions today' do
       ActsAsTenant.with_tenant(organization) do
         3.times do
-          create(:pomodoro_session,
+          create(:mongo_pomodoro_session,
             user: user,
             task: task,
             status: :completed,
@@ -296,14 +296,14 @@ RSpec.describe PomodoroSession, type: :model do
           )
         end
         
-        create(:pomodoro_session,
+        create(:mongo_pomodoro_session,
           user: user,
           task: task,
           status: :completed,
           started_at: 1.day.ago
         )
         
-        session = create(:pomodoro_session, user: user, task: task)
+        session = create(:mongo_pomodoro_session, user: user, task: task)
         expect(session.todays_completed_sessions).to eq(3)
       end
     end
@@ -313,7 +313,7 @@ RSpec.describe PomodoroSession, type: :model do
     context 'after completing 4 sessions' do
       it 'returns :long_break' do
         ActsAsTenant.with_tenant(organization) do
-          session = create(:pomodoro_session,
+          session = create(:mongo_pomodoro_session,
             user: user,
             task: task,
             session_count: 4
@@ -327,7 +327,7 @@ RSpec.describe PomodoroSession, type: :model do
     context 'after completing fewer than 4 sessions' do
       it 'returns :short_break' do
         ActsAsTenant.with_tenant(organization) do
-          session = create(:pomodoro_session,
+          session = create(:mongo_pomodoro_session,
             user: user,
             task: task,
             session_count: 2
@@ -345,7 +345,7 @@ RSpec.describe PomodoroSession, type: :model do
         friday_afternoon = Time.parse("2024-01-05 16:00:00") # Friday 4 PM
         monday_morning = Time.parse("2024-01-08 09:00:00") # Monday 9 AM
         
-        session = create(:pomodoro_session,
+        session = create(:mongo_pomodoro_session,
           user: user,
           task: task,
           started_at: friday_afternoon,

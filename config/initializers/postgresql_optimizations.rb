@@ -13,10 +13,11 @@ if Rails.env.production? || Rails.env.development?
     conn.execute("SET SESSION default_statistics_target = 100") rescue nil
   end
   
-  # 2. 커넥션 풀 최적화 (캐시 워밍 유지)
+  # 2. 커넥션 풀 최적화 (캐시 워밍 유지) - 수정됨
   Rails.application.config.after_initialize do
     ActiveRecord::Base.connection_pool.size.times do
-      ActiveRecord::Base.connection_pool.checkout
+      conn = ActiveRecord::Base.connection_pool.checkout
+      ActiveRecord::Base.connection_pool.checkin(conn)  # 반드시 반환!
     end
   end
   

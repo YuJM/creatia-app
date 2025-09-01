@@ -79,13 +79,19 @@ ActiveRecord::Base.transaction do
 
     # Create some tasks for testing
     3.times do |i|
-      Task.find_or_create_by!(
+      task = Task.where(
         title: "Test Task #{i + 1}",
         organization: test_org
-      ) do |task|
-        task.description = "Description for test task #{i + 1}"
-        task.status = ['todo', 'in_progress', 'done'].sample
-        task.assignee_id = [admin_user.id, editor_user.id].sample
+      ).first
+      
+      if task.nil?
+        Task.create!(
+          title: "Test Task #{i + 1}",
+          organization: test_org,
+          description: "Description for test task #{i + 1}",
+          status: ['todo', 'in_progress', 'done'].sample,
+          assignee_id: [admin_user.id, editor_user.id].sample
+        )
       end
     end
   end

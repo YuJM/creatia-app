@@ -5,16 +5,16 @@
 class CompletePomodoroSessionJob < ApplicationJob
   queue_as :pomodoro
   
-  discard_on ActiveRecord::RecordNotFound
+  discard_on Mongoid::Errors::DocumentNotFound
   
   def perform(session_id)
     session = PomodoroSession.find(session_id)
     
     # 이미 완료되었거나 취소된 경우 무시
-    return unless session.in_progress?
+    return unless session.running?
     
     # 세션 완료 처리
-    session.complete!
+    session.complete_session!
     
     # 완료 알림 전송
     PomodoroNotifier.with(

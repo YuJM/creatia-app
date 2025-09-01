@@ -9,7 +9,10 @@ class DashboardController < TenantBaseController
     authorize! :index, :dashboard
     
     # 현재 활성 스프린트
-    @active_sprint = ::Sprint.accessible_by(current_ability).active.first
+    @active_sprint = Sprint.where(
+      organization_id: current_organization.id.to_s,
+      status: 'active'
+    ).first
     
     # 대시보드 메트릭 계산
     @dashboard_metrics = calculate_dashboard_metrics
@@ -204,8 +207,14 @@ class DashboardController < TenantBaseController
   
   # 대시보드 메트릭 계산
   def calculate_dashboard_metrics
-    tasks = ::Task.accessible_by(current_ability).where(created_at: @start_date..@end_date)
-    sprints = ::Sprint.accessible_by(current_ability).where(start_date: @start_date..@end_date)
+    tasks = Task.where(
+      organization_id: current_organization.id.to_s,
+      created_at: @start_date..@end_date
+    )
+    sprints = Sprint.where(
+      organization_id: current_organization.id.to_s,
+      start_date: @start_date..@end_date
+    )
     team_members = current_organization.users.active
     
     # TeamMetrics 구조체 사용
@@ -216,8 +225,16 @@ class DashboardController < TenantBaseController
       
       # 완료 지표
       completion_rate: calculate_overall_completion_rate(tasks),
-      tasks_completed_today: tasks.done.where(updated_at: Date.current.beginning_of_day..Date.current.end_of_day).count,
-      tasks_completed_week: tasks.done.where(updated_at: 1.week.ago..Time.current).count,
+      tasks_completed_today: tasks.where(
+        status: 'done',
+        :updated_at.gte => Date.current.beginning_of_day,
+        :updated_at.lte => Date.current.end_of_day
+      ).count,
+      tasks_completed_week: tasks.where(
+        status: 'done',
+        :updated_at.gte => 1.week.ago,
+        :updated_at.lte => Time.current
+      ).count,
       
       # 업무 분배
       workload_distribution: calculate_current_workload_distribution(team_members),
@@ -227,8 +244,13 @@ class DashboardController < TenantBaseController
       
       # 추가 지표
       average_cycle_time: calculate_average_cycle_time(tasks),
-      overdue_tasks_count: tasks.overdue.count,
-      high_priority_tasks_count: tasks.urgent.count + tasks.high_priority.count
+      overdue_tasks_count: tasks.where(
+        :deadline.lt => Time.current,
+        status: { '$ne' => 'done' }
+      ).count,
+      high_priority_tasks_count: tasks.where(
+        priority: { '$in' => ['urgent', 'high'] }
+      ).count
     )
   end
   
@@ -236,10 +258,12 @@ class DashboardController < TenantBaseController
     return 0.0 if sprints.empty?
     
     # 완료된 스프린트들의 평균 완료 작업 수
-    completed_sprints = sprints.completed
+    completed_sprints = sprints.where(status: 'completed')
     return 0.0 if completed_sprints.empty?
     
-    total_completed_tasks = completed_sprints.joins(:tasks).where(tasks: { status: 'done' }).count
+    total_completed_tasks = completed_sprints.map do |sprint|
+      Task.where(sprint_id: sprint.id, status: 'done').count
+    end.sum
     (total_completed_tasks.to_f / completed_sprints.count).round(1)
   end
   
@@ -254,7 +278,7 @@ class DashboardController < TenantBaseController
   def calculate_overall_completion_rate(tasks)
     return 0.0 if tasks.empty?
     
-    completed_tasks = tasks.done.count
+    completed_tasks = tasks.where(status: 'done').count
     (completed_tasks.to_f / tasks.count * 100).round(1)
   end
   
@@ -263,7 +287,11 @@ class DashboardController < TenantBaseController
     
     team_members.each do |member|
       # 현재 진행 중인 작업들의 예상 시간 합계
-      active_tasks = member.assigned_tasks.where(status: ['todo', 'in_progress', 'review'])
+      active_tasks = Task.where(
+        organization_id: current_organization.id.to_s,
+        assigned_user: member,
+        status: { '$in' => ['todo', 'in_progress', 'review'] }
+      )
       estimated_hours = active_tasks.sum { |task| task.estimated_hours || 4.0 }
       
       distribution[member.id] = estimated_hours.round(1)
@@ -277,13 +305,24 @@ class DashboardController < TenantBaseController
     data = []
     
     (30.days.ago.to_date..Date.current).each do |date|
-      remaining_tasks = ::Task.accessible_by(current_ability).where('created_at <= ? AND (status != ? OR updated_at > ?)', 
-                                                date.end_of_day, 'done', date.end_of_day).count
+      remaining_tasks = Task.where(
+        organization_id: current_organization.id.to_s,
+        :created_at.lte => date.end_of_day
+      ).where(
+        '$or' => [
+          { status: { '$ne' => 'done' } },
+          { :updated_at.gt => date.end_of_day }
+        ]
+      ).count
       
       # 이상적인 번다운 계산 (선형 감소)
       total_days = 30
       elapsed_days = (date - 30.days.ago.to_date).to_i
-      total_initial_tasks = ::Task.accessible_by(current_ability).where(created_at: 30.days.ago.beginning_of_day..30.days.ago.end_of_day).count
+      total_initial_tasks = Task.where(
+        organization_id: current_organization.id.to_s,
+        :created_at.gte => 30.days.ago.beginning_of_day,
+        :created_at.lte => 30.days.ago.end_of_day
+      ).count
       
       ideal_remaining = total_initial_tasks * [(total_days - elapsed_days).to_f / total_days, 0].max
       
@@ -298,7 +337,7 @@ class DashboardController < TenantBaseController
   end
   
   def calculate_average_cycle_time(tasks)
-    completed_tasks = tasks.done.where.not(created_at: nil)
+    completed_tasks = tasks.where(status: 'done').where(:created_at.exists => true)
     return 0.0 if completed_tasks.empty?
     
     total_cycle_time = completed_tasks.sum do |task|
@@ -317,10 +356,12 @@ class DashboardController < TenantBaseController
     range.beginning_of_week.step(range.end_of_week, 1.week) do |week_start|
       week_end = [week_start.end_of_week, Date.current].min
       
-      tasks_completed = ::Task.accessible_by(current_ability)
-                       .done
-                       .where(updated_at: week_start.beginning_of_day..week_end.end_of_day)
-                       .count
+      tasks_completed = Task.where(
+        organization_id: current_organization.id.to_s,
+        status: 'done',
+        :updated_at.gte => week_start.beginning_of_day,
+        :updated_at.lte => week_end.end_of_day
+      ).count
       
       data << {
         week: week_start.strftime('%-m/%-d'),
@@ -337,8 +378,15 @@ class DashboardController < TenantBaseController
     
     data = []
     range.each do |date|
-      remaining = ::Task.accessible_by(current_ability).where('created_at <= ? AND (status != ? OR updated_at > ?)', 
-                                          date.end_of_day, 'done', date.end_of_day).count
+      remaining = Task.where(
+        organization_id: current_organization.id.to_s,
+        :created_at.lte => date.end_of_day
+      ).where(
+        '$or' => [
+          { status: { '$ne' => 'done' } },
+          { :updated_at.gt => date.end_of_day }
+        ]
+      ).count
       
       data << {
         date: date.strftime('%-m/%-d'),
@@ -361,8 +409,13 @@ class DashboardController < TenantBaseController
     
     # 우선순위별 완료율
     %w[low medium high urgent].each do |priority|
-      priority_tasks = ::Task.accessible_by(current_ability).where(priority: priority, created_at: range)
-      completed = priority_tasks.done.count
+      priority_tasks = Task.where(
+        organization_id: current_organization.id.to_s,
+        priority: priority,
+        :created_at.gte => range.begin,
+        :created_at.lte => range.end
+      )
+      completed = priority_tasks.where(status: 'done').count
       total = priority_tasks.count
       
       data[:by_priority][priority] = {
@@ -374,8 +427,13 @@ class DashboardController < TenantBaseController
     
     # 담당자별 완료율 (활성 멤버만)
     current_organization.users.active.each do |user|
-      user_tasks = ::Task.accessible_by(current_ability).where(assigned_user: user, created_at: range)
-      completed = user_tasks.done.count
+      user_tasks = Task.where(
+        organization_id: current_organization.id.to_s,
+        assigned_user: user,
+        :created_at.gte => range.begin,
+        :created_at.lte => range.end
+      )
+      completed = user_tasks.where(status: 'done').count
       total = user_tasks.count
       
       data[:by_assignee][user.email] = {
@@ -387,8 +445,12 @@ class DashboardController < TenantBaseController
     
     # 일별 완료율
     range.each do |date|
-      day_tasks = ::Task.accessible_by(current_ability).where(created_at: date.beginning_of_day..date.end_of_day)
-      completed = day_tasks.done.count
+      day_tasks = Task.where(
+        organization_id: current_organization.id.to_s,
+        :created_at.gte => date.beginning_of_day,
+        :created_at.lte => date.end_of_day
+      )
+      completed = day_tasks.where(status: 'done').count
       total = day_tasks.count
       
       data[:by_day] << {
@@ -416,7 +478,11 @@ class DashboardController < TenantBaseController
     alerts = []
     
     # 지연된 작업 경고
-    overdue_count = ::Task.accessible_by(current_ability).overdue.count
+    overdue_count = Task.where(
+      organization_id: current_organization.id.to_s,
+      :deadline.lt => Time.current,
+      status: { '$ne' => 'done' }
+    ).count
     if overdue_count > 0
       alerts << {
         id: "overdue_tasks",
@@ -431,7 +497,11 @@ class DashboardController < TenantBaseController
     end
     
     # 높은 우선순위 작업 알림
-    urgent_count = ::Task.accessible_by(current_ability).urgent.where.not(status: 'done').count
+    urgent_count = Task.where(
+      organization_id: current_organization.id.to_s,
+      priority: 'urgent',
+      status: { '$ne' => 'done' }
+    ).count
     if urgent_count > 0
       alerts << {
         id: "urgent_tasks",
@@ -446,9 +516,14 @@ class DashboardController < TenantBaseController
     end
     
     # 활성 스프린트 진행 상황 확인
-    active_sprint = ::Sprint.accessible_by(current_ability).active.first
+    active_sprint = Sprint.where(
+      organization_id: current_organization.id.to_s,
+      status: 'active'
+    ).first
     if active_sprint
-      progress = (active_sprint.tasks.done.count.to_f / active_sprint.tasks.count * 100).round(1) rescue 0
+      total_tasks = Task.where(sprint_id: active_sprint.id).count
+      completed_tasks = Task.where(sprint_id: active_sprint.id, status: 'done').count
+      progress = total_tasks > 0 ? (completed_tasks.to_f / total_tasks * 100).round(1) : 0
       days_remaining = (active_sprint.end_date - Date.current).to_i rescue 0
       
       if days_remaining <= 2 && progress < 80
@@ -492,11 +567,12 @@ class DashboardController < TenantBaseController
     activities = []
     
     # 최근 완료된 작업들
-    recent_completed_tasks = ::Task.accessible_by(current_ability).done
-                                               .where(updated_at: 24.hours.ago..Time.current)
-                                               .includes(:assigned_user)
-                                               .order(updated_at: :desc)
-                                               .limit(5)
+    recent_completed_tasks = Task.where(
+      organization_id: current_organization.id.to_s,
+      status: 'done',
+      :updated_at.gte => 24.hours.ago,
+      :updated_at.lte => Time.current
+    ).order(updated_at: :desc).limit(5)
     
     recent_completed_tasks.each do |task|
       activities << {
@@ -509,10 +585,11 @@ class DashboardController < TenantBaseController
     end
     
     # 새로 생성된 작업들
-    recent_new_tasks = ::Task.accessible_by(current_ability).where(created_at: 24.hours.ago..Time.current)
-                                        .includes(:assigned_user)
-                                        .order(created_at: :desc)
-                                        .limit(3)
+    recent_new_tasks = Task.where(
+      organization_id: current_organization.id.to_s,
+      :created_at.gte => 24.hours.ago,
+      :created_at.lte => Time.current
+    ).order(created_at: :desc).limit(3)
     
     recent_new_tasks.each do |task|
       activities << {

@@ -3,12 +3,16 @@ module UserCacheable
   extend ActiveSupport::Concern
 
   class_methods do
-    # 메모리 캐시를 사용한 사용자 정보 조회
+    # 메모리 캐시를 사용한 사용자 정보 조회 (동시성 개선)
     def cached_find(user_id)
       return nil unless user_id.present?
       
-      Rails.cache.fetch("user/#{user_id}", expires_in: 1.hour) do
-        User.find_by(id: user_id)
+      # 동시 요청 시 첫 번째 요청만 DB 접근, 나머지는 대기
+      Rails.cache.fetch("user/#{user_id}", expires_in: 1.hour, race_condition_ttl: 30.seconds) do
+        ActiveRecord::Base.connection_pool.with_connection do |conn|
+          # 연결을 명시적으로 관리하여 누수 방지
+          User.where(id: user_id).first
+        end
       end
     end
 
@@ -47,7 +51,7 @@ module UserCacheable
       return nil unless user_id.present?
       
       Rails.cache.fetch("user_basic/#{user_id}", expires_in: 2.hours) do
-        user = User.find_by(id: user_id)
+        user = User.where(id: user_id).first
         next nil unless user
         
         {
@@ -60,10 +64,23 @@ module UserCacheable
       end
     end
 
+    # 이메일로 사용자 찾기 (캐싱 + 동시성 개선)
+    def cached_find_by_email(email)
+      return nil unless email.present?
+      
+      Rails.cache.fetch("user_email/#{email}", expires_in: 1.hour, race_condition_ttl: 30.seconds) do
+        ActiveRecord::Base.connection_pool.with_connection do
+          User.where(email: email).first
+        end
+      end
+    end
+
     # 캐시 무효화
     def invalidate_cache(user_id)
+      user = User.where(id: user_id).first
       Rails.cache.delete("user/#{user_id}")
       Rails.cache.delete("user_basic/#{user_id}")
+      Rails.cache.delete("user_email/#{user.email}") if user
     end
   end
 

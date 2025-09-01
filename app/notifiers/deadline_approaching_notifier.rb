@@ -350,25 +350,34 @@ class DeadlineApproachingNotifier < ApplicationNotifier
   class << self
     def bulk_notify_upcoming_deadlines
       # 24시간 이내 마감 태스크
-      Task.joins(:assignee)
-          .where(deadline: Time.current..24.hours.from_now)
-          .where.not(status: 'done')
-          .find_each do |task|
-        with(task: task).deliver_later(task.assignee)
+      Task.where(
+        :due_date.gte => Time.current,
+        :due_date.lte => 24.hours.from_now,
+        :status.ne => 'done'
+      ).each do |task|
+        assignee = User.cached_find( task.assignee_id) if task.assignee_id
+        with(task: task).deliver_later(assignee) if assignee
       end
       
       # 1시간 이내 긴급 태스크
-      Task.joins(:assignee)
-          .where(deadline: Time.current..1.hour.from_now)
-          .where.not(status: 'done')
-          .find_each do |task|
-        with(task: task, urgency_override: :critical).deliver(task.assignee)
+      Task.where(
+        :due_date.gte => Time.current,
+        :due_date.lte => 1.hour.from_now,
+        :status.ne => 'done'
+      ).each do |task|
+        assignee = User.cached_find( task.assignee_id) if task.assignee_id
+        with(task: task, urgency_override: :critical).deliver(assignee) if assignee
       end
     end
     
     def schedule_smart_reminders
       # Groupdate를 활용한 패턴 분석으로 최적 알림 시간 결정
-      productivity_by_hour = Task.hourly_productivity_analysis
+      # MongoDB에서는 집계 분석을 별도 서비스로 처리
+      productivity_by_hour = Mongodb::MongoMetrics.by_category('productivity')
+                               .where(metric_type: 'hourly_productivity')
+                               .order_by(timestamp: :desc)
+                               .limit(24)
+                               .group_by(&:hour)
       
       # 생산성이 높은 시간대 2시간 전에 알림 전송
       optimal_reminder_times = calculate_optimal_reminder_times(productivity_by_hour)

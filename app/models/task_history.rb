@@ -6,10 +6,10 @@ class TaskHistory
   include Mongoid::Timestamps
 
   # Fields
-  field :task_id, type: Integer
-  field :organization_id, type: Integer
-  field :service_id, type: Integer
-  field :user_id, type: Integer
+  field :task_id, type: String     # MongoDB Task ID
+  field :organization_id, type: String  # UUID from PostgreSQL
+  field :service_id, type: String       # UUID from PostgreSQL
+  field :user_id, type: String          # UUID from PostgreSQL User
   field :action, type: String # created, updated, status_changed, assigned, commented, etc.
   field :previous_state, type: Hash
   field :current_state, type: Hash
@@ -210,11 +210,13 @@ class TaskHistory
 
   # 관련 PostgreSQL 모델과의 연동
   def task
-    @task ||= Task.find_by(id: task_id)
+    @task ||= Task.find(task_id)
+  rescue Mongoid::Errors::DocumentNotFound
+    nil
   end
 
   def user
-    @user ||= User.find_by(id: user_id)
+    @user ||= User.cached_find( user_id)
   end
 
   def organization

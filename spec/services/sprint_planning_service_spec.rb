@@ -9,7 +9,7 @@ RSpec.describe SprintPlanningService do
   let(:organization) { create(:organization) }
   let(:service) { create(:service, organization: organization) }
   let(:sprint) do
-    create(:sprint,
+    create(:mongo_sprint,
       service: service,
       start_date: Date.current,
       end_date: 14.days.from_now
@@ -22,7 +22,7 @@ RSpec.describe SprintPlanningService do
   
   let!(:tasks) do
     5.times.map do |i|
-      create(:task,
+      create(:mongo_task,
         sprint: sprint,
         service: service,
         title: "Task #{i}",
@@ -79,7 +79,7 @@ RSpec.describe SprintPlanningService do
     
     context 'with invalid sprint data' do
       let(:invalid_sprint) do
-        build(:sprint,
+        build(:mongo_sprint,
           service: service,
           start_date: Date.current,
           end_date: Date.yesterday # Invalid: end before start
@@ -88,7 +88,7 @@ RSpec.describe SprintPlanningService do
       
       it 'returns Failure with validation errors' do
         # stub하여 validation 에러가 나지 않도록 함
-        allow(invalid_sprint).to receive(:tasks).and_return(Task.none)
+        allow(invalid_sprint).to receive(:tasks).and_return(Mongodb::MongoTask.none)
         service = described_class.new(invalid_sprint, team_members)
         result = service.execute
         

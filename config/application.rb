@@ -34,6 +34,14 @@ module CreatiaApp
     # Load middleware path
     config.autoload_paths << Rails.root.join('app/middleware')
     
+    # Load lib directories for dry-rb
+    config.autoload_paths << Rails.root.join('app/lib')
+    config.autoload_paths << Rails.root.join('app/repositories')
+    config.autoload_paths << Rails.root.join('app/contracts')
+    config.autoload_paths << Rails.root.join('app/transactions')
+    config.autoload_paths << Rails.root.join('app/value_objects')
+    config.autoload_paths << Rails.root.join('app/schemas')
+    
     # Multi-tenant security middleware (프로덕션과 필요시에만)
     if Rails.env.production? || ENV['ENABLE_RATE_LIMITING'] == 'true'
       config.middleware.use 'TenantRateLimiter'

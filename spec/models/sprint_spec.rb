@@ -1,10 +1,10 @@
 require 'rails_helper'
 
-RSpec.describe Sprint, type: :model do
+RSpec.describe Mongodb::MongoMongodb::MongoSprint, type: :model do
   let(:organization) { create(:organization) }
   let(:service) { create(:service, organization: organization) }
   let(:user) { create(:user, organization: organization) }
-  let(:sprint) { create(:sprint, service: service) }
+  let(:sprint) { create(:mongo_sprint, service: service) }
   
   before do
     ActsAsTenant.with_tenant(organization) do
@@ -14,8 +14,8 @@ RSpec.describe Sprint, type: :model do
 
   describe 'associations' do
     it { should belong_to(:service) }
-    it { should have_many(:tasks).dependent(:nullify) }
-    it { should have_many(:users).through(:tasks) }
+    it { should have_many(:tasks) }
+    # MongoDB embeds_many relationships don't use dependent options
   end
 
   describe 'validations' do
@@ -25,7 +25,7 @@ RSpec.describe Sprint, type: :model do
     
     context 'date validations' do
       it 'validates end_date is after start_date' do
-        invalid_sprint = build(:sprint, 
+        invalid_sprint = build(:mongo_sprint, 
           service: service,
           start_date: Date.today, 
           end_date: Date.yesterday
@@ -38,10 +38,7 @@ RSpec.describe Sprint, type: :model do
 
   describe 'enums' do
     it { should define_enum_for(:status).with_values(
-      planning: 0,
-      active: 1,
-      completed: 2,
-      cancelled: 3
+      [:planning, :active, :completed, :cancelled]
     ) }
   end
 
@@ -49,27 +46,27 @@ RSpec.describe Sprint, type: :model do
     describe '.current' do
       it 'returns active sprints containing today' do
         ActsAsTenant.with_tenant(organization) do
-          past_sprint = create(:sprint, 
+          past_sprint = create(:mongo_sprint, 
             service: service,
             start_date: 2.weeks.ago, 
             end_date: 1.week.ago,
             status: :completed
           )
-          current_sprint = create(:sprint,
+          current_sprint = create(:mongo_sprint,
             service: service,
             start_date: 1.week.ago,
             end_date: 1.week.from_now,
             status: :active
           )
-          future_sprint = create(:sprint,
+          future_sprint = create(:mongo_sprint,
             service: service,
             start_date: 1.week.from_now,
             end_date: 2.weeks.from_now,
             status: :planning
           )
           
-          expect(Sprint.current).to include(current_sprint)
-          expect(Sprint.current).not_to include(past_sprint, future_sprint)
+          expect(Mongodb::MongoSprint.current).to include(current_sprint)
+          expect(Mongodb::MongoSprint.current).not_to include(past_sprint, future_sprint)
         end
       end
     end
@@ -77,11 +74,11 @@ RSpec.describe Sprint, type: :model do
     describe '.past' do
       it 'returns completed sprints' do
         ActsAsTenant.with_tenant(organization) do
-          active_sprint = create(:sprint, service: service, status: :active)
-          completed_sprint = create(:sprint, service: service, status: :completed)
+          active_sprint = create(:mongo_sprint, service: service, status: :active)
+          completed_sprint = create(:mongo_sprint, service: service, status: :completed)
           
-          expect(Sprint.past).to include(completed_sprint)
-          expect(Sprint.past).not_to include(active_sprint)
+          expect(Mongodb::MongoSprint.past).to include(completed_sprint)
+          expect(Mongodb::MongoSprint.past).not_to include(active_sprint)
         end
       end
     end
@@ -89,15 +86,15 @@ RSpec.describe Sprint, type: :model do
     describe '.upcoming' do
       it 'returns planning sprints with future start date' do
         ActsAsTenant.with_tenant(organization) do
-          upcoming_sprint = create(:sprint,
+          upcoming_sprint = create(:mongo_sprint,
             service: service,
             start_date: 1.week.from_now,
             status: :planning
           )
-          active_sprint = create(:sprint, service: service, status: :active)
+          active_sprint = create(:mongo_sprint, service: service, status: :active)
           
-          expect(Sprint.upcoming).to include(upcoming_sprint)
-          expect(Sprint.upcoming).not_to include(active_sprint)
+          expect(Mongodb::MongoSprint.upcoming).to include(upcoming_sprint)
+          expect(Mongodb::MongoSprint.upcoming).not_to include(active_sprint)
         end
       end
     end
@@ -106,7 +103,7 @@ RSpec.describe Sprint, type: :model do
   describe '#initialize_schedule' do
     it 'creates an Ice Cube schedule' do
       ActsAsTenant.with_tenant(organization) do
-        new_sprint = build(:sprint, service: service)
+        new_sprint = build(:mongo_sprint, service: service)
         new_sprint.initialize_schedule(2)
         
         expect(new_sprint.schedule).to be_present
@@ -123,7 +120,7 @@ RSpec.describe Sprint, type: :model do
   describe '#duration_in_days' do
     it 'calculates sprint duration correctly' do
       ActsAsTenant.with_tenant(organization) do
-        sprint = create(:sprint,
+        sprint = create(:mongo_sprint,
           service: service,
           start_date: Date.today,
           end_date: 14.days.from_now
@@ -138,7 +135,7 @@ RSpec.describe Sprint, type: :model do
     context 'when sprint has not started' do
       it 'returns 0' do
         ActsAsTenant.with_tenant(organization) do
-          future_sprint = create(:sprint,
+          future_sprint = create(:mongo_sprint,
             service: service,
             start_date: 1.week.from_now,
             end_date: 2.weeks.from_now
@@ -152,7 +149,7 @@ RSpec.describe Sprint, type: :model do
     context 'when sprint is active' do
       it 'calculates progress based on elapsed time' do
         ActsAsTenant.with_tenant(organization) do
-          active_sprint = create(:sprint,
+          active_sprint = create(:mongo_sprint,
             service: service,
             start_date: 7.days.ago,
             end_date: 7.days.from_now
@@ -167,7 +164,7 @@ RSpec.describe Sprint, type: :model do
     context 'when sprint is completed' do
       it 'returns 100' do
         ActsAsTenant.with_tenant(organization) do
-          past_sprint = create(:sprint,
+          past_sprint = create(:mongo_sprint,
             service: service,
             start_date: 2.weeks.ago,
             end_date: 1.week.ago
@@ -182,20 +179,20 @@ RSpec.describe Sprint, type: :model do
   describe '#calculate_velocity' do
     it 'calculates velocity based on completed story points' do
       ActsAsTenant.with_tenant(organization) do
-        sprint = create(:sprint, service: service, status: :active)
+        sprint = create(:mongo_sprint, service: service, status: :active)
         
         # Create tasks with story points
-        completed_task1 = create(:task, 
+        completed_task1 = create(:mongo_task, 
           sprint: sprint, 
           story_points: 3,
           completed_at: Time.current
         )
-        completed_task2 = create(:task,
+        completed_task2 = create(:mongo_task,
           sprint: sprint,
           story_points: 5,
           completed_at: Time.current
         )
-        incomplete_task = create(:task,
+        incomplete_task = create(:mongo_task,
           sprint: sprint,
           story_points: 2,
           completed_at: nil
@@ -209,7 +206,7 @@ RSpec.describe Sprint, type: :model do
   describe '#burndown_data' do
     it 'generates burndown chart data' do
       ActsAsTenant.with_tenant(organization) do
-        sprint = create(:sprint,
+        sprint = create(:mongo_sprint,
           service: service,
           start_date: 7.days.ago,
           end_date: 7.days.from_now,
@@ -217,8 +214,8 @@ RSpec.describe Sprint, type: :model do
         )
         
         # Create tasks
-        create(:task, sprint: sprint, story_points: 5)
-        create(:task, sprint: sprint, story_points: 3)
+        create(:mongo_task, sprint: sprint, story_points: 5)
+        create(:mongo_task, sprint: sprint, story_points: 3)
         
         burndown = sprint.burndown_data
         
@@ -231,7 +228,7 @@ RSpec.describe Sprint, type: :model do
   describe '#can_activate?' do
     it 'returns true for planning sprints with current date in range' do
       ActsAsTenant.with_tenant(organization) do
-        ready_sprint = create(:sprint,
+        ready_sprint = create(:mongo_sprint,
           service: service,
           start_date: Date.today,
           end_date: 2.weeks.from_now,
@@ -244,7 +241,7 @@ RSpec.describe Sprint, type: :model do
 
     it 'returns false for already active sprints' do
       ActsAsTenant.with_tenant(organization) do
-        active_sprint = create(:sprint, service: service, status: :active)
+        active_sprint = create(:mongo_sprint, service: service, status: :active)
         expect(active_sprint.can_activate?).to be false
       end
     end
@@ -253,7 +250,7 @@ RSpec.describe Sprint, type: :model do
   describe '#activate!' do
     it 'changes status to active' do
       ActsAsTenant.with_tenant(organization) do
-        planning_sprint = create(:sprint,
+        planning_sprint = create(:mongo_sprint,
           service: service,
           start_date: Date.today,
           status: :planning
@@ -270,9 +267,9 @@ RSpec.describe Sprint, type: :model do
   describe '#complete!' do
     it 'changes status to completed and calculates final velocity' do
       ActsAsTenant.with_tenant(organization) do
-        active_sprint = create(:sprint, service: service, status: :active)
+        active_sprint = create(:mongo_sprint, service: service, status: :active)
         
-        create(:task, 
+        create(:mongo_task, 
           sprint: active_sprint,
           story_points: 5,
           completed_at: Time.current

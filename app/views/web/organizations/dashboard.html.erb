@@ -31,9 +31,9 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Total Tasks</p>
-            <p class="text-3xl font-bold text-foreground mt-2"><%= Task.count %></p>
+            <p class="text-3xl font-bold text-foreground mt-2"><%= @dashboard_metrics.task_stats.total %></p>
             <p class="text-sm text-success-600 mt-1">
-              <span class="font-medium"><%= Task.where(status: 'completed').count %></span> completed
+              <span class="font-medium"><%= @dashboard_metrics.task_stats.completed %></span> completed
             </p>
           </div>
           <div class="p-3 bg-primary-100 dark:bg-primary-900/20 rounded-full">
@@ -71,8 +71,8 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-muted-foreground">Progress</p>
-            <% total_tasks = Task.count %>
-            <% completed_tasks = Task.where(status: 'completed').count %>
+            <% total_tasks = @dashboard_metrics.task_stats.total %>
+            <% completed_tasks = @dashboard_metrics.task_stats.completed %>
             <% progress = total_tasks > 0 ? (completed_tasks.to_f / total_tasks * 100).round : 0 %>
             <p class="text-3xl font-bold text-foreground mt-2"><%= progress %>%</p>
             <p class="text-sm text-muted-foreground mt-1">completion rate</p>
@@ -118,7 +118,7 @@
           <% end %>
         </div>
         
-        <% recent_tasks = Task.order(created_at: :desc).limit(5) %>
+        <% recent_tasks = @dashboard_metrics.recent_tasks %>
         <% if recent_tasks.any? %>
           <div class="space-y-4">
             <% recent_tasks.each do |task| %>

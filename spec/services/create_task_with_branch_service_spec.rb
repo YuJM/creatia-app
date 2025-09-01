@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe CreateTaskWithBranchService do
+RSpec.describe CreateMongodb::MongoTaskWithBranchService do
   let(:organization) { create(:organization) }
   let(:user) { create(:user, organization: organization) }
   let(:service) { create(:service, organization: organization) }
@@ -29,12 +29,12 @@ RSpec.describe CreateTaskWithBranchService do
         result = create_service.call
         
         expect(result).to be_success
-        expect(result.value!).to be_a(Task)
+        expect(result.value!).to be_a(Mongodb::MongoTask)
         expect(result.value!.title).to eq('Implement shopping cart')
       end
       
       it 'creates a task' do
-        expect { create_service.call }.to change { Task.count }.by(1)
+        expect { create_service.call }.to change { Mongodb::MongoTask.count }.by(1)
       end
       
       it 'assigns creator to task' do

@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe TasksController, type: :controller do
+RSpec.describe Mongodb::MongoTasksController, type: :controller do
   let(:organization) { create(:organization) }
   let(:service) { create(:service, organization: organization) }
   let(:owner) { create(:user) }
@@ -14,8 +14,8 @@ RSpec.describe TasksController, type: :controller do
   let!(:member_membership) { create(:organization_membership, user: member, organization: organization, role: 'member') }
   let!(:viewer_membership) { create(:organization_membership, user: viewer, organization: organization, role: 'viewer') }
   
-  let(:task) { create(:task, organization: organization, service: service) }
-  let(:member_task) { create(:task, organization: organization, service: service, assignee_id: member.id) }
+  let(:task) { create(:mongo_task, organization: organization, service: service) }
+  let(:member_task) { create(:mongo_task, organization: organization, service: service, assignee_id: member.id) }
   
   before do
     ActsAsTenant.current_tenant = organization
@@ -31,8 +31,8 @@ RSpec.describe TasksController, type: :controller do
       end
       
       it 'returns all tasks' do
-        task1 = create(:task, organization: organization)
-        task2 = create(:task, organization: organization)
+        task1 = create(:mongo_task, organization: organization)
+        task2 = create(:mongo_task, organization: organization)
         
         get :index
         expect(assigns(:tasks)).to include(task1, task2)
@@ -148,8 +148,8 @@ RSpec.describe TasksController, type: :controller do
     let(:task_params) do
       {
         task: {
-          title: 'New Task',
-          description: 'Task description',
+          title: 'New Mongodb::MongoTask',
+          description: 'Mongodb::MongoTask description',
           service_id: service.id
         }
       }
@@ -161,9 +161,9 @@ RSpec.describe TasksController, type: :controller do
       it 'allows creation' do
         expect {
           post :create, params: task_params
-        }.to change { Task.count }.by(1)
+        }.to change { Mongodb::MongoTask.count }.by(1)
         
-        expect(response).to redirect_to(task_path(Task.last))
+        expect(response).to redirect_to(task_path(Mongodb::MongoTask.last))
       end
     end
     
@@ -173,7 +173,7 @@ RSpec.describe TasksController, type: :controller do
       it 'allows creation' do
         expect {
           post :create, params: task_params
-        }.to change { Task.count }.by(1)
+        }.to change { Mongodb::MongoTask.count }.by(1)
       end
     end
     
@@ -185,7 +185,7 @@ RSpec.describe TasksController, type: :controller do
           expect {
             post :create, params: task_params
           }.to raise_error(CanCan::AccessDenied)
-        }.not_to change { Task.count }
+        }.not_to change { Mongodb::MongoTask.count }
       end
     end
   end
@@ -292,7 +292,7 @@ RSpec.describe TasksController, type: :controller do
         
         expect {
           delete :destroy, params: { id: task.id }
-        }.to change { Task.count }.by(-1)
+        }.to change { Mongodb::MongoTask.count }.by(-1)
         
         expect(response).to redirect_to(tasks_path)
       end
@@ -306,7 +306,7 @@ RSpec.describe TasksController, type: :controller do
         
         expect {
           delete :destroy, params: { id: task.id }
-        }.to change { Task.count }.by(-1)
+        }.to change { Mongodb::MongoTask.count }.by(-1)
       end
     end
     
@@ -320,7 +320,7 @@ RSpec.describe TasksController, type: :controller do
           expect {
             delete :destroy, params: { id: member_task.id }
           }.to raise_error(CanCan::AccessDenied)
-        }.not_to change { Task.count }
+        }.not_to change { Mongodb::MongoTask.count }
       end
     end
     
@@ -334,14 +334,14 @@ RSpec.describe TasksController, type: :controller do
           expect {
             delete :destroy, params: { id: task.id }
           }.to raise_error(CanCan::AccessDenied)
-        }.not_to change { Task.count }
+        }.not_to change { Mongodb::MongoTask.count }
       end
     end
   end
 
   describe 'Multi-tenant isolation' do
     let(:other_organization) { create(:organization) }
-    let(:other_task) { create(:task, organization: other_organization) }
+    let(:other_task) { create(:mongo_task, organization: other_organization) }
     
     before { sign_in owner }
     
@@ -377,9 +377,9 @@ RSpec.describe TasksController, type: :controller do
     
     before do
       # Add specific permissions to the custom role
-      read_perm = create(:permission, resource: 'Task', action: 'read')
-      create_perm = create(:permission, resource: 'Task', action: 'create')
-      update_perm = create(:permission, resource: 'Task', action: 'update')
+      read_perm = create(:permission, resource: 'Mongodb::MongoTask', action: 'read')
+      create_perm = create(:permission, resource: 'Mongodb::MongoTask', action: 'create')
+      update_perm = create(:permission, resource: 'Mongodb::MongoTask', action: 'update')
       
       custom_role.add_permission(read_perm)
       custom_role.add_permission(create_perm)
@@ -397,16 +397,16 @@ RSpec.describe TasksController, type: :controller do
       expect {
         post :create, params: {
           task: {
-            title: 'PM Task',
+            title: 'PM Mongodb::MongoTask',
             service_id: service.id
           }
         }
-      }.to change { Task.count }.by(1)
+      }.to change { Mongodb::MongoTask.count }.by(1)
     end
     
     it 'respects permission conditions' do
       # Can update own task
-      own_task = create(:task, organization: organization, assignee_id: custom_user.id)
+      own_task = create(:mongo_task, organization: organization, assignee_id: custom_user.id)
       patch :update, params: { id: own_task.id, task: { title: 'Updated' } }
       expect(own_task.reload.title).to eq('Updated')
       

@@ -300,7 +300,7 @@ class UserActionLog
              { 
                user_id: user_id, 
                count: count,
-               user: User.find_by(id: user_id)&.name
+               user: User.cached_find( user_id)&.name
              } 
            }
     end
@@ -329,7 +329,7 @@ class UserActionLog
 
   # Instance methods
   def user
-    @user ||= User.find_by(id: user_id)
+    @user ||= User.cached_find( user_id)
   end
 
   def organization

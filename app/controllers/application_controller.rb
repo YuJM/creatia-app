@@ -47,16 +47,16 @@ class ApplicationController < ActionController::Base
       @current_user = case user_data
                       when Array
                         # Devise 직렬화에서 배열이 반환되는 경우
-                        user_data.first.is_a?(User) ? user_data.first : User.find(user_data.first)
+                        user_data.first.is_a?(User) ? user_data.first : User.cached_find(user_data.first)
                       when Hash
                         # If warden returns a hash (can happen in tests)
-                        User.find_by(id: user_data['id'] || user_data[:id])
+                        User.cached_find(user_data['id'] || user_data[:id])
                       when User
                         # 이미 User 객체인 경우
                         user_data
                       else
                         # ID나 다른 형태인 경우
-                        user_data.is_a?(Integer) ? User.find(user_data) : user_data
+                        user_data.is_a?(Integer) ? User.cached_find(user_data) : user_data
                       end
     # 2. JWT 토큰에서 확인 (크로스 도메인 지원)
     elsif cookies[:jwt_access_token].present? || cookies[:jwt_refresh_token].present?
@@ -169,20 +169,24 @@ class ApplicationController < ActionController::Base
   
   private
   
-  # 멀티테넌트 설정
+  # 멀티테넌트 설정 (연결 관리 최적화)
   def set_current_tenant
     # 인증이 필요하지 않은 컨트롤러에서는 current_user가 nil일 수 있음
     user = user_signed_in? ? current_user : nil
-    @tenant_context = TenantContextService.new(request, user)
     
-    begin
-      @tenant_context.setup_tenant_context!
-    rescue TenantContextService::TenantNotFound => e
-      raise ActionController::RoutingError, e.message
-    rescue TenantContextService::AccessDenied => e
-      redirect_to_auth_with_error(e.message)
-    rescue TenantContextService::InvalidTenant => e
-      redirect_to_auth_with_error(e.message)
+    # 연결 풀 관리를 위한 명시적 블록 사용
+    ActiveRecord::Base.connection_pool.with_connection do
+      @tenant_context = TenantContextService.new(request, user)
+      
+      begin
+        @tenant_context.setup_tenant_context!
+      rescue TenantContextService::TenantNotFound => e
+        raise ActionController::RoutingError, e.message
+      rescue TenantContextService::AccessDenied => e
+        redirect_to_auth_with_error(e.message)
+      rescue TenantContextService::InvalidTenant => e
+        redirect_to_auth_with_error(e.message)
+      end
     end
   end
   

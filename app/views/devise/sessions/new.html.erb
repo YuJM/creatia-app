@@ -16,6 +16,9 @@
     <!-- Login Form Card -->
     <%= render Ui::CardComponent.new(variant: :elevated, padding: :lg, class: "animate-fade-in") do %>
       <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-6" }) do |f| %>
+        <% if params[:return_to].present? %>
+          <%= hidden_field_tag :return_to, params[:return_to] %>
+        <% end %>
         
         <!-- Email Field -->
         <div>

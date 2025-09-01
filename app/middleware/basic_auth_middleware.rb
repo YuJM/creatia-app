@@ -34,7 +34,7 @@ class BasicAuthMiddleware
     return if email.blank? || password.blank?
 
     # 사용자 인증 시도
-    user = User.find_by(email: email)
+    user = User.cached_find_by_email(email)
     if user&.valid_password?(password)
       # Warden에 사용자 설정
       env['warden']&.set_user(user, scope: :user)

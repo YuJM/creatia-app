@@ -395,7 +395,7 @@ class NotificationLog
 
   # 관련 PostgreSQL 모델과의 연동
   def recipient
-    @recipient ||= User.find_by(id: recipient_id)
+    @recipient ||= User.cached_find( recipient_id)
   end
 
   def organization
@@ -403,7 +403,7 @@ class NotificationLog
   end
 
   def sender
-    @sender ||= User.find_by(id: sender_id)
+    @sender ||= User.cached_find( sender_id)
   end
 
   def related_entity

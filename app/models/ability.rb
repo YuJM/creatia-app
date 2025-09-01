@@ -161,10 +161,10 @@ class Ability
     # Handle "own_only" condition
     if conditions['own_only']
       case resource_class.name
-      when 'Task'
+      when 'Task', 'Mongodb::MongoTask'
         can action, resource_class, assignee_id: @user.id
         can action, resource_class, created_by_id: @user.id
-      when 'PomodoroSession'
+      when 'PomodoroSession', 'Mongodb::MongoPomodoroSession'
         can action, resource_class, user_id: @user.id
       else
         # Generic owner check
@@ -216,9 +216,9 @@ class Ability
       end
       
       # Task management
-      can :assign, Task
-      can :plan, Sprint
-      can :metrics, Sprint
+      can :assign, Mongodb::MongoTask
+      can :plan, Mongodb::MongoSprint
+      can :metrics, Mongodb::MongoSprint
     end
 
     if role.priority >= 100 # Owner level
@@ -277,9 +277,9 @@ class Ability
     
     # Whitelist of allowed classes for security
     allowed_classes = %w[
-      Organization Service Task Sprint Team User 
+      Organization Service Mongodb::MongoTask Mongodb::MongoSprint Team User 
       OrganizationMembership Role Permission
-      PomodoroSession PermissionAuditLog
+      Mongodb::MongoPomodoroSession PermissionAuditLog
     ]
     
     return nil unless allowed_classes.include?(class_name)

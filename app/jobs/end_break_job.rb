@@ -5,7 +5,7 @@
 class EndBreakJob < ApplicationJob
   queue_as :pomodoro
   
-  discard_on ActiveRecord::RecordNotFound
+  discard_on Mongoid::Errors::DocumentNotFound
   
   def perform(user_id:, session_id: nil)
     user = User.find(user_id)
@@ -14,7 +14,10 @@ class EndBreakJob < ApplicationJob
     session = if session_id
                 PomodoroSession.find(session_id)
               else
-                user.pomodoro_sessions.completed.last
+                PomodoroSession.where(
+                  user_id: user_id,
+                  status: 'completed'
+                ).order_by(completed_at: :desc).first
               end
     
     return unless session
@@ -32,7 +35,11 @@ class EndBreakJob < ApplicationJob
         type: "break_ended",
         message: "휴식이 끝났습니다. 다음 포모도로를 시작할 준비가 되셨나요?",
         next_action: "start_pomodoro",
-        session_count_today: user.pomodoro_sessions.today.completed.count
+        session_count_today: PomodoroSession.where(
+          user_id: user_id,
+          session_date: Date.current,
+          status: 'completed'
+        ).count
       }
     )
     
@@ -43,9 +50,21 @@ class EndBreakJob < ApplicationJob
   private
   
   def update_user_statistics(user)
+    daily_sessions = PomodoroSession.where(
+      user_id: user.id,
+      session_date: Date.current,
+      status: 'completed'
+    )
+    
+    weekly_sessions = PomodoroSession.where(
+      user_id: user.id,
+      :session_date.gte => Date.current.beginning_of_week,
+      status: 'completed'
+    )
+    
     stats = {
-      daily_completed: user.pomodoro_sessions.today.completed.count,
-      weekly_completed: user.pomodoro_sessions.this_week.completed.count,
+      daily_completed: daily_sessions.count,
+      weekly_completed: weekly_sessions.count,
       total_focus_time: calculate_total_focus_time(user),
       productivity_score: calculate_productivity_score(user)
     }
@@ -68,13 +87,24 @@ class EndBreakJob < ApplicationJob
   end
   
   def calculate_total_focus_time(user)
-    user.pomodoro_sessions.today.completed.count * 25
+    PomodoroSession.where(
+      user_id: user.id,
+      session_date: Date.current,
+      status: 'completed'
+    ).count * 25
   end
   
   def calculate_productivity_score(user)
     # 완료율 기반 생산성 점수 계산
-    total_started = user.pomodoro_sessions.today.count
-    total_completed = user.pomodoro_sessions.today.completed.count
+    total_started = PomodoroSession.where(
+      user_id: user.id,
+      session_date: Date.current
+    ).count
+    total_completed = PomodoroSession.where(
+      user_id: user.id,
+      session_date: Date.current,
+      status: 'completed'
+    ).count
     
     return 0 if total_started.zero?
     
