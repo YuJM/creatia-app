@@ -3,9 +3,11 @@
 # 애플리케이션 전체에서 사용되는 주요 경로 상수들을 정의
 module AppRoutes
   # 인증 관련 경로 (auth 서브도메인 사용)
-  module Auth
+  module AuthRoutes
     class << self
       # SSO를 위한 auth 서브도메인 URL 생성
+      # 모든 인증은 auth.creatia.local을 통해 처리됩니다
+      
       def register_url
         DomainService.auth_url('register')
       end
@@ -26,17 +28,15 @@ module AppRoutes
         DomainService.auth_url('edit')
       end
       
-      # 레거시 경로 (메인 도메인용)
-      REGISTER_PATH = '/users/register'
-      LOGIN_PATH = '/users/login'
-      LOGOUT_PATH = '/users/logout'
-      PASSWORD_RESET_PATH = '/users/password/new'
-      PROFILE_EDIT_PATH = '/users/edit'
+      # SSO 리다이렉트 URL (조직별 접근 시)
+      def sso_redirect_url(organization_subdomain)
+        DomainService.auth_url("login?return_to=#{organization_subdomain}")
+      end
     end
   end
   
   # 조직 관련 경로
-  module Organization
+  module OrganizationRoutes
     # 조직 목록
     INDEX_PATH = '/organizations'
     
@@ -53,8 +53,8 @@ module AppRoutes
     MEMBERS_PATH = '/organization/members'
   end
   
-  # 태스크 관련 경로
-  module Task
+  # 태스크 관련 경로 (web 네임스페이스 제거)
+  module TaskRoutes
     # 태스크 목록
     INDEX_PATH = '/tasks'
     
@@ -64,12 +64,12 @@ module AppRoutes
     # 캘린더 뷰
     CALENDAR_PATH = '/tasks/calendar'
     
-    # 칸반 보드
+    # 칸반 보드  
     BOARD_PATH = '/tasks/board'
   end
   
   # 랜딩 및 공개 페이지
-  module Public
+  module PublicRoutes
     # 홈 (랜딩)
     HOME_PATH = '/'
     
@@ -87,7 +87,7 @@ module AppRoutes
   end
   
   # 관리자 경로
-  module Admin
+  module AdminRoutes
     # 관리자 대시보드
     DASHBOARD_PATH = '/admin'
     
@@ -102,7 +102,7 @@ module AppRoutes
   end
   
   # API 경로
-  module Api
+  module ApiRoutes
     # API 베이스 경로
     BASE_PATH = '/api/v1'
     
@@ -120,21 +120,29 @@ module AppRoutes
   class << self
     # 로그인 여부에 따른 리다이렉트 경로
     def after_sign_in_path
-      Organization::DASHBOARD_PATH
+      OrganizationRoutes::DASHBOARD_PATH
     end
     
     def after_sign_out_path
-      Public::HOME_PATH
+      PublicRoutes::HOME_PATH
     end
     
     # 조직 서브도메인이 있는 경우의 루트 경로
     def organization_root_path
-      Organization::DASHBOARD_PATH
+      OrganizationRoutes::DASHBOARD_PATH
     end
     
     # 메인 도메인 루트 경로
     def main_root_path
-      Public::HOME_PATH
+      PublicRoutes::HOME_PATH
     end
   end
+  
+  # 기존 코드와의 호환성을 위한 alias (deprecated)
+  Auth = AuthRoutes
+  Organization = OrganizationRoutes
+  Task = TaskRoutes
+  Public = PublicRoutes
+  Admin = AdminRoutes
+  Api = ApiRoutes
 end

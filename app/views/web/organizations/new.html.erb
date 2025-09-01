@@ -2,7 +2,7 @@
   <div class="container mx-auto px-6 py-12 max-w-3xl">
     <!-- Back Link -->
     <div class="mb-8">
-      <%= link_to web_organizations_path, 
+      <%= link_to organizations_path, 
           class: "inline-flex items-center text-muted-foreground hover:text-foreground transition-colors" do %>
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -113,7 +113,7 @@
         <!-- Form Actions -->
         <div class="px-8 py-6 bg-muted/30 border-t border-border rounded-b-xl">
           <div class="flex justify-end space-x-4">
-            <%= link_to "Cancel", web_organizations_path, 
+            <%= link_to "Cancel", organizations_path, 
                 class: "px-6 py-3 text-muted-foreground bg-background border border-border rounded-lg hover:bg-muted/50 transition-all" %>
             <%= form.submit "Create Organization", 
                 class: "px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all shadow-sm hover:shadow-md active:scale-95 cursor-pointer" %>

@@ -6,7 +6,7 @@ class TasksController < TenantBaseController
   # GET /tasks
   # 현재 조직의 태스크 목록을 반환합니다.
   def index
-    @tasks = Task.accessible_by(current_ability).includes(:assigned_user, :organization)
+    @tasks = ::Task.accessible_by(current_ability).includes(:assigned_user, :organization)
     
     # 필터링
     @tasks = @tasks.by_status(params[:status]) if params[:status].present?
@@ -205,7 +205,7 @@ class TasksController < TenantBaseController
   def stats
     authorize! :index, Task
     
-    tasks = Task.accessible_by(current_ability)
+    tasks = ::Task.accessible_by(current_ability)
     
     stats = {
       total: tasks.count,
@@ -266,7 +266,7 @@ class TasksController < TenantBaseController
   private
   
   def set_task
-    @task = Task.accessible_by(current_ability).find(params[:id])
+    @task = ::Task.accessible_by(current_ability).find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render_error("태스크를 찾을 수 없습니다.", status: :not_found)
   end

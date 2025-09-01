@@ -7,7 +7,7 @@
       </p>
     </div>
     <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-      <%= link_to export_web_permission_audit_logs_path(format: :csv, start_date: 30.days.ago, end_date: Date.current),
+      <%= link_to export_permission_audit_logs_path(format: :csv, start_date: 30.days.ago, end_date: Date.current),
                   class: "inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" do %>
         <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -58,7 +58,7 @@
   <!-- Filters -->
   <div class="mt-8 bg-white shadow sm:rounded-lg">
     <div class="px-4 py-5 sm:p-6">
-      <%= form_with url: web_permission_audit_logs_path, method: :get, local: true, class: "space-y-4" do |f| %>
+      <%= form_with url: permission_audit_logs_path, method: :get, local: true, class: "space-y-4" do |f| %>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-6">
           <div class="sm:col-span-2">
             <%= f.label :user_id, "사용자", class: "block text-sm font-medium text-gray-700" %>
@@ -110,7 +110,7 @@
         
         <div class="flex justify-end space-x-3">
           <%= link_to "초기화",
-                      web_permission_audit_logs_path,
+                      permission_audit_logs_path,
                       class: "inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
           <%= f.submit "필터 적용",
                        class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
@@ -178,7 +178,7 @@
                   </td>
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                     <%= link_to "상세",
-                                web_permission_audit_log_path(log),
+                                permission_audit_log_path(log),
                                 class: "text-indigo-600 hover:text-indigo-900" %>
                   </td>
                 </tr>

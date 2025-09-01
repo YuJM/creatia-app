@@ -21,7 +21,7 @@ class TestAuthController < ApplicationController
         
         # 조직 설정
         subdomain = params[:subdomain] || 'demo'
-        organization = Organization.find_by(subdomain: subdomain)
+        organization = ::Organization.find_by(subdomain: subdomain)
         
         if organization
           # 세션에 현재 조직 저장

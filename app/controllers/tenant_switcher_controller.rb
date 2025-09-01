@@ -44,7 +44,7 @@ class TenantSwitcherController < ApplicationController
     
     # 전환 전 현재 조직 정보 저장
     from_tenant = current_organization
-    to_tenant = Organization.find_by(subdomain: subdomain)
+    to_tenant = ::Organization.find_by(subdomain: subdomain)
     
     result = @tenant_switcher.switch_to!(subdomain, record_history: true)
     
@@ -162,7 +162,7 @@ class TenantSwitcherController < ApplicationController
     end
     
     can_access = @tenant_switcher.can_switch_to?(subdomain)
-    organization = Organization.find_by(subdomain: subdomain)
+    organization = ::Organization.find_by(subdomain: subdomain)
     
     response_data = {
       success: true,

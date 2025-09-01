@@ -3,19 +3,59 @@
   <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-card border-r border-border px-6 pb-4">
     <!-- Logo and Organization Info -->
     <div class="flex h-16 shrink-0 items-center">
-      <%= link_to root_path, class: "flex items-center gap-3" do %>
-        <div class="h-10 w-10 bg-gradient-to-r from-primary to-accent rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
-          <span class="text-white text-xl font-bold">C</span>
-        </div>
-        <div class="flex flex-col">
+      <div class="flex items-center gap-3 w-full">
+        <%= link_to root_path, class: "flex items-center gap-2" do %>
+          <div class="h-10 w-10 bg-gradient-to-r from-primary to-accent rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
+            <span class="text-white text-xl font-bold">C</span>
+          </div>
           <span class="text-lg font-semibold text-foreground">Creatia</span>
-          <% if ActsAsTenant.current_tenant %>
-            <span class="text-xs text-muted-foreground truncate max-w-32">
-              <%= ActsAsTenant.current_tenant.name %>
-            </span>
-          <% end %>
-        </div>
-      <% end %>
+        <% end %>
+        
+        <!-- Organization Switcher -->
+        <% if ActsAsTenant.current_tenant %>
+          <div class="ml-auto relative" data-controller="dropdown">
+            <button type="button" 
+                    class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-muted transition-colors"
+                    data-action="click->dropdown#toggle"
+                    aria-expanded="false"
+                    aria-haspopup="true">
+              <span class="text-xs text-muted-foreground truncate max-w-32">
+                <%= ActsAsTenant.current_tenant.name %>
+              </span>
+              <svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            
+            <div class="hidden absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-card shadow-lg border border-border"
+                 data-dropdown-target="menu">
+              <div class="py-1">
+                <div class="px-4 py-2 text-xs font-semibold text-muted-foreground border-b border-border">
+                  조직 전환
+                </div>
+                <% current_user.organizations.each do |org| %>
+                  <% if org != ActsAsTenant.current_tenant %>
+                    <%= link_to org.name, 
+                        "#{request.protocol}#{org.subdomain}.#{DomainService.base_domain}",
+                        class: "block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors",
+                        data: { turbo: false } %>
+                  <% else %>
+                    <div class="px-4 py-2 text-sm text-foreground bg-muted/50">
+                      <%= org.name %> <span class="text-xs text-muted-foreground">(현재)</span>
+                    </div>
+                  <% end %>
+                <% end %>
+                <div class="border-t border-border mt-1 pt-1">
+                  <%= link_to "새 조직 만들기", 
+                      "#{request.protocol}www.#{DomainService.base_domain}/web/organizations/new",
+                      class: "block px-4 py-2 text-sm text-primary hover:bg-muted transition-colors",
+                      data: { turbo: false } %>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
     </div>
 
     <!-- Navigation -->
@@ -36,7 +76,7 @@
 
             <!-- Tasks -->
             <li>
-              <%= link_to web_tasks_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(web_tasks_path)}" do %>
+              <%= link_to tasks_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(tasks_path)}" do %>
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                 </svg>
@@ -49,20 +89,10 @@
               <% end %>
             </li>
 
-            <!-- Organizations -->
-            <li>
-              <%= link_to web_organizations_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(web_organizations_path)}" do %>
-                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                </svg>
-                Organizations
-              <% end %>
-            </li>
-
             <!-- Members (if current organization) -->
             <% if ActsAsTenant.current_tenant %>
               <li>
-                <%= link_to organization_organization_memberships_path(ActsAsTenant.current_tenant), class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors" do %>
+                <%= link_to members_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors" do %>
                   <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                   </svg>
@@ -73,7 +103,7 @@
 
             <!-- Permission Audit Logs -->
             <li>
-              <%= link_to web_permission_audit_logs_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors" do %>
+              <%= link_to permission_audit_logs_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors" do %>
                 <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
@@ -197,19 +227,23 @@
         <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-card px-6 pb-4">
           <!-- Same content as desktop sidebar -->
           <div class="flex h-16 shrink-0 items-center">
-            <%= link_to root_path, class: "flex items-center gap-3" do %>
-              <div class="h-10 w-10 bg-gradient-to-r from-primary-500 to-accent-500 rounded-xl flex items-center justify-center shadow-lg">
-                <span class="text-white text-xl font-bold">C</span>
-              </div>
-              <div class="flex flex-col">
+            <div class="flex items-center gap-3 w-full">
+              <%= link_to root_path, class: "flex items-center gap-2" do %>
+                <div class="h-10 w-10 bg-gradient-to-r from-primary-500 to-accent-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <span class="text-white text-xl font-bold">C</span>
+                </div>
                 <span class="text-lg font-semibold text-foreground">Creatia</span>
-                <% if ActsAsTenant.current_tenant %>
-                  <span class="text-xs text-muted-foreground truncate max-w-32">
+              <% end %>
+              
+              <!-- Organization Info for Mobile -->
+              <% if ActsAsTenant.current_tenant %>
+                <div class="ml-auto">
+                  <span class="text-xs text-muted-foreground truncate max-w-32 block">
                     <%= ActsAsTenant.current_tenant.name %>
                   </span>
-                <% end %>
-              </div>
-            <% end %>
+                </div>
+              <% end %>
+            </div>
           </div>
 
           <nav class="flex flex-1 flex-col">

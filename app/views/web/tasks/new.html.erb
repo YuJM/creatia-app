@@ -1,7 +1,7 @@
 <!-- Page Header -->
 <div class="mb-8">
   <div class="flex items-center gap-4">
-    <%= render Ui::ButtonComponent.new(variant: :ghost, size: :sm, icon: :chevron_left, href: web_tasks_path) do %>
+    <%= render Ui::ButtonComponent.new(variant: :ghost, size: :sm, icon: :chevron_left, href: tasks_path) do %>
       Back to Tasks
     <% end %>
     <div>
@@ -175,7 +175,7 @@
         <!-- Form Actions -->
         <div class="mt-6 flex items-center justify-end space-x-3">
           <%= link_to "취소",
-                      web_tasks_path,
+                      tasks_path,
                       class: "inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
           <%= form.submit "태스크 생성",
                           class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>

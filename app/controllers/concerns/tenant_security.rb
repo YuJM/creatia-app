@@ -70,7 +70,7 @@ module TenantSecurity
     end
     
     # 존재하지 않는 조직에 대한 접근 차단
-    unless Organization.exists?(subdomain: subdomain)
+    unless ::Organization.exists?(subdomain: subdomain)
       Rails.logger.security "Access attempt to non-existent organization: #{subdomain}"
       raise ActionController::RoutingError, "조직을 찾을 수 없습니다"
     end

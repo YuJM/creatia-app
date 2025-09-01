@@ -128,59 +128,44 @@ Rails.application.routes.draw do
     get 'dashboard', to: 'web/organizations#dashboard'
     
     # 현재 조직 정보
-    resource :organization, only: [:show, :edit, :update] do
-      # 멤버십은 Web 네임스페이스로 이동
-      resources :organization_memberships, path: 'members', controller: 'web/organization_memberships' do
-        member do
-          patch :toggle_active
-        end
-        collection do
-          post :invite
-        end
-      end
-      
-      # 이제 Web 네임스페이스로 이동
-    end
+    resource :organization, only: [:show, :edit, :update]
     
-    # Web 인터페이스 라우트 확장
-    namespace :web do
-      resources :roles do
-        member do
-          get :permissions
-          post :duplicate
-        end
-      end
-      
-      resources :permission_audit_logs, only: [:index, :show] do
-        collection do
-          get :export
-        end
+    # Web 인터페이스 라우트 확장 (URL에서 /web 접두사 제거)
+    resources :roles, controller: 'web/roles' do
+      member do
+        get :permissions
+        post :duplicate
       end
     end
     
-    # Web 인터페이스 라우트
-    namespace :web do
-      resources :tasks do
-        member do
-          patch :assign
-          patch :change_status, path: 'status'
-          patch :reorder
-          get :metrics
-        end
-        collection do
-          get :stats
-        end
-      end
-      
-      resources :organization_memberships, path: 'members' do
-        member do
-          patch :toggle_active
-        end
+    resources :permission_audit_logs, controller: 'web/permission_audit_logs', only: [:index, :show] do
+      collection do
+        get :export
       end
     end
     
-    # 기존 라우트를 Web으로 리다이렉트 (하위 호환성)
-    resources :tasks, controller: 'web/tasks'
+    # Web 인터페이스 라우트 (URL에서 /web 접두사 제거)
+    # 컨트롤러는 web 네임스페이스를 사용하지만 URL은 깔끔하게 유지
+    resources :tasks, controller: 'web/tasks' do
+      member do
+        patch :assign
+        patch :change_status, path: 'status'
+        patch :reorder
+        get :metrics
+      end
+      collection do
+        get :stats
+      end
+    end
+    
+    resources :members, controller: 'web/organization_memberships' do
+      member do
+        patch :toggle_active
+      end
+      collection do
+        post :invite
+      end
+    end
     
     # 추후 추가될 테넌트별 리소스들
     # resources :projects

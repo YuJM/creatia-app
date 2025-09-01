@@ -8,7 +8,7 @@
           <p class="mt-2 text-muted-foreground">Manage your organizations and workspaces</p>
         </div>
         <% if policy(Organization).create? %>
-          <%= link_to new_web_organization_path, 
+          <%= link_to new_organization_path, 
               class: "inline-flex items-center justify-center px-6 py-3 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-95" do %>
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -28,7 +28,7 @@
           <div class="group relative bg-card border border-border rounded-xl p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-300">
             <%= render OrganizationCardComponent.new(
               organization: org,
-              action_path: switch_web_organization_path(org),
+              action_path: switch_organization_path(org),
               action_method: :post
             ) %>
           </div>
@@ -48,7 +48,7 @@
             Create your first organization to start collaborating with your team and managing projects.
           </p>
           <% if policy(Organization).create? %>
-            <%= link_to new_web_organization_path, 
+            <%= link_to new_organization_path, 
                 class: "inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95" do %>
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>

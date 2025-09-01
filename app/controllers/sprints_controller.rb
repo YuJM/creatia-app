@@ -5,7 +5,7 @@ class SprintsController < TenantBaseController
   
   # GET /sprints
   def index
-    @sprints = Sprint.accessible_by(current_ability).includes(:tasks, :organization)
+    @sprints = ::Sprint.accessible_by(current_ability).includes(:tasks, :organization)
     
     # 필터링
     @sprints = @sprints.active if params[:status] == 'active'
@@ -215,7 +215,7 @@ class SprintsController < TenantBaseController
   private
   
   def set_sprint
-    @sprint = Sprint.accessible_by(current_ability).find(params[:id])
+    @sprint = ::Sprint.accessible_by(current_ability).find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render_error("스프린트를 찾을 수 없습니다.", status: :not_found)
   end
@@ -239,7 +239,7 @@ class SprintsController < TenantBaseController
   # Sprint 계획 관련 helper 메서드들
   def calculate_sprint_velocity(sprint)
     # 이전 3개 스프린트의 평균 완료 작업 수
-    previous_sprints = Sprint.accessible_by(current_ability)
+    previous_sprints = ::Sprint.accessible_by(current_ability)
                       .where('end_date < ?', sprint.start_date)
                       .order(end_date: :desc)
                       .limit(3)

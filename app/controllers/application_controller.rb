@@ -1,6 +1,6 @@
 class ApplicationController < ActionController::Base
-  # Include AppRoutes constants
-  include AppRoutes
+  # AppRoutes 모듈은 include하지 않고 직접 참조
+  # 이렇게 하면 AppRoutes::Task와 ::Task 모델이 충돌하지 않음
   
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
@@ -292,8 +292,22 @@ class ApplicationController < ActionController::Base
     if request.format.json?
       render json: { error: exception.message || "이 작업을 수행할 권한이 없습니다." }, status: :forbidden
     else
-      flash[:alert] = exception.message || "이 작업을 수행할 권한이 없습니다."
-      redirect_to(request.referrer || root_path, allow_other_host: true)
+      # Settings 컨트롤러의 경우 특별 처리
+      if params[:controller].starts_with?('settings/')
+        @error_message = "이 페이지에 접근할 권한이 없습니다."
+        @error_details = case exception.action
+        when :manage, :update, :edit
+          "조직 설정을 변경하려면 관리자 권한이 필요합니다."
+        when :show, :read
+          "조직 설정을 보려면 멤버 권한이 필요합니다."
+        else
+          "이 작업을 수행할 권한이 없습니다."
+        end
+        render 'shared/access_denied', status: :forbidden
+      else
+        flash[:alert] = exception.message || "이 작업을 수행할 권한이 없습니다."
+        redirect_to(request.referrer || root_path, allow_other_host: true)
+      end
     end
   end
   

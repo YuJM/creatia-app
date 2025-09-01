@@ -7,7 +7,7 @@ module Web
     # GET /organizations
     # 사용자가 속한 조직 목록을 반환합니다.
     def index
-      @organizations = Organization.accessible_by(current_ability)
+      @organizations = ::Organization.accessible_by(current_ability)
       authorize! :index, Organization
       
       respond_to do |format|
@@ -28,14 +28,14 @@ module Web
     # GET /organizations/new
     # 새 조직 생성 폼을 표시합니다.
     def new
-      @organization = Organization.new
+      @organization = ::Organization.new
       authorize! :new, @organization
     end
     
     # POST /organizations
     # 새로운 조직을 생성합니다.
     def create
-      @organization = Organization.new(organization_params)
+      @organization = ::Organization.new(organization_params)
       authorize! :create, @organization
       
       if @organization.save
@@ -101,14 +101,14 @@ module Web
       
       # 대시보드에서 필요한 데이터들
       @organization = current_organization
-      @recent_tasks = Task.accessible_by(current_ability).includes(:assigned_user)
+      @recent_tasks = ::Task.accessible_by(current_ability).includes(:assigned_user)
                                        .order(updated_at: :desc)
                                        .limit(10)
       @task_stats = {
-        total: Task.accessible_by(current_ability).count,
-        todo: Task.accessible_by(current_ability).todo.count,
-        in_progress: Task.accessible_by(current_ability).in_progress.count,
-        done: Task.accessible_by(current_ability).done.count
+        total: ::Task.accessible_by(current_ability).count,
+        todo: ::Task.accessible_by(current_ability).todo.count,
+        in_progress: ::Task.accessible_by(current_ability).in_progress.count,
+        done: ::Task.accessible_by(current_ability).done.count
       }
       
       render :dashboard
@@ -133,7 +133,7 @@ module Web
     private
     
     def set_organization
-      @organization = Organization.find(params[:id])
+      @organization = ::Organization.find(params[:id])
     rescue ActiveRecord::RecordNotFound
       redirect_to web_organizations_path, alert: "조직을 찾을 수 없습니다."
     end

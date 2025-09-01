@@ -4,13 +4,14 @@ module Web
   class OrganizationMembershipsController < ApplicationController
     before_action :authenticate_user!
     before_action :ensure_current_organization
+    before_action :set_organization
     before_action :set_membership, only: [:show, :edit, :update, :destroy]
     
     # GET /organization_memberships
     def index
       @memberships = OrganizationMembership.accessible_by(current_ability)
                        .where(organization: current_organization)
-                       .includes(:user, :organization, :role)
+                       .includes(:user, :organization, :role_object)
                        .page(params[:page])
       
       authorize! :index, OrganizationMembership
@@ -50,11 +51,11 @@ module Web
       
       if @membership.save
         respond_to do |format|
-          format.html { redirect_to web_organization_membership_path(@membership), notice: '멤버가 추가되었습니다.' }
+          format.html { redirect_to member_path(@membership), notice: '멤버가 추가되었습니다.' }
           format.turbo_stream do
             render turbo_stream: [
               turbo_stream.append("members_list",
-                render_to_string(partial: "organization_memberships/member_row", locals: { membership: @membership })
+                render_to_string(partial: "web/organization_memberships/member_row", locals: { membership: @membership })
               ),
               turbo_stream.replace("flash_messages",
                 render_to_string(partial: "shared/flash_messages")
@@ -67,7 +68,7 @@ module Web
           format.html { render :new, status: :unprocessable_entity }
           format.turbo_stream do
             render turbo_stream: turbo_stream.replace("membership_form",
-              render_to_string(partial: "organization_memberships/form", locals: { membership: @membership })
+              render_to_string(partial: "web/organization_memberships/form", locals: { membership: @membership })
             )
           end
         end
@@ -89,11 +90,11 @@ module Web
       
       if @membership.update(membership_params)
         respond_to do |format|
-          format.html { redirect_to web_organization_membership_path(@membership), notice: '멤버 정보가 업데이트되었습니다.' }
+          format.html { redirect_to member_path(@membership), notice: '멤버 정보가 업데이트되었습니다.' }
           format.turbo_stream do
             render turbo_stream: [
               turbo_stream.replace("membership_#{@membership.id}",
-                render_to_string(partial: "organization_memberships/member_row", locals: { membership: @membership })
+                render_to_string(partial: "web/organization_memberships/member_row", locals: { membership: @membership })
               ),
               turbo_stream.replace("flash_messages",
                 render_to_string(partial: "shared/flash_messages")
@@ -106,7 +107,7 @@ module Web
           format.html { render :edit, status: :unprocessable_entity }
           format.turbo_stream do
             render turbo_stream: turbo_stream.replace("membership_form",
-              render_to_string(partial: "organization_memberships/form", locals: { membership: @membership })
+              render_to_string(partial: "web/organization_memberships/form", locals: { membership: @membership })
             )
           end
         end
@@ -120,14 +121,14 @@ module Web
       # 자신이 소유자인 경우 탈퇴 방지
       if @membership.owner? && @membership.user == current_user
         flash[:alert] = "소유자는 조직을 탈퇴할 수 없습니다. 먼저 소유권을 이전하세요."
-        redirect_to web_organization_memberships_path, status: :see_other
+        redirect_to members_path, status: :see_other
         return
       end
       
       if @membership.destroy
         respond_to do |format|
           format.html { 
-            redirect_to web_organization_memberships_path, 
+            redirect_to members_path, 
             notice: "#{@membership.user.email}님이 조직에서 제거되었습니다.",
             status: :see_other 
           }
@@ -142,7 +143,7 @@ module Web
         end
       else
         flash[:alert] = "멤버십을 삭제할 수 없습니다."
-        redirect_to web_organization_memberships_path, status: :see_other
+        redirect_to members_path, status: :see_other
       end
     end
     
@@ -154,7 +155,7 @@ module Web
       @membership.update!(active: !@membership.active)
       
       respond_to do |format|
-        format.html { redirect_to web_organization_membership_path(@membership), notice: '멤버 상태가 변경되었습니다.' }
+        format.html { redirect_to member_path(@membership), notice: '멤버 상태가 변경되었습니다.' }
         format.turbo_stream do
           render turbo_stream: turbo_stream.replace("membership_#{@membership.id}",
             render_to_string(partial: "organization_memberships/member_row", locals: { membership: @membership })
@@ -171,10 +172,14 @@ module Web
       end
     end
     
+    def set_organization
+      @organization = current_organization
+    end
+    
     def set_membership
       @membership = current_organization.organization_memberships.find(params[:id])
     rescue ActiveRecord::RecordNotFound
-      redirect_to web_organization_memberships_path, alert: "멤버십을 찾을 수 없습니다."
+      redirect_to members_path, alert: "멤버십을 찾을 수 없습니다."
     end
     
     def membership_params

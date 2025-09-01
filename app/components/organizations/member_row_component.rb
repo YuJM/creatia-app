@@ -1,6 +1,7 @@
-module Organization
+module Organizations
   class MemberRowComponent < ViewComponent::Base
     include Turbo::FramesHelper
+    include CanCan::ControllerAdditions
     
     def initialize(membership:, current_user:, organization:)
       @membership = membership

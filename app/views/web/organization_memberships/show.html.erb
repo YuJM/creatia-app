@@ -8,10 +8,10 @@
     </div>
     <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none space-x-2">
       <%= link_to "편집",
-                  edit_organization_organization_membership_path(@organization, @membership),
+                  edit_member_path(@membership),
                   class: "inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
       <%= link_to "목록으로",
-                  organization_organization_memberships_path(@organization),
+                  members_path,
                   class: "inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" %>
     </div>
   </div>

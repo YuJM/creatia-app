@@ -124,7 +124,7 @@ class Users::SessionsController < Devise::SessionsController
   # 조직 접근이 거부되었을 때의 페이지
   def access_denied
     @organization_subdomain = params[:org]
-    @organization = Organization.find_by(subdomain: @organization_subdomain) if @organization_subdomain
+    @organization = ::Organization.find_by(subdomain: @organization_subdomain) if @organization_subdomain
     
     respond_to do |format|
       format.html # access_denied.html.erb

@@ -5,9 +5,9 @@ module Admin
     before_action :authenticate_admin!
     
     def index
-      @organizations_count = Organization.count
+      @organizations_count = ::Organization.count
       @users_count = User.count
-      @recent_organizations = Organization.order(created_at: :desc).limit(10)
+      @recent_organizations = ::Organization.order(created_at: :desc).limit(10)
       @recent_users = User.order(created_at: :desc).limit(10)
     end
     

@@ -11,7 +11,7 @@
         </p>
       </div>
       <div class="hidden sm:block">
-        <%= render Ui::ButtonComponent.new(variant: :default, icon: :plus, href: new_web_task_path) do %>
+        <%= render Ui::ButtonComponent.new(variant: :default, icon: :plus, href: new_task_path) do %>
           Quick Task
         <% end %>
       </div>
@@ -27,7 +27,7 @@
   <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
     <!-- Tasks Overview -->
     <%= render Ui::CardComponent.new(variant: :default, hover: true, clickable: true, class: "group") do %>
-      <%= link_to web_tasks_path, class: "block p-6" do %>
+      <%= link_to tasks_path, class: "block p-6" do %>
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Total Tasks</p>
@@ -47,7 +47,7 @@
 
     <!-- Members Overview -->
     <%= render Ui::CardComponent.new(variant: :default, hover: true, clickable: true, class: "group") do %>
-      <%= link_to organization_organization_memberships_path(ActsAsTenant.current_tenant), class: "block p-6" do %>
+      <%= link_to members_path, class: "block p-6" do %>
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Team Members</p>
@@ -113,7 +113,7 @@
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-lg font-semibold text-foreground">Recent Tasks</h3>
-          <%= render Ui::ButtonComponent.new(variant: :ghost, size: :sm, href: web_tasks_path) do %>
+          <%= render Ui::ButtonComponent.new(variant: :ghost, size: :sm, href: tasks_path) do %>
             View All
           <% end %>
         </div>
@@ -124,7 +124,7 @@
             <% recent_tasks.each do |task| %>
               <div class="flex items-center justify-between py-3 border-b border-border last:border-b-0">
                 <div class="flex-1 min-w-0">
-                  <%= link_to web_task_path(task), class: "block group" do %>
+                  <%= link_to task_path(task), class: "block group" do %>
                     <p class="text-sm font-medium text-foreground group-hover:text-primary-600 truncate transition-colors">
                       <%= task.title %>
                     </p>
@@ -160,7 +160,7 @@
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-lg font-semibold text-foreground">Team Activity</h3>
-          <%= render Ui::ButtonComponent.new(variant: :ghost, size: :sm, href: web_permission_audit_logs_path) do %>
+          <%= render Ui::ButtonComponent.new(variant: :ghost, size: :sm, href: permission_audit_logs_path) do %>
             View All
           <% end %>
         </div>
@@ -212,7 +212,7 @@
         <p class="mt-2 text-muted-foreground mb-6">
           Please select an organization to access the dashboard and manage your projects.
         </p>
-        <%= render Ui::ButtonComponent.new(variant: :default, href: web_organizations_path) do %>
+        <%= render Ui::ButtonComponent.new(variant: :default, href: organizations_path) do %>
           Select Organization
         <% end %>
       </div>

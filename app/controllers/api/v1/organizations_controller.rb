@@ -10,12 +10,12 @@ module Api
       end
       
       def show
-        organization = Organization.find(params[:id])
+        organization = ::Organization.find(params[:id])
         render_serialized(OrganizationSerializer, organization)
       end
       
       def create
-        organization = Organization.new(organization_params)
+        organization = ::Organization.new(organization_params)
         
         if organization.save
           render_serialized(OrganizationSerializer, organization, status: :created)
@@ -25,7 +25,7 @@ module Api
       end
       
       def update
-        organization = Organization.find(params[:id])
+        organization = ::Organization.find(params[:id])
         
         if organization.update(organization_params)
           render_serialized(OrganizationSerializer, organization)
@@ -35,7 +35,7 @@ module Api
       end
       
       def destroy
-        organization = Organization.find(params[:id])
+        organization = ::Organization.find(params[:id])
         organization.destroy
         head :no_content
       end

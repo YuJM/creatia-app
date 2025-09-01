@@ -7,7 +7,7 @@ module Api
       
       # GET /api/v1/tasks
       def index
-        @tasks = Task.accessible_by(current_ability).includes(:assigned_user, :organization)
+        @tasks = ::Task.accessible_by(current_ability).includes(:assigned_user, :organization)
         
         apply_filters
         apply_sorting
@@ -152,7 +152,7 @@ module Api
       def stats
         authorize! :index, Task
         
-        tasks = Task.accessible_by(current_ability)
+        tasks = ::Task.accessible_by(current_ability)
         
         stats = {
           total: tasks.count,
@@ -201,7 +201,7 @@ module Api
       private
       
       def set_task
-        @task = Task.accessible_by(current_ability).find(params[:id])
+        @task = ::Task.accessible_by(current_ability).find(params[:id])
       rescue ActiveRecord::RecordNotFound
         render_error("작업을 찾을 수 없습니다.", status: :not_found)
       end

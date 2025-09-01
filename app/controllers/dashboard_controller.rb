@@ -9,7 +9,7 @@ class DashboardController < TenantBaseController
     authorize! :index, :dashboard
     
     # 현재 활성 스프린트
-    @active_sprint = Sprint.accessible_by(current_ability).active.first
+    @active_sprint = ::Sprint.accessible_by(current_ability).active.first
     
     # 대시보드 메트릭 계산
     @dashboard_metrics = calculate_dashboard_metrics
@@ -204,8 +204,8 @@ class DashboardController < TenantBaseController
   
   # 대시보드 메트릭 계산
   def calculate_dashboard_metrics
-    tasks = Task.accessible_by(current_ability).where(created_at: @start_date..@end_date)
-    sprints = Sprint.accessible_by(current_ability).where(start_date: @start_date..@end_date)
+    tasks = ::Task.accessible_by(current_ability).where(created_at: @start_date..@end_date)
+    sprints = ::Sprint.accessible_by(current_ability).where(start_date: @start_date..@end_date)
     team_members = current_organization.users.active
     
     # TeamMetrics 구조체 사용
@@ -277,13 +277,13 @@ class DashboardController < TenantBaseController
     data = []
     
     (30.days.ago.to_date..Date.current).each do |date|
-      remaining_tasks = Task.accessible_by(current_ability).where('created_at <= ? AND (status != ? OR updated_at > ?)', 
+      remaining_tasks = ::Task.accessible_by(current_ability).where('created_at <= ? AND (status != ? OR updated_at > ?)', 
                                                 date.end_of_day, 'done', date.end_of_day).count
       
       # 이상적인 번다운 계산 (선형 감소)
       total_days = 30
       elapsed_days = (date - 30.days.ago.to_date).to_i
-      total_initial_tasks = Task.accessible_by(current_ability).where(created_at: 30.days.ago.beginning_of_day..30.days.ago.end_of_day).count
+      total_initial_tasks = ::Task.accessible_by(current_ability).where(created_at: 30.days.ago.beginning_of_day..30.days.ago.end_of_day).count
       
       ideal_remaining = total_initial_tasks * [(total_days - elapsed_days).to_f / total_days, 0].max
       
@@ -317,7 +317,7 @@ class DashboardController < TenantBaseController
     range.beginning_of_week.step(range.end_of_week, 1.week) do |week_start|
       week_end = [week_start.end_of_week, Date.current].min
       
-      tasks_completed = Task.accessible_by(current_ability)
+      tasks_completed = ::Task.accessible_by(current_ability)
                        .done
                        .where(updated_at: week_start.beginning_of_day..week_end.end_of_day)
                        .count
@@ -337,7 +337,7 @@ class DashboardController < TenantBaseController
     
     data = []
     range.each do |date|
-      remaining = Task.accessible_by(current_ability).where('created_at <= ? AND (status != ? OR updated_at > ?)', 
+      remaining = ::Task.accessible_by(current_ability).where('created_at <= ? AND (status != ? OR updated_at > ?)', 
                                           date.end_of_day, 'done', date.end_of_day).count
       
       data << {
@@ -361,7 +361,7 @@ class DashboardController < TenantBaseController
     
     # 우선순위별 완료율
     %w[low medium high urgent].each do |priority|
-      priority_tasks = Task.accessible_by(current_ability).where(priority: priority, created_at: range)
+      priority_tasks = ::Task.accessible_by(current_ability).where(priority: priority, created_at: range)
       completed = priority_tasks.done.count
       total = priority_tasks.count
       
@@ -374,7 +374,7 @@ class DashboardController < TenantBaseController
     
     # 담당자별 완료율 (활성 멤버만)
     current_organization.users.active.each do |user|
-      user_tasks = Task.accessible_by(current_ability).where(assigned_user: user, created_at: range)
+      user_tasks = ::Task.accessible_by(current_ability).where(assigned_user: user, created_at: range)
       completed = user_tasks.done.count
       total = user_tasks.count
       
@@ -387,7 +387,7 @@ class DashboardController < TenantBaseController
     
     # 일별 완료율
     range.each do |date|
-      day_tasks = Task.accessible_by(current_ability).where(created_at: date.beginning_of_day..date.end_of_day)
+      day_tasks = ::Task.accessible_by(current_ability).where(created_at: date.beginning_of_day..date.end_of_day)
       completed = day_tasks.done.count
       total = day_tasks.count
       
@@ -416,7 +416,7 @@ class DashboardController < TenantBaseController
     alerts = []
     
     # 지연된 작업 경고
-    overdue_count = Task.accessible_by(current_ability).overdue.count
+    overdue_count = ::Task.accessible_by(current_ability).overdue.count
     if overdue_count > 0
       alerts << {
         id: "overdue_tasks",
@@ -431,7 +431,7 @@ class DashboardController < TenantBaseController
     end
     
     # 높은 우선순위 작업 알림
-    urgent_count = Task.accessible_by(current_ability).urgent.where.not(status: 'done').count
+    urgent_count = ::Task.accessible_by(current_ability).urgent.where.not(status: 'done').count
     if urgent_count > 0
       alerts << {
         id: "urgent_tasks",
@@ -446,7 +446,7 @@ class DashboardController < TenantBaseController
     end
     
     # 활성 스프린트 진행 상황 확인
-    active_sprint = Sprint.accessible_by(current_ability).active.first
+    active_sprint = ::Sprint.accessible_by(current_ability).active.first
     if active_sprint
       progress = (active_sprint.tasks.done.count.to_f / active_sprint.tasks.count * 100).round(1) rescue 0
       days_remaining = (active_sprint.end_date - Date.current).to_i rescue 0
@@ -492,7 +492,7 @@ class DashboardController < TenantBaseController
     activities = []
     
     # 최근 완료된 작업들
-    recent_completed_tasks = Task.accessible_by(current_ability).done
+    recent_completed_tasks = ::Task.accessible_by(current_ability).done
                                                .where(updated_at: 24.hours.ago..Time.current)
                                                .includes(:assigned_user)
                                                .order(updated_at: :desc)
@@ -509,7 +509,7 @@ class DashboardController < TenantBaseController
     end
     
     # 새로 생성된 작업들
-    recent_new_tasks = Task.accessible_by(current_ability).where(created_at: 24.hours.ago..Time.current)
+    recent_new_tasks = ::Task.accessible_by(current_ability).where(created_at: 24.hours.ago..Time.current)
                                         .includes(:assigned_user)
                                         .order(created_at: :desc)
                                         .limit(3)

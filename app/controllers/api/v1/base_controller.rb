@@ -74,9 +74,9 @@ module Api
         # API의 경우 헤더나 파라미터로 조직 식별
         @current_organization ||= begin
           if params[:organization_id].present?
-            Organization.find(params[:organization_id])
+            ::Organization.find(params[:organization_id])
           elsif request.headers['X-Organization-ID'].present?
-            Organization.find(request.headers['X-Organization-ID'])
+            ::Organization.find(request.headers['X-Organization-ID'])
           end
         end
       end
