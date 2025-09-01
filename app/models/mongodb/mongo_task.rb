@@ -7,9 +7,9 @@ module Mongodb
     # MongoDB 컬렉션 이름 설정
     store_in collection: "tasks"
     
-    # ===== Core References =====
-    field :organization_id, type: Integer
-    field :service_id, type: Integer
+    # ===== Core References (PostgreSQL UUIDs) =====
+    field :organization_id, type: String  # UUID from PostgreSQL
+    field :service_id, type: String       # UUID from PostgreSQL
     field :sprint_id, type: String # MongoDB Sprint ID (optional - backlog tasks)
     field :milestone_id, type: String # MongoDB Milestone ID (optional)
     
@@ -23,11 +23,11 @@ module Mongodb
     field :task_type, type: String, default: 'feature' # feature, bug, chore, spike, epic
     
     # ===== Assignment =====
-    field :assignee_id, type: Integer
+    field :assignee_id, type: String      # UUID from PostgreSQL User
     field :assignee_name, type: String
-    field :reviewer_id, type: Integer
-    field :team_id, type: Integer
-    field :created_by_id, type: Integer
+    field :reviewer_id, type: String      # UUID from PostgreSQL User
+    field :team_id, type: String          # UUID from PostgreSQL Team
+    field :created_by_id, type: String    # UUID from PostgreSQL User
     
     # ===== Status & Priority =====
     field :status, type: String, default: 'backlog' # backlog, todo, in_progress, review, done, archived
@@ -58,8 +58,8 @@ module Mongodb
     # ===== Collaboration =====
     field :comment_count, type: Integer, default: 0
     field :attachment_count, type: Integer, default: 0
-    field :watchers, type: Array, default: []
-    field :participants, type: Array, default: []
+    field :watchers, type: Array, default: []     # Array of UUID strings
+    field :participants, type: Array, default: [] # Array of UUID strings
     field :mentions, type: Array, default: []
     
     # ===== Development Tracking =====

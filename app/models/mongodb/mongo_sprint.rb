@@ -7,10 +7,10 @@ module Mongodb
     # MongoDB 컬렉션 이름 설정
     store_in collection: "sprints"
     
-    # ===== Core References =====
-    field :organization_id, type: Integer
-    field :service_id, type: Integer
-    field :team_id, type: Integer
+    # ===== Core References (PostgreSQL UUIDs) =====
+    field :organization_id, type: String  # UUID from PostgreSQL
+    field :service_id, type: String       # UUID from PostgreSQL
+    field :team_id, type: String          # UUID from PostgreSQL
     field :milestone_id, type: String # MongoDB Milestone ID
     
     # ===== Sprint Definition =====

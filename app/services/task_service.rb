@@ -326,7 +326,8 @@ class TaskService
     
     def extract_mentions(content)
       return [] unless content
-      content.scan(/@user_(\d+)/).flatten.map(&:to_i).uniq
+      # UUID 형식의 멘션 추출
+      content.scan(/@user_([a-f0-9\-]{36})/).flatten.uniq
     end
     
     def log_task_activity(task, action, changes = {})

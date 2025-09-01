@@ -3,10 +3,10 @@ class Milestone
   include Mongoid::Document
   include Mongoid::Timestamps
   
-  # ===== Core References (PostgreSQL 연결) =====
-  field :organization_id, type: Integer
-  field :service_id, type: Integer
-  field :created_by_id, type: Integer
+  # ===== Core References (PostgreSQL UUIDs) =====
+  field :organization_id, type: String  # UUID from PostgreSQL
+  field :service_id, type: String       # UUID from PostgreSQL
+  field :created_by_id, type: String    # UUID from PostgreSQL User
   
   # ===== Milestone Definition =====
   field :title, type: String

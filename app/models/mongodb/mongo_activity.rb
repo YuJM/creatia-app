@@ -7,9 +7,9 @@ module Mongodb
     # MongoDB 컬렉션 이름 설정
     store_in collection: "activities"
     
-    # ===== Context =====
-    field :organization_id, type: Integer
-    field :actor_id, type: Integer
+    # ===== Context (PostgreSQL UUIDs) =====
+    field :organization_id, type: String  # UUID from PostgreSQL
+    field :actor_id, type: String         # UUID from PostgreSQL User
     field :actor_name, type: String
     field :actor_type, type: String, default: 'user' # user, system, integration
     
@@ -32,8 +32,8 @@ module Mongodb
     
     # ===== Visibility =====
     field :visibility, type: String, default: 'team'
-    field :team_id, type: Integer
-    field :mentioned_user_ids, type: Array, default: []
+    field :team_id, type: String          # UUID from PostgreSQL Team
+    field :mentioned_user_ids, type: Array, default: []  # Array of UUID strings
     
     # ===== Source =====
     field :source, type: String, default: 'web' # web, api, mobile, integration

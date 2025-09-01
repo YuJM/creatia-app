@@ -11,10 +11,10 @@ module Mongodb
     # ===== Polymorphic References =====
     field :commentable_type, type: String # 'MongoTask', 'MongoSprint', 'Milestone'
     field :commentable_id, type: String # MongoDB Document ID
-    field :organization_id, type: Integer
+    field :organization_id, type: String  # UUID from PostgreSQL
     
     # ===== Author Info =====
-    field :author_id, type: Integer
+    field :author_id, type: String        # UUID from PostgreSQL User
     field :author_name, type: String
     field :author_avatar, type: String
     field :author_role, type: String
@@ -29,16 +29,16 @@ module Mongodb
     field :attachments, type: Array, default: []
     
     # ===== Mentions & References =====
-    field :mentioned_user_ids, type: Array, default: []
-    field :referenced_task_ids, type: Array, default: []
-    field :referenced_comment_ids, type: Array, default: []
+    field :mentioned_user_ids, type: Array, default: []     # Array of UUID strings
+    field :referenced_task_ids, type: Array, default: []    # Array of task_id strings (e.g., SHOP-123)
+    field :referenced_comment_ids, type: Array, default: []  # Array of MongoDB IDs
     
     # ===== Collaboration Features =====
     field :reactions, type: Hash, default: {}
     # { "👍": [1, 2, 3], "👎": [4], "🎉": [5, 6] }
     
     field :resolved, type: Boolean, default: false
-    field :resolved_by_id, type: Integer
+    field :resolved_by_id, type: String   # UUID from PostgreSQL User
     field :resolved_at, type: Time
     
     # ===== Comment Type =====
@@ -181,8 +181,9 @@ module Mongodb
       # TODO: 실제 마크다운 파서 구현
       self.content_html = content
       
-      # 멘션 추출
-      self.mentioned_user_ids = content.scan(/@user_(\d+)/).flatten.map(&:to_i).uniq
+      # 멘션 추출 (UUID 형식)
+      # @user_uuid 또는 @username 패턴 지원
+      self.mentioned_user_ids = content.scan(/@user_([a-f0-9\-]{36})/).flatten.uniq
       
       # 태스크 참조 추출
       self.referenced_task_ids = content.scan(/\b([A-Z]+-\d+)\b/).flatten.uniq
