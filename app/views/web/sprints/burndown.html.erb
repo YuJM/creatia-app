@@ -1,0 +1,180 @@
+<%# app/views/web/sprints/burndown.html.erb %>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Burndown Chart</h1>
+        <p class="mt-1 text-sm text-gray-600">
+          <%= @sprint.name %> • 
+          <%= @sprint.start_date.strftime("%b %d") %> - <%= @sprint.end_date.strftime("%b %d, %Y") %>
+        </p>
+      </div>
+      
+      <div class="flex space-x-3">
+        <%= link_to "Back to Board", board_web_service_sprint_path(@service, @sprint),
+            class: "px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
+        <button data-action="click->burndown-chart#refresh"
+                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
+          Refresh Data
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Metrics Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <!-- Total Points -->
+    <div class="bg-white rounded-lg shadow px-6 py-4">
+      <dt class="text-sm font-medium text-gray-500">Total Points</dt>
+      <dd class="mt-1 text-2xl font-semibold text-gray-900">
+        <%= @sprint.committed_points || 0 %>
+      </dd>
+    </div>
+    
+    <!-- Completed Points -->
+    <div class="bg-white rounded-lg shadow px-6 py-4">
+      <dt class="text-sm font-medium text-gray-500">Completed</dt>
+      <dd class="mt-1 text-2xl font-semibold text-green-600">
+        <%= @sprint.completed_points || 0 %>
+      </dd>
+      <dd class="text-sm text-gray-500">
+        <%= ((@sprint.completed_points.to_f / @sprint.committed_points * 100).round rescue 0) %>% done
+      </dd>
+    </div>
+    
+    <!-- Remaining Days -->
+    <div class="bg-white rounded-lg shadow px-6 py-4">
+      <dt class="text-sm font-medium text-gray-500">Time Remaining</dt>
+      <dd class="mt-1 text-2xl font-semibold text-gray-900" data-metric="remaining-days">
+        <%= (@sprint.end_date - Date.current).to_i %> days
+      </dd>
+      <dd class="text-sm text-gray-500">
+        <%= (((Date.current - @sprint.start_date).to_f / (@sprint.end_date - @sprint.start_date) * 100).round rescue 0) %>% elapsed
+      </dd>
+    </div>
+    
+    <!-- Health Score -->
+    <div class="bg-white rounded-lg shadow px-6 py-4">
+      <dt class="text-sm font-medium text-gray-500">Health Score</dt>
+      <dd class="mt-1 text-2xl font-semibold" data-metric="health-score">
+        <%= @sprint.health_score || 100 %>%
+      </dd>
+      <dd class="text-sm">
+        <% if @sprint.health_score >= 75 %>
+          <span class="text-green-600">On Track</span>
+        <% elsif @sprint.health_score >= 50 %>
+          <span class="text-yellow-600">At Risk</span>
+        <% else %>
+          <span class="text-red-600">Off Track</span>
+        <% end %>
+      </dd>
+    </div>
+  </div>
+  
+  <!-- Burndown Chart -->
+  <div class="bg-white rounded-lg shadow p-6" 
+       data-controller="burndown-chart"
+       data-burndown-chart-sprint-id-value="<%= @sprint.id %>"
+       data-burndown-chart-data-value="<%= @burndown_data.to_json %>">
+    <div class="relative" style="height: 400px;">
+      <canvas></canvas>
+    </div>
+  </div>
+  
+  <!-- Sprint Progress Details -->
+  <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Task Status Distribution -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Task Status Distribution</h3>
+      
+      <div class="space-y-3">
+        <% task_counts = @sprint.task_counts || {} %>
+        <% ['backlog', 'todo', 'in_progress', 'review', 'done'].each do |status| %>
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-gray-600"><%= status.humanize %></span>
+              <span class="font-medium"><%= task_counts[status] || 0 %> tasks</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="h-2 rounded-full <%= status == 'done' ? 'bg-green-500' : 'bg-indigo-500' %>"
+                   style="width: <%= ((task_counts[status].to_f / task_counts.values.sum * 100).round rescue 0) %>%">
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    
+    <!-- Daily Velocity -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Daily Velocity</h3>
+      
+      <div class="space-y-2">
+        <div class="flex justify-between py-2 border-b">
+          <span class="text-sm text-gray-600">Average Velocity</span>
+          <span class="text-sm font-medium" data-metric="velocity">
+            <%= (@sprint.completed_points.to_f / (Date.current - @sprint.start_date).to_i).round(1) rescue 0 %> pts/day
+          </span>
+        </div>
+        
+        <div class="flex justify-between py-2 border-b">
+          <span class="text-sm text-gray-600">Required Velocity</span>
+          <span class="text-sm font-medium">
+            <%= ((@sprint.committed_points - @sprint.completed_points).to_f / (@sprint.end_date - Date.current).to_i).round(1) rescue 0 %> pts/day
+          </span>
+        </div>
+        
+        <div class="flex justify-between py-2 border-b">
+          <span class="text-sm text-gray-600">Planned Velocity</span>
+          <span class="text-sm font-medium">
+            <%= @sprint.planned_velocity || 'N/A' %> pts/day
+          </span>
+        </div>
+        
+        <div class="flex justify-between py-2">
+          <span class="text-sm text-gray-600">Spillover Points</span>
+          <span class="text-sm font-medium">
+            <%= @sprint.spillover_points || 0 %> pts
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Recent Activity -->
+  <div class="mt-8 bg-white rounded-lg shadow">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h3 class="text-lg font-medium text-gray-900">Recent Sprint Activity</h3>
+    </div>
+    
+    <div class="divide-y divide-gray-200">
+      <% recent_activities = Mongodb::MongoActivity.by_target('MongoSprint', @sprint.id).recent.limit(10) %>
+      <% if recent_activities.any? %>
+        <% recent_activities.each do |activity| %>
+          <div class="px-6 py-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
+                  <%= activity.actor_name&.first&.upcase || '?' %>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm text-gray-900">
+                    <%= activity.description %>
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    <%= time_ago_in_words(activity.created_at) %> ago
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="px-6 py-8 text-center text-gray-500">
+          No recent activity
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

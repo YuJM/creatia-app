@@ -1,0 +1,150 @@
+<%# app/views/web/sprints/board.html.erb %>
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8" data-controller="sprint-board" data-sprint-board-sprint-id-value="<%= @sprint.id %>">
+  <!-- Sprint Header -->
+  <div class="bg-white shadow-sm rounded-lg mb-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900"><%= @sprint.name %></h1>
+          <p class="text-sm text-gray-600 mt-1">
+            <%= @sprint.start_date.strftime("%b %d") %> - <%= @sprint.end_date.strftime("%b %d, %Y") %>
+            <span class="ml-2 px-2 py-1 text-xs font-medium rounded-full
+              <%= @sprint.status == 'active' ? 'bg-green-100 text-green-800' : 
+                 @sprint.status == 'completed' ? 'bg-gray-100 text-gray-800' : 
+                 'bg-yellow-100 text-yellow-800' %>">
+              <%= @sprint.status.capitalize %>
+            </span>
+          </p>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+          <!-- Sprint Metrics -->
+          <div class="text-right">
+            <p class="text-sm text-gray-500">Story Points</p>
+            <p class="text-lg font-semibold">
+              <span class="text-green-600"><%= @sprint.completed_points || 0 %></span>
+              / 
+              <span class="text-gray-900"><%= @sprint.committed_points || 0 %></span>
+            </p>
+          </div>
+          
+          <!-- Actions -->
+          <div class="flex space-x-2">
+            <%= link_to "Burndown", burndown_web_service_sprint_path(@service, @sprint), 
+                class: "px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50" %>
+            <%= link_to "Edit Sprint", edit_web_service_sprint_path(@service, @sprint),
+                class: "px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kanban Board -->
+  <div class="flex space-x-4 overflow-x-auto pb-4">
+    <% ['backlog', 'todo', 'in_progress', 'review', 'done'].each do |status| %>
+      <div class="flex-shrink-0 w-80">
+        <div class="bg-gray-50 rounded-lg">
+          <!-- Column Header -->
+          <div class="px-4 py-3 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+              <h3 class="font-medium text-gray-900">
+                <%= status.humanize %>
+              </h3>
+              <span class="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-200 rounded-full">
+                <%= @tasks_by_status[status]&.size || 0 %>
+              </span>
+            </div>
+          </div>
+          
+          <!-- Task Cards Container -->
+          <div class="p-2 space-y-2 min-h-[400px]" 
+               data-sprint-board-target="column" 
+               data-status="<%= status %>"
+               data-controller="sortable"
+               data-sortable-group-value="tasks">
+            
+            <% (@tasks_by_status[status] || []).each do |task| %>
+              <%= render 'task_card', task: task %>
+            <% end %>
+            
+            <!-- Add Task Button -->
+            <button class="w-full p-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                    data-action="click->sprint-board#showNewTaskForm"
+                    data-status="<%= status %>">
+              + Add a task
+            </button>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- New Task Form Modal (hidden by default) -->
+<div class="hidden fixed inset-0 z-50 overflow-y-auto" data-sprint-board-target="newTaskModal">
+  <div class="flex items-center justify-center min-h-screen px-4">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+    
+    <div class="relative bg-white rounded-lg max-w-md w-full p-6">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Add New Task</h3>
+      
+      <%= form_with model: Mongodb::MongoTask.new, 
+                    url: web_service_tasks_path(@service),
+                    data: { sprint_board_target: "newTaskForm" } do |f| %>
+        <%= f.hidden_field :sprint_id, value: @sprint.id %>
+        <%= f.hidden_field :status, value: 'todo', data: { sprint_board_target: "statusField" } %>
+        
+        <div class="mb-4">
+          <%= f.label :title, class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_field :title, 
+              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500",
+              required: true %>
+        </div>
+        
+        <div class="mb-4">
+          <%= f.label :description, class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.text_area :description, 
+              rows: 3,
+              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" %>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <%= f.label :story_points, class: "block text-sm font-medium text-gray-700 mb-1" %>
+            <%= f.select :story_points, 
+                options_for_select([1, 2, 3, 5, 8, 13, 21]),
+                { prompt: "Select points" },
+                class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" %>
+          </div>
+          
+          <div>
+            <%= f.label :priority, class: "block text-sm font-medium text-gray-700 mb-1" %>
+            <%= f.select :priority,
+                options_for_select([['Low', 'low'], ['Medium', 'medium'], ['High', 'high'], ['Urgent', 'urgent']]),
+                { selected: 'medium' },
+                class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" %>
+          </div>
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+          <button type="button" 
+                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  data-action="click->sprint-board#hideNewTaskForm">
+            Cancel
+          </button>
+          <%= f.submit "Create Task", 
+              class: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- ActionCable subscription for real-time updates -->
+<%= tag.div "", 
+    id: "sprint-channel",
+    data: {
+      channel: "SprintChannel",
+      sprint_id: @sprint.id
+    } %>

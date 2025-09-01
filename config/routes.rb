@@ -63,6 +63,34 @@ Rails.application.routes.draw do
       
       # 사용자 관리 (전역)
       resources :users, only: [:index, :show, :edit, :update, :destroy]
+      
+      # Services with nested Sprints and Tasks
+      resources :services do
+        resources :sprints do
+          member do
+            get :board
+            get :burndown
+            post :start
+            post :complete
+          end
+        end
+        
+        resources :tasks do
+          member do
+            post :assign
+            patch :update_status
+            post :block
+            post :unblock
+            post :add_comment
+            post :add_subtask
+            patch :complete_subtask
+          end
+          
+          collection do
+            patch :bulk_update
+          end
+        end
+      end
     end
     
     # 메인 랜딩 페이지
