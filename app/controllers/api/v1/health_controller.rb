@@ -35,13 +35,6 @@ module Api
         render json: postgresql_health, status: status_code
       end
 
-      # GET /api/v1/health/redis
-      def redis
-        redis_health = check_redis_health
-        status_code = redis_health[:healthy] ? :ok : :service_unavailable
-        
-        render json: redis_health, status: status_code
-      end
 
       # GET /api/v1/health/detailed
       def detailed
@@ -54,7 +47,6 @@ module Api
           services: {
             mongodb: check_mongodb_health_detailed,
             postgresql: check_postgresql_health_detailed,
-            redis: check_redis_health_detailed,
             sidekiq: check_sidekiq_health
           },
           system: check_system_resources,
@@ -69,8 +61,7 @@ module Api
       def check_all_systems
         checks = {
           mongodb: check_mongodb_health,
-          postgresql: check_postgresql_health,
-          redis: check_redis_health
+          postgresql: check_postgresql_health
         }
         
         healthy = checks.values.all? { |check| check[:healthy] }
@@ -218,72 +209,6 @@ module Api
         }
       end
 
-      def check_redis_health
-        return { healthy: true, status: 'not_configured' } unless defined?(Redis)
-        
-        start_time = Time.current
-        
-        # Redis ping
-        redis = Redis.current
-        redis.ping
-        response_time = ((Time.current - start_time) * 1000).round(2)
-        
-        # 메모리 정보
-        info = redis.info
-        
-        {
-          healthy: true,
-          status: 'connected',
-          response_time_ms: response_time,
-          memory: {
-            used_mb: (info['used_memory'].to_f / 1024 / 1024).round(2),
-            peak_mb: (info['used_memory_peak'].to_f / 1024 / 1024).round(2)
-          },
-          clients: info['connected_clients'],
-          uptime_days: info['uptime_in_days']
-        }
-      rescue => e
-        {
-          healthy: false,
-          status: 'error',
-          error: e.message
-        }
-      end
-
-      def check_redis_health_detailed
-        return { healthy: true, status: 'not_configured' } unless defined?(Redis)
-        
-        redis = Redis.current
-        info = redis.info
-        
-        {
-          healthy: true,
-          status: 'connected',
-          version: info['redis_version'],
-          uptime_seconds: info['uptime_in_seconds'],
-          memory: {
-            used_mb: (info['used_memory'].to_f / 1024 / 1024).round(2),
-            peak_mb: (info['used_memory_peak'].to_f / 1024 / 1024).round(2),
-            fragmentation_ratio: info['mem_fragmentation_ratio']
-          },
-          persistence: {
-            last_save_time: Time.at(info['rdb_last_save_time']),
-            changes_since_save: info['rdb_changes_since_last_save']
-          },
-          stats: {
-            total_connections: info['total_connections_received'],
-            total_commands: info['total_commands_processed'],
-            ops_per_sec: info['instantaneous_ops_per_sec']
-          },
-          keyspace: parse_keyspace_info(info)
-        }
-      rescue => e
-        {
-          healthy: false,
-          status: 'error',
-          error: e.message
-        }
-      end
 
       def check_sidekiq_health
         return { healthy: true, status: 'not_configured' } unless defined?(Sidekiq)

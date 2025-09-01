@@ -230,7 +230,6 @@ Rails.application.routes.draw do
           get 'ping', to: 'health#ping'
           get 'mongodb', to: 'health#mongodb'
           get 'postgresql', to: 'health#postgresql'
-          get 'redis', to: 'health#redis'
           get 'detailed', to: 'health#detailed'
         end
 

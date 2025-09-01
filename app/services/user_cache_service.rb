@@ -1,7 +1,7 @@
 # app/services/user_cache_service.rb
 class UserCacheService
   class << self
-    # Redis 또는 Rails.cache를 사용한 다층 캐싱
+    # Rails.cache를 사용한 다층 캐싱
     
     # 1. 로컬 메모리 캐시 (Request 단위)
     def request_cache
@@ -20,7 +20,7 @@ class UserCacheService
       cached = request_cache[user_id]
       return cached if cached
       
-      # L2: Redis/Rails.cache
+      # L2: Rails.cache
       user = User.cached_find(user_id)
       
       # L1 캐시에 저장
