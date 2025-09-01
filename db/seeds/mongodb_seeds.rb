@@ -3,6 +3,45 @@
 # MongoDB 실행 데이터 시드
 # PostgreSQL 시드 데이터가 먼저 실행되어야 합니다.
 
+# ============================================================================
+# 헬퍼 메서드 정의
+# ============================================================================
+def generate_burndown_data(start_date, end_date, committed_points, completed_points, status)
+  burndown_data = []
+  current_remaining = committed_points
+  
+  (start_date..Date.current).each_with_index do |date, index|
+    # 이상적인 번다운 계산
+    total_days = (end_date - start_date).to_i
+    ideal_remaining = committed_points - (committed_points * (index + 1) / total_days.to_f)
+    
+    # 실제 번다운 (약간의 랜덤성 추가)
+    if date <= Date.current
+      if status == 'completed' && date == Date.current - 7.days
+        # 완료된 스프린트는 마지막에 0에 도달
+        actual_remaining = [committed_points - completed_points, 0].max
+      else
+        # 진행 중인 스프린트는 점진적 감소
+        daily_completion = rand(0..5) # 하루에 완료되는 포인트
+        current_remaining = [current_remaining - daily_completion, 0].max
+        actual_remaining = current_remaining
+      end
+    else
+      actual_remaining = nil # 미래 데이터는 nil
+    end
+    
+    burndown_data << {
+      date: date,
+      ideal_remaining: ideal_remaining.round(1),
+      actual_remaining: actual_remaining&.round(1),
+      tasks_completed: rand(0..3),
+      points_completed: rand(0..5)
+    }
+  end
+  
+  burndown_data
+end
+
 puts "\n🏗️ MongoDB 실행 데이터 생성 중..."
 puts "=" * 60
 
@@ -145,7 +184,6 @@ organizations.each do |org|
     organization: org
   ) do |s|
     s.description = "#{org.name}의 메인 개발 프로젝트"
-    s.active = true
   end
   
   sprint_data.each_with_index do |sprint_attrs, index|
@@ -627,42 +665,3 @@ puts "  2. 스프린트 보드 테스트: {org}.creatia.local/web/services/{serv
 puts "  3. 번다운 차트 테스트: {org}.creatia.local/web/services/{service_id}/sprints/{sprint_id}/burndown"
 
 puts "\n" + "=" * 60
-
-# ============================================================================
-# 헬퍼 메서드
-# ============================================================================
-def generate_burndown_data(start_date, end_date, committed_points, completed_points, status)
-  burndown_data = []
-  current_remaining = committed_points
-  
-  (start_date..Date.current).each_with_index do |date, index|
-    # 이상적인 번다운 계산
-    total_days = (end_date - start_date).to_i
-    ideal_remaining = committed_points - (committed_points * (index + 1) / total_days.to_f)
-    
-    # 실제 번다운 (약간의 랜덤성 추가)
-    if date <= Date.current
-      if status == 'completed' && date == Date.current - 7.days
-        # 완료된 스프린트는 마지막에 0에 도달
-        actual_remaining = [committed_points - completed_points, 0].max
-      else
-        # 진행 중인 스프린트는 점진적 감소
-        daily_completion = rand(0..5) # 하루에 완료되는 포인트
-        current_remaining = [current_remaining - daily_completion, 0].max
-        actual_remaining = current_remaining
-      end
-    else
-      actual_remaining = nil # 미래 데이터는 nil
-    end
-    
-    burndown_data << {
-      date: date,
-      ideal_remaining: ideal_remaining.round(1),
-      actual_remaining: actual_remaining&.round(1),
-      tasks_completed: rand(0..3),
-      points_completed: rand(0..5)
-    }
-  end
-  
-  burndown_data
-end
