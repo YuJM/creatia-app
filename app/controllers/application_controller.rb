@@ -9,6 +9,7 @@ class ApplicationController < ActionController::Base
   set_current_tenant_through_filter
   before_action :set_current_tenant
   before_action :authenticate_user!, unless: :skip_authentication?
+  before_action :set_current_attributes
   before_action :ensure_organization_access, unless: :skip_organization_check?
   
   # Logging
@@ -64,6 +65,13 @@ class ApplicationController < ActionController::Base
     else
       @current_user = nil
     end
+    
+    # 로그아웃 후 세션이 정리되었는지 확인
+    if @current_user && session.empty? && !cookies[:jwt_access_token].present?
+      @current_user = nil
+    end
+    
+    @current_user
   end
   
   def authenticate_from_jwt_token
@@ -168,6 +176,12 @@ class ApplicationController < ActionController::Base
   helper_method :tenant_switcher
   
   private
+  
+  # Current 속성 설정
+  def set_current_attributes
+    Current.user = current_user
+    Current.organization = current_organization
+  end
   
   # 멀티테넌트 설정 (연결 관리 최적화)
   def set_current_tenant

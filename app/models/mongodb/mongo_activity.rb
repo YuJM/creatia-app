@@ -69,7 +69,7 @@ module Mongodb
         activity = new(
           organization_id: options[:organization_id],
           actor_id: options[:actor_id] || Current.user&.id,
-          actor_name: options[:actor_name] || Current.user&.name,
+          actor_name: options[:actor_name] || Current.user_name,
           actor_type: options[:actor_type] || 'user',
           action: options[:action],
           target_type: options[:target_type],

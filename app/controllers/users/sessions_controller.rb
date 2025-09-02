@@ -3,6 +3,7 @@
 # Users::SessionsController - SSO 중앙 인증을 처리하는 커스텀 Devise 컨트롤러
 class Users::SessionsController < Devise::SessionsController
   layout :determine_layout
+  before_action :set_current_attributes
   before_action :check_auth_domain, except: [:destroy]
   before_action :store_return_organization, only: [:new, :create]
   
@@ -41,8 +42,23 @@ class Users::SessionsController < Devise::SessionsController
   
   # DELETE /users/sign_out
   def destroy
+    # 로그아웃 전 사용자 정보 저장
+    user = current_user
+    
+    # devise_mapping이 nil인 경우 안전하게 처리
+    if request.env['devise.mapping'].nil?
+      # Devise 매핑이 없으면 직접 로그아웃 처리
+      sign_out(user) if user_signed_in?
+      clear_cross_domain_session
+      clear_all_sessions
+      redirect_to DomainService.main_url, allow_other_host: true
+      return
+    end
+    
     # 로그아웃 후 메인 도메인으로 리다이렉트
     super do
+      # 추가 세션 정리
+      clear_all_sessions
       store_location_for(:user, DomainService.main_url)
     end
   end
@@ -141,6 +157,18 @@ class Users::SessionsController < Devise::SessionsController
   
   private
   
+  # Current 속성 설정
+  def set_current_attributes
+    # 로그아웃 과정에서는 Current.user를 nil로 설정하여 안전하게 처리
+    Current.user = user_signed_in? ? current_user : nil
+    Current.organization = nil  # SessionsController에서는 조직 컨텍스트 없음
+  rescue => e
+    # Current 설정 중 에러가 발생하면 안전하게 nil로 설정
+    Current.user = nil
+    Current.organization = nil
+    Rails.logger.error "Failed to set current attributes: #{e.message}"
+  end
+  
   # 액션별로 레이아웃 결정
   def determine_layout
     case action_name
@@ -216,6 +244,15 @@ class Users::SessionsController < Devise::SessionsController
     redirect_to organization_selection_path
   end
   
+  # Devise mapping이 없을 때 안전하게 처리
+  def resource_name
+    devise_mapping&.name || :user
+  end
+  
+  def devise_mapping
+    request.env["devise.mapping"] || Devise.mappings[:user]
+  end
+  
   protected
   
   # Devise 기본 after_sign_in_path 오버라이드
@@ -228,7 +265,24 @@ class Users::SessionsController < Devise::SessionsController
   def after_sign_out_path_for(resource_or_scope)
     # 크로스 도메인 세션 쿠키 삭제
     clear_cross_domain_session
-    DomainService.main_url
+    # Turbo 캐시 무효화를 위한 파라미터 추가
+    "#{DomainService.main_url}?from_logout=true"
+  end
+  
+  # Devise 로그아웃 후 리다이렉트 처리
+  def respond_to_on_destroy
+    respond_to do |format|
+      format.html do
+        # Turbo 캐시 무효화를 위한 헤더 설정
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        redirect_to after_sign_out_path_for(resource_name), allow_other_host: true
+      end
+      format.all do
+        redirect_to after_sign_out_path_for(resource_name), allow_other_host: true
+      end
+    end
   end
   
   # JWT 기반 크로스 도메인 세션 설정
@@ -279,5 +333,24 @@ class Users::SessionsController < Devise::SessionsController
     
     # CSRF 토큰 삭제
     session.delete(:jwt_csrf)
+  end
+  
+  # 모든 세션 데이터 정리
+  def clear_all_sessions
+    # Rails 세션 정리
+    session.clear
+    
+    # Warden 세션 정리
+    if warden
+      warden.logout(:user)
+      warden.clear_strategies_cache!
+    end
+    
+    # Current 객체 정리
+    Current.user = nil
+    Current.organization = nil
+    
+    # 인스턴스 변수 정리
+    @current_user = nil
   end
 end

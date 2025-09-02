@@ -46,10 +46,13 @@ class TaskQueryService
           # 3. DTO 변환
           dtos = build_simple_task_dtos(enriched_data)
 
+          # 통계 계산
+          statistics = calculate_statistics(tasks)
+          
           Success({
             tasks: dtos,
             metadata: build_metadata(tasks, enriched_data),
-            stats: resolver_stats
+            stats: statistics
           })
         when Failure
           user_data_result
@@ -166,10 +169,17 @@ class TaskQueryService
         )
       end
 
+      # aggregated_results를 Task 객체로 변환하여 통계 계산
+      tasks_for_stats = aggregated_results.map do |result|
+        Task.new(result.except("assignee_snapshot", "reviewer_snapshot"))
+      end
+      
+      statistics = calculate_statistics(tasks_for_stats)
+      
       Success({
         tasks: dtos,
         metadata: build_metadata_from_aggregation(aggregated_results),
-        stats: { aggregation_used: true }
+        stats: statistics
       })
 
     rescue => e
@@ -375,11 +385,40 @@ class TaskQueryService
       query_service: @stats
     }
   end
+  
+  # Task 통계 계산
+  def calculate_statistics(tasks)
+    by_status = tasks.group_by(&:status).transform_values(&:count)
+    by_priority = tasks.group_by(&:priority).transform_values(&:count)
+    
+    overdue_count = tasks.count do |task|
+      task.due_date.present? && task.due_date < Date.current && task.status != 'done'
+    end
+    
+    {
+      total: tasks.size,
+      by_status: {
+        todo: by_status['todo'] || 0,
+        in_progress: by_status['in_progress'] || 0,
+        done: by_status['done'] || 0,
+        blocked: by_status['blocked'] || 0
+      },
+      by_priority: {
+        urgent: by_priority['urgent'] || 0,
+        high: by_priority['high'] || 0,
+        medium: by_priority['medium'] || 0,
+        low: by_priority['low'] || 0
+      },
+      overdue: overdue_count
+    }
+  end
 
   # MongoDB Aggregation 사용 조건
   def use_mongodb_aggregation?(filters)
     # 복잡한 필터나 대량 조회시 Aggregation 사용
-    filters.size > 2 ||
+    # ActionController::Parameters의 경우 keys.size 사용
+    filter_count = filters.respond_to?(:keys) ? filters.keys.size : filters.size
+    filter_count > 2 ||
     filters[:search].present? ||
     !filters[:per_page] || filters[:per_page].to_i > 20
   end

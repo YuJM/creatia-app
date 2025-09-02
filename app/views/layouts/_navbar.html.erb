@@ -82,6 +82,30 @@
               <% end %>
             </li>
 
+            <!-- Timeline -->
+            <li>
+              <%= link_to timeline_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(timeline_path)}" do %>
+                <%= icon "calendar", class: "h-5 w-5 shrink-0" %>
+                Timeline
+              <% end %>
+            </li>
+
+            <!-- Milestones -->
+            <li>
+              <%= link_to milestones_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(milestones_path)}" do %>
+                <%= icon "flag", class: "h-5 w-5 shrink-0" %>
+                Milestones
+              <% end %>
+            </li>
+
+            <!-- Sprints -->
+            <li>
+              <%= link_to sprints_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(sprints_path)}" do %>
+                <%= icon "lightning", class: "h-5 w-5 shrink-0" %>
+                Sprints
+              <% end %>
+            </li>
+
             <!-- Members (if current organization) -->
             <% if ActsAsTenant.current_tenant %>
               <li>
@@ -150,7 +174,7 @@
             Profile Settings
           <% end %>
           <%= link_to AppRoutes::Auth.logout_url, 
-              data: { turbo: false },
+              data: { turbo: false, turbo_action: "replace" },
               class: "block w-full text-left px-4 py-2 text-sm text-destructive hover:bg-muted transition-colors" do %>
             <%= icon "sign-out", class: "h-4 w-4 inline mr-2" %>
             Sign out

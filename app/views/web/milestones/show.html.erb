@@ -1,0 +1,278 @@
+<%# Milestone Detail View %>
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Milestone Header -->
+    <div class="bg-white shadow-lg rounded-lg mb-6">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex justify-between items-start">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-2">
+              <h1 class="text-3xl font-bold text-gray-900"><%= @milestone.title %></h1>
+              <span class="px-3 py-1 rounded-full text-sm font-medium <%= status_badge_class(@milestone.status) %>">
+                <%= @milestone.status.humanize %>
+              </span>
+              <% if @milestone.health_status == 'at_risk' %>
+                <span class="text-yellow-600">⚠️ At Risk</span>
+              <% elsif @milestone.health_status == 'critical' %>
+                <span class="text-red-600">🚨 Critical</span>
+              <% end %>
+            </div>
+            
+            <p class="text-gray-600 mb-4"><%= @milestone.description %></p>
+            
+            <div class="flex gap-6 text-sm text-gray-500">
+              <div>
+                <span class="font-medium">Type:</span> 
+                <%= @milestone.milestone_type.humanize %>
+              </div>
+              <div>
+                <span class="font-medium">Start:</span> 
+                <%= @milestone.planned_start&.strftime('%B %d, %Y') %>
+              </div>
+              <div>
+                <span class="font-medium">End:</span> 
+                <%= @milestone.planned_end&.strftime('%B %d, %Y') %>
+              </div>
+              <% if @milestone.owner.present? %>
+                <div>
+                  <span class="font-medium">Owner:</span> 
+                  <%= @milestone.owner['name'] || @milestone.owner %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <%= link_to edit_milestone_path(@milestone), 
+                class: "px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              Edit
+            <% end %>
+            
+            <%= link_to milestones_path, 
+                class: "px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300" do %>
+              Back to Milestones
+            <% end %>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Progress Section -->
+      <div class="px-6 py-4">
+        <div class="mb-2 flex justify-between items-center">
+          <span class="text-sm font-medium text-gray-700">Overall Progress</span>
+          <span class="text-sm text-gray-600"><%= @milestone.progress_percentage %>% Complete</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-3">
+          <div class="bg-blue-500 h-3 rounded-full transition-all duration-300" 
+               style="width: <%= @milestone.progress_percentage %>%"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Main Content -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Objectives -->
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Objectives</h2>
+          </div>
+          <div class="px-6 py-4">
+            <% if @objectives.any? %>
+              <ul class="space-y-2">
+                <% @objectives.each do |objective| %>
+                  <li class="flex items-start gap-2">
+                    <svg class="w-5 h-5 text-green-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                      <p class="font-medium text-gray-900"><%= objective['title'] %></p>
+                      <% if objective['description'].present? %>
+                        <p class="text-sm text-gray-600"><%= objective['description'] %></p>
+                      <% end %>
+                    </div>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="text-gray-500">No objectives defined yet.</p>
+            <% end %>
+          </div>
+        </div>
+        
+        <!-- Sprints -->
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-900">Sprints</h2>
+            <%= link_to new_milestone_sprint_path(@milestone), 
+                class: "px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm flex items-center gap-1" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Add Sprint
+            <% end %>
+          </div>
+          <div class="px-6 py-4">
+            <% if @sprints.any? %>
+              <div class="space-y-3">
+                <% @sprints.each do |sprint| %>
+                  <div class="border rounded-lg p-4 hover:bg-gray-50">
+                    <div class="flex justify-between items-start">
+                      <div class="flex-1">
+                        <%= link_to sprint.name, 
+                            sprint_path(sprint),
+                            class: "font-medium text-gray-900 hover:text-blue-600" %>
+                        <div class="flex gap-4 mt-1 text-sm text-gray-600">
+                          <span><%= sprint.start_date&.strftime('%b %d') %> - <%= sprint.end_date&.strftime('%b %d, %Y') %></span>
+                          <span><%= sprint.completed_points %>/<%= sprint.committed_points %> points</span>
+                        </div>
+                      </div>
+                      <span class="px-2 py-1 rounded text-xs font-medium <%= status_badge_class(sprint.status) %>">
+                        <%= sprint.status.humanize %>
+                      </span>
+                    </div>
+                    
+                    <% if sprint.goal.present? %>
+                      <p class="mt-2 text-sm text-gray-600"><%= sprint.goal %></p>
+                    <% end %>
+                    
+                    <!-- Sprint Progress -->
+                    <div class="mt-3">
+                      <div class="w-full bg-gray-200 rounded-full h-2">
+                        <% progress = sprint.committed_points > 0 ? (sprint.completed_points.to_f / sprint.committed_points * 100).round : 0 %>
+                        <div class="bg-green-500 h-2 rounded-full" style="width: <%= progress %>%"></div>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            <% else %>
+              <p class="text-gray-500">No sprints created yet.</p>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        <!-- Risks -->
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Risks</h2>
+          </div>
+          <div class="px-6 py-4">
+            <% if @risks.any? %>
+              <ul class="space-y-2">
+                <% @risks.each do |risk| %>
+                  <li class="flex items-start gap-2">
+                    <span class="text-red-500">⚠️</span>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900"><%= risk['title'] %></p>
+                      <% if risk['mitigation'].present? %>
+                        <p class="text-xs text-gray-600 mt-1">Mitigation: <%= risk['mitigation'] %></p>
+                      <% end %>
+                    </div>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="text-sm text-gray-500">No risks identified.</p>
+            <% end %>
+          </div>
+        </div>
+        
+        <!-- Dependencies -->
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Dependencies</h2>
+          </div>
+          <div class="px-6 py-4">
+            <% if @dependencies.any? %>
+              <ul class="space-y-2">
+                <% @dependencies.each do |dependency| %>
+                  <li class="text-sm text-gray-700">
+                    • <%= dependency %>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="text-sm text-gray-500">No dependencies.</p>
+            <% end %>
+          </div>
+        </div>
+        
+        <!-- Blockers -->
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Blockers</h2>
+          </div>
+          <div class="px-6 py-4">
+            <% if @blockers.any? %>
+              <ul class="space-y-2">
+                <% @blockers.each do |blocker| %>
+                  <li class="flex items-start gap-2">
+                    <span class="text-red-600">🚫</span>
+                    <p class="text-sm text-gray-700"><%= blocker %></p>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <p class="text-sm text-gray-500">No blockers.</p>
+            <% end %>
+          </div>
+        </div>
+        
+        <!-- Metadata -->
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Details</h2>
+          </div>
+          <div class="px-6 py-4 space-y-3">
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wider">Created</p>
+              <p class="text-sm text-gray-900"><%= @milestone.created_at.strftime('%B %d, %Y at %I:%M %p') %></p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wider">Last Updated</p>
+              <p class="text-sm text-gray-900"><%= @milestone.updated_at.strftime('%B %d, %Y at %I:%M %p') %></p>
+            </div>
+            <% if @milestone.actual_start.present? %>
+              <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Actual Start</p>
+                <p class="text-sm text-gray-900"><%= @milestone.actual_start.strftime('%B %d, %Y') %></p>
+              </div>
+            <% end %>
+            <% if @milestone.actual_end.present? %>
+              <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Actual End</p>
+                <p class="text-sm text-gray-900"><%= @milestone.actual_end.strftime('%B %d, %Y') %></p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Helper method for status badge styling %>
+<% 
+def status_badge_class(status)
+  case status
+  when 'completed'
+    'bg-green-100 text-green-800'
+  when 'active'
+    'bg-blue-100 text-blue-800'
+  when 'planning'
+    'bg-gray-100 text-gray-800'
+  when 'cancelled'
+    'bg-red-100 text-red-800'
+  else
+    'bg-gray-100 text-gray-800'
+  end
+end
+%>

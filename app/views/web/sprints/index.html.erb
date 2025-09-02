@@ -1,0 +1,186 @@
+<%# Sprints Index View %>
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Page Header -->
+    <%= render Shared::PageHeaderComponent.new(
+      title: "Sprints",
+      description: "Manage and track sprint progress",
+      back_link: nil,
+      actions: [
+        {
+          component_type: :button,
+          text: "New Sprint",
+          variant: :primary,
+          icon: "plus",
+          options: {
+            tag: :a,
+            href: new_sprint_path
+          }
+        }
+      ]
+    ) %>
+    
+    <!-- Filters -->
+    <%= render Ui::CardComponent.new(classes: "mb-6") do %>
+      <div class="p-4">
+        <%= form_with url: sprints_path, method: :get, local: true, class: "flex gap-4 items-end" do |form| %>
+          <div>
+            <%= form.label :status, class: "block text-sm font-medium text-gray-700 mb-1" %>
+            <%= form.select :status, 
+                options_for_select([
+                  ['All Statuses', ''],
+                  ['Planning', 'planning'],
+                  ['Active', 'active'],
+                  ['Completed', 'completed'],
+                  ['Cancelled', 'cancelled']
+                ], params[:status]),
+                {},
+                class: "px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" %>
+          </div>
+          
+          <div>
+            <%= form.label :milestone_id, "Milestone", class: "block text-sm font-medium text-gray-700 mb-1" %>
+            <%= form.select :milestone_id, 
+                options_for_select([['All Milestones', '']], params[:milestone_id]),
+                {},
+                class: "px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" %>
+          </div>
+          
+          <%= render Ui::ButtonComponent.new(
+            variant: :secondary,
+            size: :default,
+            tag: :button,
+            type: :submit
+          ) do %>
+            Filter
+          <% end %>
+          
+          <% if params[:status].present? || params[:milestone_id].present? %>
+            <%= render Ui::ButtonComponent.new(
+              variant: :link,
+              size: :default,
+              tag: :a,
+              href: sprints_path
+            ) do %>
+              Clear Filters
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+    
+    <!-- Sprints Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <% if @sprints&.any? %>
+        <% @sprints.each do |sprint| %>
+          <%= render Ui::CardComponent.new do %>
+            <div class="p-6">
+              <!-- Sprint Header -->
+              <div class="flex justify-between items-start mb-4">
+                <div class="flex-1">
+                  <%= link_to sprint.name, 
+                      sprint_path(sprint),
+                      class: "text-lg font-semibold text-gray-900 hover:text-blue-600 block" %>
+                  <%= render Shared::StatusBadgeComponent.new(
+                    status: sprint.status
+                  ) %>
+                </div>
+                
+                <!-- Sprint Actions -->
+                <div class="flex gap-1">
+                  <%= link_to edit_sprint_path(sprint), 
+                      class: "p-2 text-gray-400 hover:text-gray-600" do %>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                  <% end %>
+                  
+                  <%= link_to board_sprint_path(sprint), 
+                      class: "p-2 text-gray-400 hover:text-gray-600",
+                      title: "Sprint Board" do %>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+                    </svg>
+                  <% end %>
+                </div>
+              </div>
+              
+              <!-- Sprint Details -->
+              <div class="space-y-3">
+                <% if sprint.goal.present? %>
+                  <p class="text-sm text-gray-600"><%= sprint.goal %></p>
+                <% end %>
+                
+                <div class="flex justify-between text-sm text-gray-500">
+                  <span><%= sprint.start_date&.strftime('%b %d') %> - <%= sprint.end_date&.strftime('%b %d') %></span>
+                  <span><%= sprint.completed_points %>/<%= sprint.committed_points %> pts</span>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <% progress = sprint.committed_points > 0 ? (sprint.completed_points.to_f / sprint.committed_points * 100).round : 0 %>
+                  <div class="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                       style="width: <%= progress %>%"></div>
+                </div>
+                
+                <!-- Sprint Actions -->
+                <div class="flex gap-2 pt-2">
+                  <% if sprint.status == 'planning' %>
+                    <%= render Ui::ButtonComponent.new(
+                      variant: :success,
+                      size: :small,
+                      tag: :a,
+                      href: start_sprint_path(sprint),
+                      data: { 
+                        turbo_method: :patch,
+                        turbo_confirm: "Start this sprint?" 
+                      }
+                    ) do %>
+                      Start Sprint
+                    <% end %>
+                  <% elsif sprint.status == 'active' %>
+                    <%= render Ui::ButtonComponent.new(
+                      variant: :primary,
+                      size: :small,
+                      tag: :a,
+                      href: complete_sprint_path(sprint),
+                      data: { 
+                        turbo_method: :patch,
+                        turbo_confirm: "Complete this sprint?" 
+                      }
+                    ) do %>
+                      Complete Sprint
+                    <% end %>
+                  <% end %>
+                  
+                  <%= render Ui::ButtonComponent.new(
+                    variant: :secondary,
+                    size: :small,
+                    tag: :a,
+                    href: board_sprint_path(sprint)
+                  ) do %>
+                    Board
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      <% else %>
+        <div class="md:col-span-2 lg:col-span-3">
+          <%= render Ui::CardComponent.new do %>
+            <%= render Shared::EmptyStateComponent.new(
+              title: "No sprints found",
+              description: "Get started by creating your first sprint.",
+              icon: :clipboard,
+              action_text: "Create Sprint",
+              action_url: new_sprint_path
+            ) %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

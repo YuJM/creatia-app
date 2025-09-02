@@ -1,0 +1,13 @@
+<%# Timeline View - Project Timeline Visualization %>
+<div class="min-h-screen bg-gray-50">
+  <%= render Timeline::TimelineViewComponent.new(
+    organization: current_organization,
+    milestones: @milestones,
+    start_date: @start_date,
+    end_date: @end_date,
+    view_mode: @view_mode
+  ) %>
+</div>
+
+<%# Modal Frame for Creating/Editing %>
+<%= turbo_frame_tag "modal" %>

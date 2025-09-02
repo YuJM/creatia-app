@@ -1,356 +1,333 @@
-# app/services/sprint_service.rb
+# frozen_string_literal: true
+
+require 'dry-monads'
+
 class SprintService
-  extend Broadcastable
+  include Dry::Monads[:result, :maybe]
   
-  class << self
-    def create_sprint(params)
-      # PostgreSQL: Service 정의 확인
-      service = Service.find(params[:service_id])
-      
-      # MongoDB: Sprint 실행 데이터 생성
-      sprint = Sprint.create!(
-        organization_id: service.organization_id,
-        service_id: service.id,
-        name: params[:name],
-        goal: params[:goal],
-        start_date: params[:start_date],
-        end_date: params[:end_date],
-        team_id: params[:team_id],
-        milestone_id: params[:milestone_id],
-        status: 'planning',
-        sprint_number: next_sprint_number(service.id)
-      )
-      
-      # 초기 메트릭 설정
-      initialize_sprint_metrics(sprint)
-      
-      # 활동 로그
-      log_activity('sprint_created', sprint)
-      
-      sprint
-    end
+  def initialize(organization:, current_user:)
+    @organization = organization
+    @current_user = current_user
+    @repository = SprintRepository.new
+    @task_repository = TaskRepository.new
+  end
+  
+  def list(filters = {})
+    filters[:organization_id] = @organization.id
     
-    def add_task_to_sprint(sprint_id, task_params)
-      sprint = Sprint.find(sprint_id)
-      
-      # 독립 Task 생성
-      task = Task.create!(
-        organization_id: sprint.organization_id,
-        service_id: sprint.service_id,
-        sprint_id: sprint_id,
-        milestone_id: sprint.milestone_id,
-        title: task_params[:title],
-        description: task_params[:description],
-        assignee_id: task_params[:assignee_id],
-        assignee_name: User.cached_find( task_params[:assignee_id])&.name,
-        story_points: task_params[:story_points],
-        priority: task_params[:priority] || 'medium',
-        status: 'todo',
-        task_id: generate_task_id(sprint.service_id),
-        task_type: task_params[:task_type] || 'feature'
-      )
-      
-      # Sprint에 Task 추가
-      sprint.add_task(task)
-      
-      # 실시간 알림
-      broadcast_task_added(sprint, task)
-      
-      task
-    end
+    result = @repository.find_by_organization(@organization.id, filters)
     
-    def update_task_status(task_id, new_status, user_id = nil)
-      task = Task.find(task_id)
+    if result.success?
+      sprints = result.value!
       
-      old_status = task.status
-      task.update_status(new_status, user_id || Current.user&.id)
-      
-      # Sprint 메트릭 업데이트
-      if task.sprint_id.present?
-        sprint = Sprint.find(task.sprint_id)
-        sprint.update_task_counts
-        update_burndown_data(sprint)
-      end
-      
-      # 활동 로그
-      Mongodb::MongoActivity.log_task_activity(
-        task, 
-        'status_changed',
-        { status: [old_status, new_status] }
-      )
-      
-      # 실시간 브로드캐스트
-      broadcast_task_update(task)
-      
-      task
-    end
-    
-    def start_sprint(sprint_id)
-      sprint = Sprint.find(sprint_id)
-      
-      return false unless sprint.status == 'planning'
-      return false unless sprint.start_date <= Date.current
-      
-      sprint.status = 'active'
-      sprint.save!
-      
-      # 번다운 데이터 초기화
-      initialize_burndown_data(sprint)
-      
-      # 활동 로그
-      log_activity('sprint_started', sprint)
-      
-      # 실시간 알림
-      broadcast_sprint_status(sprint)
-      
-      true
-    end
-    
-    def complete_sprint(sprint_id)
-      sprint = Sprint.find(sprint_id)
-      
-      return false unless sprint.status == 'active'
-      
-      # Sprint 완료 처리
-      sprint.status = 'completed'
-      sprint.actual_velocity = calculate_actual_velocity(sprint)
-      sprint.save!
-      
-      # 미완료 태스크 처리
-      handle_incomplete_tasks(sprint)
-      
-      # 회고 데이터 준비
-      prepare_retrospective_data(sprint)
-      
-      # 활동 로그
-      log_activity('sprint_completed', sprint)
-      
-      # 실시간 알림
-      broadcast_sprint_status(sprint)
-      
-      true
-    end
-    
-    def update_daily_standup(sprint_id, standup_data)
-      sprint = Sprint.find(sprint_id)
-      
-      today_standup = {
-        date: Date.current,
-        attendees: standup_data[:attendees] || [],
-        updates: standup_data[:updates] || [],
-        duration_minutes: standup_data[:duration] || 15
-      }
-      
-      # 오늘 스탠드업 업데이트 또는 추가
-      existing_index = sprint.daily_standups.find_index { |s| s[:date] == Date.current }
-      
-      if existing_index
-        sprint.daily_standups[existing_index] = today_standup
+      # Convert to DTOs
+      if sprints.is_a?(Hash) && sprints[:data]
+        dtos = sprints[:data].map { |s| Dto::SprintDto.from_model(s) }
+        Success(data: dtos, metadata: sprints[:metadata])
       else
-        sprint.daily_standups << today_standup
+        dtos = Array(sprints).map { |s| Dto::SprintDto.from_model(s) }
+        Success(dtos)
       end
-      
-      sprint.save!
-      
-      # 실시간 브로드캐스트
-      broadcast_standup_update(sprint, today_standup)
-      
-      sprint
+    else
+      result
+    end
+  end
+  
+  def list_by_milestone(milestone_id)
+    result = @repository.find_by_milestone(milestone_id)
+    
+    if result.success?
+      sprints = result.value!
+      dtos = Array(sprints).map { |s| Dto::SprintDto.from_model(s) }
+      Success(dtos)
+    else
+      result
+    end
+  end
+  
+  def find(id)
+    result = @repository.find(id)
+    
+    if result.success?
+      sprint = result.value!
+      dto = Dto::SprintDto.from_model(sprint)
+      Success(dto)
+    else
+      result
+    end
+  end
+  
+  def find_current(team_id = nil)
+    result = @repository.find_current(@organization.id, team_id)
+    
+    if result.success?
+      sprint = result.value!
+      dto = Dto::SprintDto.from_model(sprint)
+      Success(dto)
+    else
+      result
+    end
+  end
+  
+  def create(params)
+    attributes = prepare_attributes(params)
+    attributes[:organization_id] = @organization.id
+    attributes[:created_by] = @current_user
+    
+    # Handle sprint owner
+    if params[:sprint_owner_id].present?
+      owner = User.find_by(id: params[:sprint_owner_id])
+      attributes[:sprint_owner] = owner if owner
     end
     
-    def get_burndown_data(sprint_id)
-      sprint = Sprint.find(sprint_id)
-      
-      # 이상적인 번다운 라인
-      ideal_line = sprint.burndown_ideal_line
-      
-      # 실제 번다운 데이터
-      actual_data = calculate_actual_burndown(sprint)
-      
-      {
-        sprint_id: sprint.id.to_s,
-        sprint_name: sprint.name,
-        ideal: ideal_line,
-        actual: actual_data,
-        remaining_days: (sprint.end_date - Date.current).to_i,
-        health_score: sprint.calculate_health_score
-      }
+    # Handle scrum master
+    if params[:scrum_master_id].present?
+      master = User.find_by(id: params[:scrum_master_id])
+      attributes[:scrum_master] = master if master
     end
     
-    private
-    
-    def next_sprint_number(service_id)
-      last_sprint = Sprint
-        .where(service_id: service_id)
-        .order_by(sprint_number: :desc)
-        .first
-      
-      last_sprint ? last_sprint.sprint_number + 1 : 1
+    # Handle team members
+    if params[:team_member_ids].present?
+      members = prepare_team_members(params[:team_member_ids], params[:member_roles], params[:member_capacities])
+      attributes[:team_members] = members
     end
     
-    def generate_task_id(service_id)
-      service = Service.find(service_id)
-      prefix = service.task_prefix || "TASK"
-      
-      # 해당 서비스의 마지막 태스크 번호 찾기
-      last_task = Task
-        .where(service_id: service_id)
-        .where(task_id: /^#{prefix}-\d+$/)
-        .order_by(created_at: :desc)
-        .first
-      
-      if last_task && last_task.task_id.match(/^#{prefix}-(\d+)$/)
-        next_number = $1.to_i + 1
+    result = @repository.create(attributes)
+    
+    if result.success?
+      sprint = result.value!
+      dto = Dto::SprintDto.from_model(sprint)
+      Success(dto)
+    else
+      result
+    end
+  end
+  
+  def update(id, params)
+    attributes = prepare_attributes(params)
+    
+    # Handle sprint owner update
+    if params.key?(:sprint_owner_id)
+      if params[:sprint_owner_id].present?
+        owner = User.find_by(id: params[:sprint_owner_id])
+        attributes[:sprint_owner] = owner if owner
       else
-        next_number = 1
+        attributes[:sprint_owner] = nil
       end
-      
-      "#{prefix}-#{next_number}"
     end
     
-    def initialize_sprint_metrics(sprint)
-      # 번다운 데이터 초기화
-      sprint.burndown_data = []
-      sprint.health_score = 100
-      sprint.risk_level = 'low'
-      
-      # 팀 용량 계산
-      if sprint.team_id
-        team = Team.find_by(id: sprint.team_id)
-        if team
-          sprint.team_capacity = calculate_team_capacity(team, sprint)
-        end
-      end
-      
-      sprint.save!
-    end
-    
-    def initialize_burndown_data(sprint)
-      total_points = sprint.committed_points || 0
-      
-      sprint.burndown_data = [{
-        date: Date.current,
-        ideal_remaining: total_points,
-        actual_remaining: total_points,
-        tasks_completed: 0,
-        points_completed: 0
-      }]
-      
-      sprint.save!
-    end
-    
-    def update_burndown_data(sprint)
-      tasks = Task.in_sprint(sprint.id)
-      
-      today_data = {
-        date: Date.current,
-        actual_remaining: tasks.where(:status.ne => 'done').sum(:story_points) || 0,
-        tasks_completed: tasks.where(status: 'done', completed_at: Date.current).count,
-        points_completed: tasks.where(status: 'done', completed_at: Date.current).sum(:story_points) || 0
-      }
-      
-      # 이상적인 번다운 계산
-      if sprint.burndown_ideal_line.any?
-        ideal_for_today = sprint.burndown_ideal_line.find { |d| d[:date] == Date.current }
-        today_data[:ideal_remaining] = ideal_for_today[:ideal_remaining] if ideal_for_today
-      end
-      
-      # 기존 데이터 업데이트 또는 추가
-      existing = sprint.burndown_data.find { |d| d[:date] == Date.current }
-      if existing
-        existing.merge!(today_data)
+    # Handle scrum master update
+    if params.key?(:scrum_master_id)
+      if params[:scrum_master_id].present?
+        master = User.find_by(id: params[:scrum_master_id])
+        attributes[:scrum_master] = master if master
       else
-        sprint.burndown_data << today_data
+        attributes[:scrum_master] = nil
+      end
+    end
+    
+    # Handle team members update
+    if params.key?(:team_member_ids)
+      members = prepare_team_members(params[:team_member_ids], params[:member_roles], params[:member_capacities])
+      attributes[:team_members] = members
+    end
+    
+    result = @repository.update(id, attributes)
+    
+    if result.success?
+      sprint = result.value!
+      dto = Dto::SprintDto.from_model(sprint)
+      Success(dto)
+    else
+      result
+    end
+  end
+  
+  def start(id)
+    result = @repository.find(id)
+    
+    if result.success?
+      sprint = result.value!
+      
+      if sprint.status != 'planning'
+        return Failure("Sprint must be in planning status to start")
       end
       
-      sprint.save!
-    end
-    
-    def calculate_actual_velocity(sprint)
-      tasks = Task.in_sprint(sprint.id)
-      tasks.completed.sum(:story_points) || 0
-    end
-    
-    def calculate_actual_burndown(sprint)
-      tasks = Task.in_sprint(sprint.id)
-      burndown = []
+      update_result = @repository.update(id, {
+        status: 'active',
+        actual_start: Date.current
+      })
       
-      (sprint.start_date..Date.current).each do |date|
-        completed_until = tasks.where(:completed_at.lte => date.end_of_day)
-        remaining = sprint.committed_points - completed_until.sum(:story_points)
-        
-        burndown << {
-          date: date,
-          remaining: remaining,
-          completed: completed_until.count
-        }
+      if update_result.success?
+        sprint = update_result.value!
+        dto = Dto::SprintDto.from_model(sprint)
+        Success(dto)
+      else
+        update_result
+      end
+    else
+      result
+    end
+  end
+  
+  def complete(id)
+    result = @repository.find(id)
+    
+    if result.success?
+      sprint = result.value!
+      
+      if sprint.status != 'active'
+        return Failure("Sprint must be active to complete")
       end
       
-      burndown
-    end
-    
-    def calculate_team_capacity(team, sprint)
-      working_days = sprint.working_days || business_days_between(sprint.start_date, sprint.end_date)
-      team_members = team.users.count
-      hours_per_day = 8
+      # Calculate final metrics
+      completed_points = calculate_completed_points(sprint)
       
-      working_days * team_members * hours_per_day
-    end
-    
-    def business_days_between(start_date, end_date)
-      (start_date..end_date).select { |d| (1..5).include?(d.wday) }.count
-    end
-    
-    def handle_incomplete_tasks(sprint)
-      incomplete_tasks = Task
-        .in_sprint(sprint.id)
-        .where(:status.ne => 'done')
+      update_result = @repository.update(id, {
+        status: 'completed',
+        actual_end: Date.current,
+        completed_points: completed_points,
+        actual_velocity: completed_points
+      })
       
-      incomplete_tasks.each do |task|
-        # 다음 스프린트로 이동하거나 백로그로 이동
-        task.move_to_backlog
-        
-        # 활동 로그
-        Mongodb::MongoActivity.log_task_activity(
-          task,
-          'moved_to_backlog',
-          { reason: 'sprint_completed' }
-        )
+      if update_result.success?
+        sprint = update_result.value!
+        dto = Dto::SprintDto.from_model(sprint)
+        Success(dto)
+      else
+        update_result
       end
-      
-      sprint.spillover_points = incomplete_tasks.sum(:story_points) || 0
-      sprint.save!
+    else
+      result
+    end
+  end
+  
+  def add_task_to_sprint(sprint_id, task_id)
+    sprint_result = @repository.find(sprint_id)
+    task_result = @task_repository.find(task_id)
+    
+    if sprint_result.success? && task_result.success?
+      task = task_result.value!
+      @repository.add_task_to_sprint(sprint_id, task)
+    else
+      Failure("Sprint or task not found")
+    end
+  end
+  
+  def remove_task_from_sprint(sprint_id, task_id)
+    sprint_result = @repository.find(sprint_id)
+    task_result = @task_repository.find(task_id)
+    
+    if sprint_result.success? && task_result.success?
+      task = task_result.value!
+      @repository.remove_task_from_sprint(sprint_id, task)
+    else
+      Failure("Sprint or task not found")
+    end
+  end
+  
+  def add_blocker(sprint_id, description)
+    @repository.add_blocker(
+      sprint_id,
+      description,
+      raised_by: @current_user
+    )
+  end
+  
+  def resolve_blocker(sprint_id, blocker_id, resolution)
+    @repository.resolve_blocker(
+      sprint_id,
+      blocker_id,
+      resolution,
+      resolved_by: @current_user
+    )
+  end
+  
+  def record_standup(sprint_id, attendee_ids, notes: nil, blockers: [])
+    attendees = User.where(id: attendee_ids)
+    
+    @repository.record_standup(
+      sprint_id,
+      date: Date.current,
+      attendees: attendees,
+      notes: notes,
+      blockers: blockers,
+      recorded_by: @current_user
+    )
+  end
+  
+  def calculate_health_score(sprint_id)
+    @repository.calculate_health_score(sprint_id)
+  end
+  
+  def update_task_counts(sprint_id)
+    @repository.update_task_counts(sprint_id)
+  end
+  
+  def velocity_metrics(team_id: nil, limit: 5)
+    @repository.velocity_metrics(@organization.id, team_id: team_id, limit: limit)
+  end
+  
+  def burndown_data(sprint_id)
+    @repository.burndown_data(sprint_id)
+  end
+  
+  private
+  
+  def prepare_attributes(params)
+    attributes = {}
+    
+    # Basic fields
+    [:name, :goal, :sprint_number, :status, :milestone_id, :team_id, :service_id].each do |field|
+      attributes[field] = params[field] if params.key?(field)
     end
     
-    def prepare_retrospective_data(sprint)
-      tasks = Task.in_sprint(sprint.id)
+    # Date fields
+    [:start_date, :end_date].each do |field|
+      if params.key?(field)
+        attributes[field] = params[field].is_a?(String) ? Date.parse(params[field]) : params[field]
+      end
+    end
+    
+    # Numeric fields
+    [:working_days, :team_capacity, :planned_velocity, :committed_points, :stretch_points].each do |field|
+      attributes[field] = params[field].to_f if params.key?(field)
+    end
+    
+    attributes
+  end
+  
+  def prepare_team_members(user_ids, roles, capacities)
+    return [] unless user_ids.present?
+    
+    members = []
+    user_ids.each_with_index do |user_id, index|
+      next if user_id.blank?
       
-      sprint.retrospective = {
-        date: Time.current,
-        total_planned: sprint.committed_points,
-        total_completed: sprint.actual_velocity,
-        completion_rate: (sprint.actual_velocity.to_f / sprint.committed_points * 100).round(2),
-        task_statistics: {
-          total: tasks.count,
-          completed: tasks.completed.count,
-          incomplete: tasks.where(:status.ne => 'done').count
-        }
+      user = User.find_by(id: user_id)
+      next unless user
+      
+      members << {
+        user: user,
+        role: roles&.dig(index) || 'developer',
+        capacity_hours: capacities&.dig(index)&.to_f || 40.0
       }
-      
-      sprint.save!
     end
     
-    def log_activity(action, sprint)
-      Mongodb::MongoActivity.log_sprint_activity(
-        sprint,
-        action,
-        {
-          sprint_number: sprint.sprint_number,
-          status: sprint.status
-        }
-      )
-    end
+    members
+  end
+  
+  def calculate_completed_points(sprint)
+    # Get all tasks in the sprint
+    task_ids = sprint.task_ids || []
+    return 0 if task_ids.empty?
     
-    # Broadcast methods are now included from Broadcastable module
+    # Sum up story points of completed tasks
+    completed_tasks = Mongodb::MongoTask.where(
+      :_id.in => task_ids,
+      status: 'done'
+    )
+    
+    completed_tasks.sum(:story_points) || 0
   end
 end

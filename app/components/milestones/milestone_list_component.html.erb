@@ -1,0 +1,262 @@
+<div class="milestone-list-container" data-controller="milestone-list">
+  <!-- Header -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+    <div class="p-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900">Milestones</h2>
+          <p class="mt-1 text-gray-600">Manage project milestones and track progress</p>
+        </div>
+        
+        <div class="flex gap-3">
+          <!-- Filter Dropdown -->
+          <div class="relative" data-controller="dropdown">
+            <button data-action="dropdown#toggle" 
+                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+              </svg>
+              Filter
+            </button>
+            
+            <div data-dropdown-target="menu" 
+                 class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+              <div class="p-4">
+                <div class="mb-3">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select data-action="change->milestone-list#filterByStatus" 
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <option value="">All</option>
+                    <option value="planning">Planning</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Health Status</label>
+                  <select data-action="change->milestone-list#filterByHealth" 
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <option value="">All</option>
+                    <option value="on_track">On Track</option>
+                    <option value="at_risk">At Risk</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <select data-action="change->milestone-list#filterByType" 
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <option value="">All</option>
+                    <option value="release">Release</option>
+                    <option value="feature">Feature</option>
+                    <option value="business">Business</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timeline View Button -->
+          <%= link_to timeline_path, 
+              class: "px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 flex items-center gap-2" do %>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            Timeline View
+          <% end %>
+          
+          <!-- New Milestone Button -->
+          <%= link_to new_milestone_path, 
+              class: "px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2",
+              data: { turbo_frame: "modal" } do %>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            New Milestone
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Milestones Grid -->
+  <div class="grid gap-4" data-milestone-list-target="grid">
+    <% milestones.each do |milestone| %>
+      <%= turbo_frame_tag dom_id(milestone) do %>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+             data-milestone-id="<%= milestone.id %>">
+          <div class="p-6">
+            <!-- Milestone Header -->
+            <div class="flex justify-between items-start mb-4">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-lg"><%= milestone_type_icon(milestone.milestone_type) %></span>
+                  <%= link_to milestone.title, 
+                      milestone_path(milestone),
+                      class: "text-xl font-semibold text-gray-900 hover:text-blue-600",
+                      data: { turbo_frame: "_top" } %>
+                  <%= health_status_icon(milestone.health_status) %>
+                </div>
+                
+                <p class="text-gray-600 line-clamp-2"><%= milestone.description %></p>
+              </div>
+              
+              <div class="flex items-center gap-2 ml-4">
+                <span class="<%= status_badge_class(milestone.status) %>">
+                  <%= milestone.status.capitalize %>
+                </span>
+                
+                <!-- Actions Dropdown -->
+                <div class="relative" data-controller="dropdown">
+                  <button data-action="dropdown#toggle" 
+                          class="p-2 hover:bg-gray-100 rounded-lg">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                    </svg>
+                  </button>
+                  
+                  <div data-dropdown-target="menu" 
+                       class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                    <%= link_to "View Details", milestone_path(milestone), 
+                        class: "block px-4 py-2 text-gray-700 hover:bg-gray-50",
+                        data: { turbo_frame: "_top" } %>
+                    <%= link_to "Edit", edit_milestone_path(milestone), 
+                        class: "block px-4 py-2 text-gray-700 hover:bg-gray-50",
+                        data: { turbo_frame: "modal" } %>
+                    <%= link_to "Add Sprint", new_milestone_sprint_path(milestone), 
+                        class: "block px-4 py-2 text-gray-700 hover:bg-gray-50",
+                        data: { turbo_frame: "modal" } %>
+                    <%= link_to "Manage Risks", milestone_risks_path(milestone), 
+                        class: "block px-4 py-2 text-gray-700 hover:bg-gray-50",
+                        data: { turbo_frame: "_top" } %>
+                    <hr class="my-1">
+                    <%= link_to "Archive", milestone_path(milestone), 
+                        method: :delete,
+                        data: { 
+                          confirm: "Are you sure you want to archive this milestone?",
+                          turbo_method: :delete 
+                        },
+                        class: "block px-4 py-2 text-red-600 hover:bg-red-50" %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="mb-4">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-gray-700">Progress</span>
+                <span class="text-sm font-semibold text-gray-900"><%= milestone.progress_percentage %>%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="<%= progress_color_class(milestone.progress_percentage) %> h-2 rounded-full transition-all duration-300"
+                     style="width: <%= milestone.progress_percentage %>%"></div>
+              </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-4 gap-4 mb-4">
+              <div>
+                <div class="text-sm text-gray-600">Sprints</div>
+                <div class="font-semibold text-gray-900">
+                  <%= milestone.completed_sprints %>/<%= milestone.total_sprints %>
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-600">Tasks</div>
+                <div class="font-semibold text-gray-900">
+                  <%= milestone.completed_tasks %>/<%= milestone.total_tasks %>
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-600">Key Results</div>
+                <div class="font-semibold text-gray-900">
+                  <%= milestone.key_results_achieved %>/<%= milestone.key_results_count %>
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-600">Risks</div>
+                <div class="font-semibold <%= milestone.high_risks_count > 0 ? 'text-red-600' : 'text-gray-900' %>">
+                  <%= milestone.high_risks_count %> High
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline and Owner -->
+            <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+              <div class="flex items-center gap-4 text-sm">
+                <div class="flex items-center gap-1">
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  <span class="text-gray-600">
+                    <%= format_date(milestone.planned_start) %> - <%= format_date(milestone.planned_end) %>
+                  </span>
+                </div>
+                
+                <%= days_remaining_text(milestone) %>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <% if milestone.owner %>
+                  <div class="flex items-center gap-2">
+                    <% if milestone.owner[:avatar_url] %>
+                      <img src="<%= milestone.owner[:avatar_url] %>" 
+                           alt="<%= milestone.owner[:name] %>"
+                           class="w-6 h-6 rounded-full">
+                    <% else %>
+                      <div class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs text-white">
+                        <%= milestone.owner[:name].first.upcase %>
+                      </div>
+                    <% end %>
+                    <span class="text-sm text-gray-600"><%= milestone.owner[:name] %></span>
+                  </div>
+                <% end %>
+                
+                <% if milestone.stakeholders.any? %>
+                  <div class="flex -space-x-2">
+                    <% milestone.stakeholders.first(3).each do |stakeholder| %>
+                      <div class="w-6 h-6 rounded-full bg-gray-400 border-2 border-white flex items-center justify-center text-xs text-white"
+                           title="<%= stakeholder[:name] %>">
+                        <%= stakeholder[:name].first.upcase %>
+                      </div>
+                    <% end %>
+                    <% if milestone.stakeholders.size > 3 %>
+                      <div class="w-6 h-6 rounded-full bg-gray-500 border-2 border-white flex items-center justify-center text-xs text-white">
+                        +<%= milestone.stakeholders.size - 3 %>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <!-- Empty State -->
+  <% if milestones.empty? %>
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No milestones</h3>
+      <p class="mt-1 text-sm text-gray-500">Get started by creating a new milestone.</p>
+      <div class="mt-6">
+        <%= link_to "New Milestone", new_milestone_path, 
+            class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700",
+            data: { turbo_frame: "modal" } %>
+      </div>
+    </div>
+  <% end %>
+</div>

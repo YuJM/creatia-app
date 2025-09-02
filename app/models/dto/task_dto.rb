@@ -95,6 +95,58 @@ module Dto
       }[priority] || "gray"
     end
 
+    # BaseDto 인터페이스 구현
+    def self.build_attributes(model, enriched_data)
+      attributes = {
+        id: model.id.to_s,
+        title: model.title,
+        description: model.description,
+        status: model.status || "todo",
+        priority: model.priority || "medium",
+        organization_id: model.organization_id.to_s,
+        task_id: model.task_id,
+        due_date: model.due_date,
+        start_date: model.start_date,
+        completed_at: model.completed_at,
+        estimated_hours: model.estimated_hours,
+        actual_hours: model.actual_hours || 0.0,
+        remaining_hours: model.remaining_hours,
+        completion_percentage: model.respond_to?(:completion_percentage) ? (model.completion_percentage || 0) : 0,
+        tags: model.tags || [],
+        labels: model.labels || [],
+        position: model.position || 0,
+        created_at: model.created_at,
+        updated_at: model.updated_at
+      }
+      
+      # 관계 데이터 추가
+      if enriched_data[:assignee]
+        attributes[:assignee] = UserDto.from_model(enriched_data[:assignee])
+      elsif model.respond_to?(:assignee) && model.assignee
+        attributes[:assignee] = UserDto.from_model(model.assignee)
+      end
+      
+      if enriched_data[:reviewer]
+        attributes[:reviewer] = UserDto.from_model(enriched_data[:reviewer])
+      elsif model.respond_to?(:reviewer) && model.reviewer
+        attributes[:reviewer] = UserDto.from_model(model.reviewer)
+      end
+      
+      if enriched_data[:sprint]
+        attributes[:sprint] = enriched_data[:sprint]
+      elsif model.respond_to?(:sprint) && model.sprint
+        attributes[:sprint] = { id: model.sprint.id.to_s, name: model.sprint.name }
+      end
+      
+      if enriched_data[:milestone]
+        attributes[:milestone] = enriched_data[:milestone]
+      elsif model.respond_to?(:milestone) && model.milestone
+        attributes[:milestone] = { id: model.milestone.id.to_s, title: model.milestone.title }
+      end
+      
+      attributes
+    end
+    
     # Service Layer용 팩토리 메서드
     def self.from_enriched_data(task_data, user_data = {})
       new(

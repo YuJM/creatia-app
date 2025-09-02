@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "dry-struct"
+require "active_model"
 
 module Dto
   # BaseDto - dry-struct 기반 공통 DTO
@@ -25,6 +26,27 @@ module Dto
     # 계산된 속성 (하위 클래스에서 오버라이드)
     def computed_attributes
       {}
+    end
+
+    # Rails form helpers 호환성
+    def model_name
+      ActiveModel::Name.new(self.class, nil, self.class.name.demodulize.underscore.sub(/_dto$/, ''))
+    end
+
+    def to_key
+      id.present? && id != "" ? [id] : nil
+    end
+
+    def to_param
+      id.present? && id != "" ? id.to_s : nil
+    end
+
+    def persisted?
+      id.present? && id != ""
+    end
+
+    def errors
+      @errors ||= ActiveModel::Errors.new(self)
     end
 
     # 팩토리 메서드 - Service Layer에서 사용

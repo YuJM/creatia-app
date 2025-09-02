@@ -50,6 +50,24 @@ module Dto
     def self.from_model(user, enriched_data = {})
       from_user(user)
     end
+    
+    # BaseDto 인터페이스 구현
+    def self.build_attributes(model, enriched_data)
+      return {} unless model
+      
+      {
+        id: model.id.to_s,
+        name: model.name,
+        email: model.email,
+        avatar_url: model.avatar_url,
+        role: model.role,
+        department: model.respond_to?(:department) ? model.department : nil,
+        position: model.respond_to?(:position) ? model.position : nil,
+        phone: model.respond_to?(:phone) ? model.phone : nil,
+        created_at: model.created_at,
+        updated_at: model.updated_at
+      }
+    end
 
     # Hash 데이터에서 생성 (캐시 복원용)
     def self.from_data(data)

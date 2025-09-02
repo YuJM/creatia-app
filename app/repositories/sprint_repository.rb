@@ -1,11 +1,31 @@
 # frozen_string_literal: true
 
+require 'dry-monads'
+
 # Sprint Repository - MongoDB Sprint 데이터 접근 계층
 class SprintRepository < BaseRepository
+  include Dry::Monads[:result]
+  
   def initialize
     super
     @model_class = Mongodb::MongoSprintV2
   end
+  
+  private
+  
+  def handle_error(error, message)
+    Rails.logger.error "[SprintRepository] #{message}: #{error.message}"
+    Rails.logger.error error.backtrace.first(5).join("\n")
+    Failure([:database_error, message])
+  end
+  
+  def format_validation_errors(error)
+    [:validation_error, error.record.errors.to_h]
+  end
+  
+  # paginate 메서드는 BaseRepository에서 상속받아 사용
+  
+  public
 
   # ===== CREATE =====
   def create(attributes)
@@ -35,9 +55,9 @@ class SprintRepository < BaseRepository
     end
     
     sprint.save!
-    Result.success(sprint)
+    Success(sprint)
   rescue Mongoid::Errors::Validations => e
-    Result.failure(format_validation_errors(e))
+    Failure(format_validation_errors(e))
   rescue => e
     handle_error(e, "Failed to create sprint")
   end
@@ -45,9 +65,9 @@ class SprintRepository < BaseRepository
   # ===== READ =====
   def find(id)
     sprint = @model_class.find(id)
-    Result.success(sprint)
+    Success(sprint)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to find sprint")
   end
@@ -80,7 +100,7 @@ class SprintRepository < BaseRepository
     # Pagination
     result = paginate(query, options)
     
-    Result.success(result)
+    Success(result)
   rescue => e
     handle_error(e, "Failed to find sprints by organization")
   end
@@ -92,9 +112,9 @@ class SprintRepository < BaseRepository
     sprint = query.first
     
     if sprint
-      Result.success(sprint)
+      Success(sprint)
     else
-      Result.failure(:not_found)
+      Failure(:not_found)
     end
   rescue => e
     handle_error(e, "Failed to find current sprint")
@@ -104,7 +124,7 @@ class SprintRepository < BaseRepository
     sprints = @model_class.where(milestone_id: milestone_id.to_s)
                           .order(sprint_number: :asc)
     
-    Result.success(sprints)
+    Success(sprints)
   rescue => e
     handle_error(e, "Failed to find sprints by milestone")
   end
@@ -138,11 +158,11 @@ class SprintRepository < BaseRepository
     end
     
     sprint.update!(attributes)
-    Result.success(sprint)
+    Success(sprint)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue Mongoid::Errors::Validations => e
-    Result.failure(format_validation_errors(e))
+    Failure(format_validation_errors(e))
   rescue => e
     handle_error(e, "Failed to update sprint")
   end
@@ -157,9 +177,9 @@ class SprintRepository < BaseRepository
       archived_at: DateTime.current
     )
     
-    Result.success(true)
+    Success(true)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to delete sprint")
   end
@@ -169,9 +189,9 @@ class SprintRepository < BaseRepository
   def add_task_to_sprint(sprint_id, task)
     sprint = @model_class.find(sprint_id)
     sprint.add_task(task)
-    Result.success(sprint)
+    Success(sprint)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to add task to sprint")
   end
@@ -179,9 +199,9 @@ class SprintRepository < BaseRepository
   def remove_task_from_sprint(sprint_id, task)
     sprint = @model_class.find(sprint_id)
     sprint.remove_task(task)
-    Result.success(sprint)
+    Success(sprint)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to remove task from sprint")
   end
@@ -190,9 +210,9 @@ class SprintRepository < BaseRepository
     sprint = @model_class.find(sprint_id)
     blocker = sprint.add_blocker(description, raised_by: raised_by, assigned_to: assigned_to)
     sprint.save!
-    Result.success(blocker)
+    Success(blocker)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to add blocker")
   end
@@ -201,9 +221,9 @@ class SprintRepository < BaseRepository
     sprint = @model_class.find(sprint_id)
     sprint.resolve_blocker(blocker_id, resolution, resolved_by: resolved_by)
     sprint.save!
-    Result.success(true)
+    Success(true)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to resolve blocker")
   end
@@ -212,9 +232,9 @@ class SprintRepository < BaseRepository
     sprint = @model_class.find(sprint_id)
     change = sprint.add_scope_change(description, requested_by: requested_by, impact: impact)
     sprint.save!
-    Result.success(change)
+    Success(change)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to add scope change")
   end
@@ -223,9 +243,9 @@ class SprintRepository < BaseRepository
     sprint = @model_class.find(sprint_id)
     sprint.approve_scope_change(change_id, approved_by: approved_by)
     sprint.save!
-    Result.success(true)
+    Success(true)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to approve scope change")
   end
@@ -234,9 +254,9 @@ class SprintRepository < BaseRepository
     sprint = @model_class.find(sprint_id)
     sprint.record_standup(date, attendees, notes: notes, blockers: blockers, recorded_by: recorded_by)
     sprint.save!
-    Result.success(true)
+    Success(true)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to record standup")
   end
@@ -252,9 +272,9 @@ class SprintRepository < BaseRepository
       decisions: session_data[:decisions]
     )
     sprint.save!
-    Result.success(true)
+    Success(true)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to update planning session")
   end
@@ -263,9 +283,9 @@ class SprintRepository < BaseRepository
     sprint = @model_class.find(sprint_id)
     score = sprint.calculate_health_score
     sprint.save!
-    Result.success(score)
+    Success(score)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to calculate health score")
   end
@@ -273,9 +293,9 @@ class SprintRepository < BaseRepository
   def update_task_counts(sprint_id)
     sprint = @model_class.find(sprint_id)
     sprint.update_task_counts
-    Result.success(sprint)
+    Success(sprint)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to update task counts")
   end
@@ -306,7 +326,7 @@ class SprintRepository < BaseRepository
     }
     
     result = @model_class.collection.aggregate(pipeline).first
-    Result.success(result || {})
+    Success(result || {})
   rescue => e
     handle_error(e, "Failed to calculate velocity metrics")
   end
@@ -323,9 +343,9 @@ class SprintRepository < BaseRepository
       ideal_burndown: calculate_ideal_burndown(sprint)
     }
     
-    Result.success(data)
+    Success(data)
   rescue Mongoid::Errors::DocumentNotFound
-    Result.failure(:not_found)
+    Failure(:not_found)
   rescue => e
     handle_error(e, "Failed to get burndown data")
   end

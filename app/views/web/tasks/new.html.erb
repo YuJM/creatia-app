@@ -1,28 +1,186 @@
-<!-- Task Creation Page -->
-<div class="px-4 sm:px-6 lg:px-8 py-8">
-  <!-- Page Header -->
-  <div class="mb-8">
-    <div class="flex items-center gap-4">
+<%# Task Creation Page %>
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Page Header -->
+    <div class="mb-8">
       <%= link_to tasks_path, 
-                  class: "inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" do %>
+                  class: "inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4" do %>
         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
         </svg>
-        태스크 목록으로 돌아가기
+        Back to Tasks
+      <% end %>
+      
+      <h1 class="text-3xl font-bold text-gray-900">Create New Task</h1>
+      <p class="mt-2 text-gray-600">Fill in the details to create a new task.</p>
+    </div>
+
+    <!-- Task Form -->
+    <div class="bg-white shadow rounded-lg">
+      <%= form_with model: @task_dto, url: tasks_path, local: true, class: "space-y-6" do |form| %>
+        
+        <!-- Basic Information Section -->
+        <div class="px-6 py-6 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
+          
+          <div class="space-y-4">
+            <!-- Title -->
+            <div>
+              <%= form.label :title, "Title *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.text_field :title,
+                                  class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500",
+                                  placeholder: "Enter task title",
+                                  required: true %>
+            </div>
+
+            <!-- Description -->
+            <div>
+              <%= form.label :description, "Description", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.text_area :description,
+                                 rows: 4,
+                                 class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500",
+                                 placeholder: "Enter task description" %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Assignment Section -->
+        <div class="px-6 py-6 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Assignment & Status</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Status -->
+            <div>
+              <%= form.label :status, "Status", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.select :status,
+                              options_for_select([
+                                ['To Do', 'todo'],
+                                ['In Progress', 'in_progress'],
+                                ['Review', 'review'],
+                                ['Done', 'done'],
+                                ['Blocked', 'blocked']
+                              ], @task_dto.status),
+                              {},
+                              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" %>
+            </div>
+
+            <!-- Priority -->
+            <div>
+              <%= form.label :priority, "Priority", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.select :priority,
+                              options_for_select([
+                                ['Low', 'low'],
+                                ['Medium', 'medium'],
+                                ['High', 'high'],
+                                ['Urgent', 'urgent']
+                              ], @task_dto.priority),
+                              {},
+                              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" %>
+            </div>
+
+            <!-- Assignee -->
+            <div>
+              <%= form.label :assignee_id, "Assignee", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.select :assignee_id,
+                              options_for_select(
+                                [['Unassigned', '']] + (@available_assignees || []).map { |u| [u.name, u.id] },
+                                @task_dto.assignee&.id
+                              ),
+                              {},
+                              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" %>
+            </div>
+
+            <!-- Sprint -->
+            <div>
+              <%= form.label :sprint_id, "Sprint", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.select :sprint_id,
+                              options_for_select(
+                                [['No Sprint', '']] + (@available_sprints || []).map { |s| [s.name, s.id] },
+                                @task_dto.sprint&.dig("id")
+                              ),
+                              {},
+                              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule Section -->
+        <div class="px-6 py-6 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Schedule & Time Tracking</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Start Date -->
+            <div>
+              <%= form.label :start_date, "Start Date", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.date_field :start_date,
+                                  class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" %>
+            </div>
+
+            <!-- Due Date -->
+            <div>
+              <%= form.label :due_date, "Due Date", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.date_field :due_date,
+                                  class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" %>
+            </div>
+
+            <!-- Estimated Hours -->
+            <div>
+              <%= form.label :estimated_hours, "Estimated Hours", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.number_field :estimated_hours,
+                                    step: 0.5,
+                                    min: 0,
+                                    class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500",
+                                    placeholder: "0" %>
+            </div>
+
+            <!-- Story Points -->
+            <div>
+              <%= form.label :story_points, "Story Points", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.number_field :story_points,
+                                    min: 0,
+                                    class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500",
+                                    placeholder: "0" %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tags Section -->
+        <div class="px-6 py-6 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Tags & Labels</h2>
+          
+          <div class="space-y-4">
+            <!-- Tags -->
+            <div>
+              <%= form.label :tags, "Tags", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.text_field :tags,
+                                  value: @task_dto.tags&.join(', '),
+                                  class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500",
+                                  placeholder: "Enter tags separated by commas (e.g., frontend, bug, urgent)" %>
+              <p class="mt-1 text-xs text-gray-500">Separate tags with commas</p>
+            </div>
+
+            <!-- Labels -->
+            <div>
+              <%= form.label :labels, "Labels", class: "block text-sm font-medium text-gray-700 mb-1" %>
+              <%= form.text_field :labels,
+                                  value: @task_dto.labels&.join(', '),
+                                  class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500",
+                                  placeholder: "Enter labels separated by commas (e.g., epic:auth, feature)" %>
+              <p class="mt-1 text-xs text-gray-500">Use 'epic:' prefix for epic labels</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex justify-between">
+          <%= link_to "Cancel",
+                      tasks_path,
+                      class: "px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50" %>
+          
+          <%= form.submit "Create Task",
+                          class: "px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer" %>
+        </div>
       <% end %>
     </div>
-    <div class="mt-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">새 태스크 생성</h1>
-      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-        새로운 태스크를 생성하고 팀원에게 할당하세요.
-      </p>
-    </div>
   </div>
-
-  <!-- Task Form Component -->
-  <%= render Tasks::TaskFormComponent.new(
-    task_dto: @task_dto,
-    available_sprints: @available_sprints,
-    available_assignees: @available_assignees
-  ) %>
 </div>

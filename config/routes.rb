@@ -119,6 +119,8 @@ Rails.application.routes.draw do
       get 'organization_selection', to: 'users/sessions#organization_selection', as: :organization_selection
       post 'switch_to_organization', to: 'users/sessions#switch_to_organization', as: :switch_to_organization
       get 'access_denied', to: 'users/sessions#access_denied', as: :access_denied
+      # GET logout 지원 (브라우저 직접 접근용)
+      get 'logout', to: 'users/sessions#destroy'
     end
     
     # 조직 선택 및 전환 (기존 조직 컨트롤러 루트)
@@ -148,7 +150,7 @@ Rails.application.routes.draw do
         subdomain = DomainService.extract_subdomain(request)
         DomainService.login_url(subdomain)
       }
-      delete 'logout', to: 'devise/sessions#destroy'
+      delete 'logout', to: redirect { |_params, request| DomainService.auth_url('logout') }
     end
     
     # 조직 대시보드
@@ -197,9 +199,67 @@ Rails.application.routes.draw do
     
     # 추후 추가될 테넌트별 리소스들
     # resources :projects
-    # resources :sprints
-    # resources :teams
-    # resources :reports
+    # Timeline View
+    get 'timeline', to: 'web/timeline#index', as: :timeline
+    
+    # Milestones with nested Sprints
+    resources :milestones, controller: 'web/milestones' do
+      member do
+        get :risks
+        get :objectives
+        get :dependencies
+        patch :update_progress
+      end
+      
+      resources :sprints, controller: 'web/sprints' do
+        member do
+          patch :start
+          patch :complete
+          get :board
+          get :burndown
+          get :retrospective
+          get :reports
+        end
+        
+        resources :tasks, only: [:new, :create]
+      end
+    end
+    
+    # Sprints (standalone)
+    resources :sprints, controller: 'web/sprints' do
+      member do
+        patch :start
+        patch :complete
+        get :board
+        get :burndown
+        get :retrospective
+        get :reports
+      end
+      
+      resources :tasks do
+        member do
+          patch :update_status
+          post :assign
+        end
+      end
+    end
+    
+    # Tasks
+    resources :tasks do
+      member do
+        patch :update_status
+        post :assign
+        post :add_comment
+      end
+      
+      collection do
+        patch :bulk_update
+      end
+    end
+    
+    # Teams and Reports
+    resources :teams
+    resources :reports
     
     # 사용자 프로필 (조직 컨텍스트)
     resource :profile, controller: 'users', only: [:show, :edit, :update]

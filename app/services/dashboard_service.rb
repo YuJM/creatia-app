@@ -68,6 +68,9 @@ class DashboardService
         .order_by(created_at: :desc)
         .limit(5)
         .map { |task| Dto::TaskDto.from_model(task) }
+  rescue => e
+    Rails.logger.error "Error fetching recent tasks: #{e.message}"
+    []
   end
   
   def upcoming_milestones_list
@@ -75,6 +78,9 @@ class DashboardService
              .upcoming
              .limit(3)
              .map { |milestone| Dto::MilestoneDto.from_model(milestone) }
+  rescue => e
+    Rails.logger.error "Error fetching upcoming milestones: #{e.message}"
+    []
   end
   
   def calculate_completion_rate(tasks)

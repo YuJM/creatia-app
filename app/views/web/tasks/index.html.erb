@@ -26,7 +26,7 @@
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Total Tasks</p>
-        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.total || 0 %></p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.dig(:total) || 0 %></p>
       </div>
       <div class="p-3 bg-primary/10 rounded-full">
         <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,7 +40,7 @@
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Completed</p>
-        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.by_status&.done || 0 %></p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.dig(:by_status, :done) || 0 %></p>
       </div>
       <div class="p-3 bg-success/10 rounded-full">
         <svg class="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,7 +54,7 @@
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">In Progress</p>
-        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.by_status&.in_progress || 0 %></p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.dig(:by_status, :in_progress) || 0 %></p>
       </div>
       <div class="p-3 bg-accent/10 rounded-full">
         <svg class="h-6 w-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,7 +68,7 @@
     <div class="flex items-center justify-between">
       <div>
         <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Overdue</p>
-        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.overdue || 0 %></p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.dig(:overdue) || 0 %></p>
       </div>
       <div class="p-3 bg-destructive/10 rounded-full">
         <svg class="h-6 w-6 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,8 +170,8 @@
 
 <!-- Tasks List -->
 <div class="space-y-4">
-  <% if @tasks.any? %>
-    <% @tasks.each do |task| %>
+  <% if @paginated_tasks && @paginated_tasks.any? %>
+    <% @paginated_tasks.each do |task| %>
       <%= render Ui::CardComponent.new(variant: :default, hover: true, clickable: true, class: "group") do %>
         <%= link_to task_path(task), class: "block p-6" do %>
           <div class="flex items-start justify-between">
@@ -217,26 +217,14 @@
             
             <div class="flex items-center gap-3 ml-4">
               <!-- Priority Badge -->
-              <% priority_classes = case task.priority
-                 when 'high' then 'bg-destructive/10 text-destructive'
-                 when 'medium' then 'bg-warning/10 text-warning' 
-                 when 'urgent' then 'bg-destructive/20 text-destructive'
-                 else 'bg-secondary/10 text-secondary-foreground'
-                 end %>
-              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium <%= priority_classes %>">
-                <%= task.priority&.titleize || 'Low' %>
-              </span>
+              <%= render Shared::PriorityBadgeComponent.new(
+                priority: task.priority || 'low'
+              ) %>
               
               <!-- Status Badge -->
-              <% status_classes = case task.status
-                 when 'completed' then 'bg-success/10 text-success'
-                 when 'in_progress' then 'bg-accent/10 text-accent-foreground'
-                 when 'on_hold' then 'bg-warning/10 text-warning'
-                 else 'bg-secondary/10 text-secondary-foreground'
-                 end %>
-              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium <%= status_classes %>">
-                <%= task.status&.humanize || 'Pending' %>
-              </span>
+              <%= render Shared::StatusBadgeComponent.new(
+                status: task.status || 'pending'
+              ) %>
               
               <!-- Arrow Icon -->
               <svg class="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,19 +237,14 @@
     <% end %>
   <% else %>
     <!-- Empty State -->
-    <%= render Ui::CardComponent.new(variant: :default, padding: :lg, class: "text-center") do %>
-      <div class="py-12">
-        <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-        </svg>
-        <h3 class="mt-4 text-lg font-semibold text-foreground">No tasks found</h3>
-        <p class="mt-2 text-muted-foreground">Get started by creating your first task.</p>
-        <div class="mt-6">
-          <%= render Ui::ButtonComponent.new(variant: :primary, icon: :plus, href: new_task_path) do %>
-            Create Task
-          <% end %>
-        </div>
-      </div>
+    <%= render Ui::CardComponent.new do %>
+      <%= render Shared::EmptyStateComponent.new(
+        title: "No tasks found",
+        description: "Get started by creating your first task.",
+        icon: :clipboard,
+        action_text: "Create Task",
+        action_url: new_task_path
+      ) %>
     <% end %>
   <% end %>
 </div>

@@ -5,6 +5,10 @@
 <%= csrf_meta_tags %>
 <%= csp_meta_tag %>
 
+<% if params[:from_logout] == 'true' %>
+  <meta name="turbo-visit-control" content="reload">
+<% end %>
+
 <%= yield :head %>
 
 <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>

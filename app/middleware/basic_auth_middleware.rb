@@ -21,6 +21,10 @@ class BasicAuthMiddleware
     end
 
     @app.call(env)
+  rescue => e
+    # Middleware에서 발생하는 에러를 안전하게 처리
+    Rails.logger.error "BasicAuthMiddleware error: #{e.message}"
+    @app.call(env)
   end
 
   private

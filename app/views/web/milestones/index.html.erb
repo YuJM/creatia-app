@@ -1,0 +1,118 @@
+<!-- Milestones List View -->
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Page Header -->
+    <%= render Shared::PageHeaderComponent.new(
+      title: "Milestones",
+      description: "Manage project milestones and track major deliverables",
+      back_link: nil,
+      actions: [
+        {
+          component_type: :button,
+          text: "New Milestone",
+          variant: :primary,
+          icon: "plus",
+          options: {
+            tag: :a,
+            href: new_milestone_path,
+            data: { turbo_frame: "modal" }
+          }
+        }
+      ]
+    ) %>
+
+    <!-- Milestones Grid -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <% if @milestones&.any? %>
+        <% @milestones.each do |milestone| %>
+          <%= render Ui::CardComponent.new do %>
+            <div class="p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">
+                  <%= link_to milestone.title, milestone_path(milestone), 
+                      class: "hover:text-indigo-600" %>
+                </h3>
+                <%= render Shared::StatusBadgeComponent.new(
+                  status: milestone.status || 'planning'
+                ) %>
+              </div>
+              
+              <% if milestone.description.present? %>
+                <p class="text-sm text-gray-600 mb-4 line-clamp-2">
+                  <%= milestone.description %>
+                </p>
+              <% end %>
+              
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-500">Target Date:</span>
+                  <span class="font-medium">
+                    <%= milestone.planned_end&.strftime('%b %d, %Y') || 'Not set' %>
+                  </span>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-500">Sprints:</span>
+                  <span class="font-medium">
+                    <%= milestone.total_sprints || 0 %>
+                  </span>
+                </div>
+                
+                <% if milestone.progress_percentage.present? && milestone.progress_percentage > 0 %>
+                  <div class="mt-4">
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-xs text-gray-500">Progress</span>
+                      <span class="text-xs font-medium"><%= milestone.progress_percentage %>%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                      <div class="bg-indigo-600 h-2 rounded-full" 
+                           style="width: <%= milestone.progress_percentage %>%"></div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+              
+              <div class="mt-4 flex items-center justify-between">
+                <%= render Ui::ButtonComponent.new(
+                  variant: :link,
+                  size: :small,
+                  tag: :a,
+                  href: milestone_path(milestone)
+                ) do %>
+                  View Details
+                <% end %>
+                
+                <div class="flex items-center gap-2">
+                  <%= link_to edit_milestone_path(milestone),
+                      class: "text-gray-400 hover:text-gray-500",
+                      data: { turbo_frame: "modal" } do %>
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      <% else %>
+        <div class="col-span-full">
+          <%= render Ui::CardComponent.new do %>
+            <%= render Shared::EmptyStateComponent.new(
+              title: "No milestones",
+              description: "Get started by creating a new milestone.",
+              icon: :clipboard,
+              action_text: "Create Milestone",
+              action_url: new_milestone_path,
+              action_options: { data: { turbo_frame: "modal" } }
+            ) %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Frame -->
+<%= turbo_frame_tag "modal" %>

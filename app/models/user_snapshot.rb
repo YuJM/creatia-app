@@ -46,9 +46,7 @@ class UserSnapshot
       name: name,
       email: email,
       avatar_url: avatar_url,
-      role: role,
-      department: department,
-      position: position
+      role: role
     ).tap { |u| u.readonly! }
   end
 
