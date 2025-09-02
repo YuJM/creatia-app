@@ -1,0 +1,268 @@
+<div class="space-y-6">
+  <!-- Header Section -->
+  <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+    <div class="flex-1">
+      <div class="flex items-center gap-3 mb-2">
+        <% if task.task_id.present? %>
+          <span class="text-sm font-mono text-muted-foreground">#<%= task.task_id %></span>
+        <% end %>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100"><%= task.title %></h1>
+      </div>
+      
+      <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+        <span>생성일: <%= format_date(task.created_at) %></span>
+        <% if task.updated_at %>
+          <span>•</span>
+          <span>수정일: <%= format_date(task.updated_at) %></span>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <%= link_to edit_task_path(task.id), 
+                  class: "inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
+                  data: { turbo_frame: "task_form" } do %>
+        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+        편집
+      <% end %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Description Card -->
+      <%= render Ui::CardComponent.new(variant: :default, padding: :default) do %>
+        <div class="space-y-4">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">설명</h3>
+          
+          <div class="prose prose-sm dark:prose-invert max-w-none">
+            <% if task.description.present? %>
+              <%= simple_format(task.description) %>
+            <% else %>
+              <p class="text-gray-500 dark:text-gray-400 italic">설명이 없습니다.</p>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Progress Card -->
+      <% if task.estimated_hours || task.actual_hours %>
+        <%= render Ui::CardComponent.new(variant: :default, padding: :default) do %>
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">진행 상황</h3>
+            
+            <div class="space-y-3">
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400">완료율</span>
+                <span class="font-medium"><%= progress_percentage %>%</span>
+              </div>
+              
+              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div class="<%= progress_bar_color %> h-2 rounded-full transition-all duration-300" 
+                     style="width: <%= progress_percentage %>%"></div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-4 pt-2">
+                <div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">예상 시간</p>
+                  <p class="text-sm font-medium">
+                    <%= task.estimated_hours ? "#{task.estimated_hours}시간" : "-" %>
+                  </p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">실제 시간</p>
+                  <p class="text-sm font-medium">
+                    <%= task.actual_hours ? "#{task.actual_hours}시간" : "-" %>
+                  </p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">남은 시간</p>
+                  <p class="text-sm font-medium">
+                    <%= task.remaining_hours ? "#{task.remaining_hours}시간" : "-" %>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+
+      <!-- Activity/Comments Section -->
+      <div data-turbo-frame="task_activity">
+        <%= render Ui::CardComponent.new(variant: :default, padding: :default) do %>
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">활동 내역</h3>
+            
+            <div class="space-y-4">
+              <!-- Activity Timeline -->
+              <div class="flow-root">
+                <ul role="list" class="-mb-8">
+                  <li>
+                    <div class="relative pb-8">
+                      <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700" aria-hidden="true"></span>
+                      <div class="relative flex space-x-3">
+                        <div>
+                          <span class="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-8 ring-white dark:ring-gray-900">
+                            <svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                            </svg>
+                          </span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                              태스크가 생성되었습니다
+                              <time datetime="<%= task.created_at %>" class="ml-1">
+                                <%= format_datetime(task.created_at) %>
+                              </time>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Comment Form -->
+              <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+                <%= form_with url: "#", 
+                              data: { controller: "task-comment", 
+                                      turbo_frame: "task_activity" },
+                              class: "space-y-4" do |form| %>
+                  <div>
+                    <%= form.text_area :comment,
+                                       rows: 3,
+                                       class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-md",
+                                       placeholder: "댓글을 입력하세요...",
+                                       data: { task_comment_target: "input" } %>
+                  </div>
+                  <div class="flex justify-end">
+                    <%= form.submit "댓글 작성",
+                                    class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="lg:col-span-1 space-y-6">
+      <!-- Task Info Card -->
+      <%= render Ui::CardComponent.new(variant: :default, padding: :none) do %>
+        <div class="px-4 py-5 sm:px-6">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">태스크 정보</h3>
+        </div>
+        
+        <div class="border-t border-gray-200 dark:border-gray-700">
+          <dl class="divide-y divide-gray-200 dark:divide-gray-700">
+            <!-- Status -->
+            <div class="px-4 py-4 sm:px-6">
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">상태</dt>
+              <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                <span class="<%= status_badge_class %>">
+                  <%= I18n.t("task.status.#{task.status}", default: task.status.humanize) %>
+                </span>
+              </dd>
+            </div>
+
+            <!-- Priority -->
+            <div class="px-4 py-4 sm:px-6">
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">우선순위</dt>
+              <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                <span class="<%= priority_badge_class %>">
+                  <%= I18n.t("task.priority.#{task.priority}", default: task.priority.humanize) %>
+                </span>
+              </dd>
+            </div>
+
+            <!-- Assignee -->
+            <div class="px-4 py-4 sm:px-6">
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">담당자</dt>
+              <dd class="mt-2">
+                <%= assignee_avatar %>
+              </dd>
+            </div>
+
+            <!-- Due Date -->
+            <div class="px-4 py-4 sm:px-6">
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">마감일</dt>
+              <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                <% if task.due_date %>
+                  <%= format_date(task.due_date) %>
+                  <% if task.overdue? %>
+                    <span class="ml-2 text-xs text-red-600 dark:text-red-400 font-medium">기한 초과</span>
+                  <% elsif task.urgent? %>
+                    <span class="ml-2 text-xs text-orange-600 dark:text-orange-400 font-medium">긴급</span>
+                  <% end %>
+                <% else %>
+                  <span class="text-gray-500 dark:text-gray-400">설정 안됨</span>
+                <% end %>
+              </dd>
+            </div>
+
+            <!-- Sprint -->
+            <% if task.sprint %>
+              <div class="px-4 py-4 sm:px-6">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">스프린트</dt>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                  <%= task.sprint["name"] || "없음" %>
+                </dd>
+              </div>
+            <% end %>
+
+            <!-- Milestone -->
+            <% if task.milestone %>
+              <div class="px-4 py-4 sm:px-6">
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">마일스톤</dt>
+                <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
+                  <%= task.milestone["name"] || "없음" %>
+                </dd>
+              </div>
+            <% end %>
+          </dl>
+        </div>
+      <% end %>
+
+      <!-- Tags Card -->
+      <% if task.tags.present? && task.tags.any? %>
+        <%= render Ui::CardComponent.new(variant: :default, padding: :default) do %>
+          <div class="space-y-3">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">태그</h3>
+            
+            <div class="flex flex-wrap gap-2">
+              <% task.tags.each do |tag| %>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
+                  <%= tag %>
+                </span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+
+      <!-- Labels Card -->
+      <% if task.labels.present? && task.labels.any? %>
+        <%= render Ui::CardComponent.new(variant: :default, padding: :default) do %>
+          <div class="space-y-3">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">라벨</h3>
+            
+            <div class="flex flex-wrap gap-2">
+              <% task.labels.each do |label| %>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                  <%= label %>
+                </span>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,210 +1,28 @@
-<div class="px-4 sm:px-6 lg:px-8">
-  <div class="sm:flex sm:items-center">
-    <div class="sm:flex-auto">
-      <h1 class="text-2xl font-semibold text-gray-900">태스크 수정</h1>
-      <p class="mt-2 text-sm text-gray-700">
-        #<%= @task.id %> 태스크 정보를 수정합니다.
+<!-- Task Edit Page -->
+<div class="px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Page Header -->
+  <div class="mb-8">
+    <div class="flex items-center gap-4">
+      <%= link_to task_path(@task_dto.id), 
+                  class: "inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" do %>
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        태스크 상세로 돌아가기
+      <% end %>
+    </div>
+    <div class="mt-4">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">태스크 편집</h1>
+      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        태스크 정보를 수정하세요.
       </p>
     </div>
   </div>
 
-  <div class="mt-8 bg-white shadow sm:rounded-lg">
-    <div class="px-4 py-5 sm:p-6">
-      <%= form_with model: @task, local: true, data: { turbo: false } do |form| %>
-        <% if @task.errors.any? %>
-          <%= render AlertComponent.new(
-            type: :error,
-            title: "#{pluralize(@task.errors.count, 'error')} 발생:",
-            messages: @task.errors.full_messages
-          ) %>
-        <% end %>
-
-        <div class="space-y-6">
-          <!-- Title -->
-          <div>
-            <%= form.label :title, "제목", class: "block text-sm font-medium text-gray-700" %>
-            <div class="mt-1">
-              <%= form.text_field :title,
-                                  class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %>
-            </div>
-          </div>
-
-          <!-- Description -->
-          <div>
-            <%= form.label :description, "설명", class: "block text-sm font-medium text-gray-700" %>
-            <div class="mt-1">
-              <%= form.text_area :description,
-                                 rows: 4,
-                                 class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %>
-            </div>
-          </div>
-
-          <!-- Two Column Layout -->
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <!-- Status -->
-            <div>
-              <%= form.label :status, "상태", class: "block text-sm font-medium text-gray-700" %>
-              <div class="mt-1">
-                <%= form.select :status,
-                                options_for_select([
-                                  ["대기중", "pending"],
-                                  ["진행중", "in_progress"],
-                                  ["완료", "completed"],
-                                  ["보류", "on_hold"]
-                                ], @task.status),
-                                {},
-                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %>
-              </div>
-            </div>
-
-            <!-- Priority -->
-            <div>
-              <%= form.label :priority, "우선순위", class: "block text-sm font-medium text-gray-700" %>
-              <div class="mt-1">
-                <%= form.select :priority,
-                                options_for_select([
-                                  ["높음", "high"],
-                                  ["중간", "medium"],
-                                  ["낮음", "low"]
-                                ], @task.priority),
-                                {},
-                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %>
-              </div>
-            </div>
-
-            <!-- Assignee -->
-            <div>
-              <%= form.label :assignee_id, "담당자", class: "block text-sm font-medium text-gray-700" %>
-              <div class="mt-1">
-                <%= form.select :assignee_id,
-                                options_for_select(
-                                  [["미할당", ""]] + User.all.pluck(:name, :id),
-                                  @task.assignee_id
-                                ),
-                                {},
-                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %>
-              </div>
-            </div>
-
-            <!-- Due Date -->
-            <div>
-              <%= form.label :due_date, "마감일", class: "block text-sm font-medium text-gray-700" %>
-              <div class="mt-1">
-                <%= form.date_field :due_date,
-                                    value: @task.due_date,
-                                    class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %>
-              </div>
-            </div>
-
-            <!-- Estimated Hours -->
-            <div>
-              <%= form.label :estimated_hours, "예상 시간", class: "block text-sm font-medium text-gray-700" %>
-              <div class="mt-1">
-                <div class="relative rounded-md shadow-sm">
-                  <%= form.number_field :estimated_hours,
-                                        step: 0.5,
-                                        min: 0,
-                                        value: @task.estimated_hours,
-                                        class: "focus:ring-indigo-500 focus:border-indigo-500 block w-full pr-12 sm:text-sm border-gray-300 rounded-md" %>
-                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span class="text-gray-500 sm:text-sm">시간</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sprint -->
-            <div>
-              <%= form.label :sprint_id, "스프린트", class: "block text-sm font-medium text-gray-700" %>
-              <div class="mt-1">
-                <%= form.select :sprint_id,
-                                options_for_select(
-                                  [["스프린트 없음", ""]] + @available_sprints.map { |s| [s.name, s.id] },
-                                  @task_dto.sprint_id
-                                ),
-                                {},
-                                class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %>
-              </div>
-            </div>
-
-            <!-- Actual Hours -->
-            <div>
-              <%= form.label :actual_hours, "실제 소요 시간", class: "block text-sm font-medium text-gray-700" %>
-              <div class="mt-1">
-                <div class="relative rounded-md shadow-sm">
-                  <%= form.number_field :actual_hours,
-                                        step: 0.5,
-                                        min: 0,
-                                        value: @task.actual_hours,
-                                        class: "focus:ring-indigo-500 focus:border-indigo-500 block w-full pr-12 sm:text-sm border-gray-300 rounded-md" %>
-                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span class="text-gray-500 sm:text-sm">시간</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Progress -->
-            <div>
-              <%= form.label :progress, "진행률", class: "block text-sm font-medium text-gray-700" %>
-              <div class="mt-1">
-                <div class="relative rounded-md shadow-sm">
-                  <%= form.number_field :progress,
-                                        min: 0,
-                                        max: 100,
-                                        value: @task.progress || 0,
-                                        class: "focus:ring-indigo-500 focus:border-indigo-500 block w-full pr-12 sm:text-sm border-gray-300 rounded-md" %>
-                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span class="text-gray-500 sm:text-sm">%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tags -->
-          <div>
-            <%= form.label :tags, "태그", class: "block text-sm font-medium text-gray-700" %>
-            <div class="mt-1">
-              <%= form.text_field :tags,
-                                  value: @task.tags,
-                                  class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md",
-                                  placeholder: "태그를 쉼표로 구분하여 입력 (예: frontend, bug, urgent)" %>
-            </div>
-          </div>
-
-          <!-- Update History Note -->
-          <div>
-            <%= form.label :update_note, "변경 사항 메모", class: "block text-sm font-medium text-gray-700" %>
-            <div class="mt-1">
-              <%= form.text_area :update_note,
-                                 rows: 2,
-                                 class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md",
-                                 placeholder: "이번 수정 사항에 대한 간단한 메모 (선택사항)" %>
-            </div>
-          </div>
-        </div>
-
-        <!-- Form Actions -->
-        <div class="mt-6 flex items-center justify-between">
-          <button type="button"
-                  class="text-sm text-red-600 hover:text-red-500"
-                  onclick="if(confirm('정말로 이 태스크를 삭제하시겠습니까?')) { document.getElementById('delete-form').submit(); }">
-            태스크 삭제
-          </button>
-          <div class="flex items-center space-x-3">
-            <%= link_to "취소",
-                        task_path(@task),
-                        class: "inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
-            <%= form.submit "변경사항 저장",
-                            class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
-          </div>
-        </div>
-      <% end %>
-
-      <!-- Hidden delete form -->
-      <%= form_with model: @task, method: :delete, id: "delete-form", local: true, data: { turbo: false } do |form| %>
-      <% end %>
-    </div>
-  </div>
+  <!-- Task Form Component -->
+  <%= render Tasks::TaskFormComponent.new(
+    task_dto: @task_dto,
+    available_sprints: @available_sprints,
+    available_assignees: @available_assignees
+  ) %>
 </div>
