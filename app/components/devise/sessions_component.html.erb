@@ -1,0 +1,112 @@
+<div class="min-h-screen flex items-center justify-center bg-background px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <!-- Logo and Title -->
+    <div class="text-center">
+      <div class="mx-auto h-16 w-16 bg-gradient-to-r from-primary to-accent rounded-xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-6 transition-transform">
+        <span class="text-white text-2xl font-bold">C</span>
+      </div>
+      <h2 class="mt-6 text-display-xl text-foreground font-bold tracking-tight">
+        Welcome to Creatia
+      </h2>
+      <p class="mt-2 text-base text-muted-foreground">
+        Multi-tenant project management platform
+      </p>
+    </div>
+
+    <!-- Login Form Card -->
+    <%= render Ui::CardComponent.new(variant: :elevated, padding: :lg, class: "animate-fade-in") do %>
+      <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-6" }) do |f| %>
+        <% if return_to.present? %>
+          <%= hidden_field_tag :return_to, return_to %>
+        <% end %>
+        
+        <!-- Email Field -->
+        <%= render Ui::InputComponent.new(
+              type: 'email',
+              label: 'Email Address',
+              name: "#{resource_name}[email]",
+              id: "#{resource_name}_email",
+              placeholder: 'your@email.com',
+              required: true,
+              prefix: :email,
+              value: resource.email
+            ) %>
+
+        <!-- Password Field -->
+        <%= render Ui::InputComponent.new(
+              type: 'password',
+              label: 'Password',
+              name: "#{resource_name}[password]",
+              id: "#{resource_name}_password",
+              placeholder: '••••••••',
+              required: true,
+              prefix: :lock
+            ) %>
+
+        <!-- Remember Me and Forgot Password -->
+        <div class="flex items-center justify-between">
+          <% if devise_mapping.rememberable? %>
+            <div class="flex items-center">
+              <%= check_box_tag "#{resource_name}[remember_me]", '1', false, 
+                  class: "h-4 w-4 text-primary focus:ring-ring border-input rounded" %>
+              <label for="<%= resource_name %>_remember_me" class="ml-2 block text-sm text-muted-foreground">
+                Remember me
+              </label>
+            </div>
+          <% end %>
+          
+          <% if devise_mapping.recoverable? %>
+            <div class="text-sm">
+              <%= link_to "Forgot password?", new_password_path(resource_name), 
+                  class: "font-medium text-primary hover:text-primary/80 transition-colors" %>
+            </div>
+          <% end %>
+        </div>
+
+        <!-- Submit Button -->
+        <div>
+          <%= render Ui::ButtonComponent.new(
+                variant: :default,
+                size: :lg,
+                full_width: true,
+                type: "submit",
+                icon: :user
+              ) do %>
+            Sign In
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+
+    <!-- Sign Up Link -->
+    <% if devise_mapping.registerable? %>
+      <div class="mt-6 text-center">
+        <span class="text-sm text-muted-foreground">
+          Don't have an account?
+          <%= link_to "Sign up", new_registration_path(resource_name), 
+              class: "font-medium text-primary hover:text-primary/80 transition-colors" %>
+        </span>
+      </div>
+    <% end %>
+
+    <!-- Demo Account Info -->
+    <%= render Ui::CardComponent.new(variant: :outlined, class: "bg-primary/5 border-primary/20") do %>
+      <div class="p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-primary">Demo Account</h3>
+            <div class="mt-2 text-sm text-primary/80 space-y-1">
+              <p><span class="font-medium">Email:</span> admin@creatia.local</p>
+              <p><span class="font-medium">Password:</span> password123</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
