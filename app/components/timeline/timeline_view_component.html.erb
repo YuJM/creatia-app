@@ -1,0 +1,177 @@
+<div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header Section -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Project Timeline</h1>
+        <p class="mt-2 text-gray-600">
+          <%= format_month(@start_date) %> - <%= format_month(@end_date) %>
+        </p>
+      </div>
+      
+      <div class="flex items-center gap-4">
+        <!-- View Mode Selector -->
+        <%= form_with url: timeline_path, method: :get, data: { turbo_frame: "_top" }, class: "flex items-center gap-2" do |f| %>
+          <%= f.select :view_mode, 
+              options_for_select([
+                ['Month', 'month'],
+                ['Quarter', 'quarter'],
+                ['Year', 'year']
+              ], @view_mode),
+              {},
+              class: "rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500",
+              onchange: "this.form.submit()" %>
+        <% end %>
+        
+        <!-- New Milestone Button -->
+        <%= render Ui::ButtonComponent.new(
+          variant: :primary,
+          size: :default,
+          tag: :a,
+          href: new_milestone_path,
+          data: { turbo_frame: "modal" },
+          icon: "plus"
+        ) do %>
+          New Milestone
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline Container -->
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="p-6">
+      <!-- Month Headers -->
+      <div class="relative border-b border-gray-200 pb-4 mb-8 h-6">
+        <% timeline_months.each do |month| %>
+          <div class="absolute text-sm text-gray-600" style="left: <%= calculate_position(month) %>%;">
+            <%= month.strftime('%b %Y') %>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Today Line -->
+      <% if is_today_visible? %>
+        <div class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" 
+             style="left: <%= today_position %>%">
+          <div class="absolute -top-6 -left-8 bg-red-500 text-white text-xs px-2 py-1 rounded">
+            Today
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Milestones -->
+      <div class="space-y-6">
+        <% if @milestones.empty? %>
+          <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No milestones</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by creating a new milestone.</p>
+            <div class="mt-6">
+              <%= render Ui::ButtonComponent.new(
+                variant: :primary,
+                size: :default,
+                tag: :a,
+                href: new_milestone_path,
+                data: { turbo_frame: "modal" }
+              ) do %>
+                New Milestone
+              <% end %>
+            </div>
+          </div>
+        <% else %>
+          <% @milestones.each do |milestone| %>
+            <div class="border-l-4 border-indigo-600 pl-4">
+              <!-- Milestone Header -->
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">
+                    <%= link_to milestone.title, milestone_path(milestone), 
+                        class: "hover:text-indigo-600 transition-colors" %>
+                  </h3>
+                  <p class="text-sm text-gray-600">
+                    Target: <%= milestone.planned_end&.strftime('%b %d, %Y') || 'Not set' %>
+                    <% if milestone.health_status %>
+                      <span class="ml-2 <%= health_indicator_color(milestone.health_status) %>">
+                        • <%= milestone.health_status.humanize %>
+                      </span>
+                    <% end %>
+                  </p>
+                </div>
+                <div class="text-sm text-gray-500">
+                  <%= milestone.total_sprints || 0 %> sprints
+                </div>
+              </div>
+
+              <!-- Milestone Timeline Bar -->
+              <div class="relative h-12 bg-gray-100 rounded-lg mb-4">
+                <% if milestone.planned_start && milestone.planned_end %>
+                  <div class="absolute h-full rounded-lg <%= status_color(milestone.status) %> opacity-75"
+                       style="left: <%= calculate_position(milestone.planned_start) %>%; 
+                              width: <%= calculate_width(milestone.planned_start, milestone.planned_end) %>%">
+                  </div>
+                <% end %>
+              </div>
+
+              <!-- Sprints (추후 구현 예정) -->
+              <%# TODO: 스프린트 데이터를 별도로 로드하여 표시 %>
+              <% if false # milestone.sprints&.any? %>
+                <div class="space-y-2 ml-4">
+                  <%# milestone.sprints.each do |sprint| %>
+                    <div class="relative">
+                      <div class="flex items-center justify-between text-sm">
+                        <div class="flex items-center gap-2">
+                          <div class="w-2 h-2 rounded-full <%#= status_color(sprint.status) %>"></div>
+                          <%#= link_to sprint.name, sprint_path(sprint),
+                              class: "text-gray-700 hover:text-indigo-600" %>
+                          <span class="text-xs text-gray-500">
+                            (<%#= sprint.start_date&.strftime('%b %d') %> - <%#= sprint.end_date&.strftime('%b %d') %>)
+                          </span>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                          <%#= sprint.task_ids&.count || 0 %> tasks
+                        </div>
+                      </div>
+                      
+                      <!-- Sprint Timeline Bar -->
+                      <div class="relative h-6 bg-gray-50 rounded mt-1">
+                        <%# if sprint.start_date && sprint.end_date %>
+                          <div class="absolute h-full rounded <%#= status_color(sprint.status) %> opacity-50"
+                               style="left: <%#= calculate_position(sprint.start_date) %>%; 
+                                      width: <%#= calculate_width(sprint.start_date, sprint.end_date) %>%">
+                          </div>
+                        <%# end %>
+                      </div>
+                    </div>
+                  <%# end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="mt-6 flex items-center justify-center gap-6 text-sm">
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-gray-400 rounded"></div>
+      <span class="text-gray-600">Planning</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-blue-500 rounded"></div>
+      <span class="text-gray-600">Active</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-green-500 rounded"></div>
+      <span class="text-gray-600">Completed</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-red-500 rounded"></div>
+      <span class="text-gray-600">Cancelled</span>
+    </div>
+  </div>
+</div>

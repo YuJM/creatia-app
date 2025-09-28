@@ -1,0 +1,228 @@
+<div class="milestone-form-container" data-controller="milestone-form">
+  <%= turbo_frame_tag "modal" do %>
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-40"></div>
+    
+    <div class="fixed inset-0 z-50 overflow-y-auto">
+      <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full">
+          <!-- Form Header -->
+          <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+              <h3 class="text-lg font-semibold text-gray-900"><%= form_title %></h3>
+              <%= link_to "×", "#", 
+                  class: "text-gray-400 hover:text-gray-500 text-2xl leading-none",
+                  data: { action: "click->milestone-form#close" } %>
+            </div>
+          </div>
+
+          <!-- Form Body -->
+          <%= form_with model: milestone, url: form_url, method: form_method, 
+                        local: false, data: { milestone_form_target: "form" } do |f| %>
+            <div class="px-6 py-4 space-y-6 max-h-[70vh] overflow-y-auto">
+              
+              <!-- Basic Information -->
+              <div class="border-b border-gray-200 pb-6">
+                <h4 class="text-sm font-medium text-gray-900 mb-4">Basic Information</h4>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="col-span-2">
+                    <%= f.label :title, class: "block text-sm font-medium text-gray-700 mb-1" %>
+                    <%= f.text_field :title, 
+                        class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                        placeholder: "Enter milestone title",
+                        required: true,
+                        data: { milestone_form_target: "title" } %>
+                  </div>
+
+                  <div class="col-span-2">
+                    <%= f.label :description, class: "block text-sm font-medium text-gray-700 mb-1" %>
+                    <%= f.text_area :description, 
+                        rows: 3,
+                        class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                        placeholder: "Describe the milestone objectives and scope" %>
+                  </div>
+
+                  <div>
+                    <%= f.label :milestone_type, "Type", class: "block text-sm font-medium text-gray-700 mb-1" %>
+                    <%= f.select :milestone_type, 
+                        options_for_select(milestone_types, milestone.milestone_type),
+                        {},
+                        class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+                  </div>
+
+                  <div>
+                    <%= f.label :status, class: "block text-sm font-medium text-gray-700 mb-1" %>
+                    <%= f.select :status, 
+                        options_for_select(milestone_statuses, milestone.status),
+                        {},
+                        class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Timeline -->
+              <div class="border-b border-gray-200 pb-6">
+                <h4 class="text-sm font-medium text-gray-900 mb-4">Timeline</h4>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <%= f.label :planned_start, "Planned Start Date", class: "block text-sm font-medium text-gray-700 mb-1" %>
+                    <%= f.date_field :planned_start, 
+                        class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                        required: true %>
+                  </div>
+
+                  <div>
+                    <%= f.label :planned_end, "Planned End Date", class: "block text-sm font-medium text-gray-700 mb-1" %>
+                    <%= f.date_field :planned_end, 
+                        class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                        required: true %>
+                  </div>
+
+                  <% if milestone.persisted? %>
+                    <div>
+                      <%= f.label :actual_start, "Actual Start Date", class: "block text-sm font-medium text-gray-700 mb-1" %>
+                      <%= f.date_field :actual_start, 
+                          class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+                    </div>
+
+                    <div>
+                      <%= f.label :actual_end, "Actual End Date", class: "block text-sm font-medium text-gray-700 mb-1" %>
+                      <%= f.date_field :actual_end, 
+                          class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+
+              <!-- Team & Ownership -->
+              <div class="border-b border-gray-200 pb-6">
+                <h4 class="text-sm font-medium text-gray-900 mb-4">Team & Ownership</h4>
+                
+                <div class="space-y-4">
+                  <div>
+                    <%= f.label :owner_id, "Owner", class: "block text-sm font-medium text-gray-700 mb-1" %>
+                    <%= f.select :owner_id, 
+                        options_for_select(available_users.map { |u| [u.name, u.id] }, milestone.owner&.dig(:user_id)),
+                        { prompt: "Select owner" },
+                        class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                        data: { action: "change->milestone-form#updateOwner" } %>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stakeholders</label>
+                    <div class="space-y-2" data-milestone-form-target="stakeholdersList">
+                      <% (milestone.stakeholders || []).each_with_index do |stakeholder, index| %>
+                        <div class="flex gap-2" data-milestone-form-target="stakeholderRow">
+                          <select name="milestone[stakeholder_ids][]" 
+                                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select stakeholder</option>
+                            <% available_users.each do |user| %>
+                              <option value="<%= user.id %>" <%= 'selected' if stakeholder[:user_id] == user.id.to_s %>>
+                                <%= user.name %>
+                              </option>
+                            <% end %>
+                          </select>
+                          <input type="text" 
+                                 name="milestone[stakeholder_roles][]" 
+                                 value="<%= stakeholder[:role] %>"
+                                 placeholder="Role"
+                                 class="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          <button type="button" 
+                                  data-action="click->milestone-form#removeStakeholder"
+                                  class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md">
+                            Remove
+                          </button>
+                        </div>
+                      <% end %>
+                    </div>
+                    <button type="button" 
+                            data-action="click->milestone-form#addStakeholder"
+                            class="mt-2 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
+                      + Add Stakeholder
+                    </button>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Team Leads</label>
+                    <div class="space-y-2" data-milestone-form-target="teamLeadsList">
+                      <% (milestone.team_leads || []).each do |team_lead| %>
+                        <div class="flex gap-2" data-milestone-form-target="teamLeadRow">
+                          <select name="milestone[team_lead_ids][]" 
+                                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select team lead</option>
+                            <% available_users.each do |user| %>
+                              <option value="<%= user.id %>" <%= 'selected' if team_lead[:user_id] == user.id.to_s %>>
+                                <%= user.name %>
+                              </option>
+                            <% end %>
+                          </select>
+                          <select name="milestone[team_ids][]" 
+                                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select team</option>
+                            <% available_teams.each do |team| %>
+                              <option value="<%= team.id %>" <%= 'selected' if team_lead[:team_id] == team.id.to_s %>>
+                                <%= team.name %>
+                              </option>
+                            <% end %>
+                          </select>
+                          <button type="button" 
+                                  data-action="click->milestone-form#removeTeamLead"
+                                  class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md">
+                            Remove
+                          </button>
+                        </div>
+                      <% end %>
+                    </div>
+                    <button type="button" 
+                            data-action="click->milestone-form#addTeamLead"
+                            class="mt-2 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
+                      + Add Team Lead
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Initial Objectives (Optional) -->
+              <div>
+                <h4 class="text-sm font-medium text-gray-900 mb-4">Initial Objectives (Optional)</h4>
+                
+                <div class="space-y-3" data-milestone-form-target="objectivesList">
+                  <div class="p-4 border border-gray-200 rounded-md" data-milestone-form-target="objectiveRow">
+                    <div class="grid grid-cols-1 gap-3">
+                      <input type="text" 
+                             name="milestone[objectives][][title]" 
+                             placeholder="Objective title"
+                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <textarea name="milestone[objectives][][description]" 
+                                rows="2"
+                                placeholder="Objective description"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                  </div>
+                </div>
+                
+                <button type="button" 
+                        data-action="click->milestone-form#addObjective"
+                        class="mt-2 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-md">
+                  + Add Objective
+                </button>
+              </div>
+            </div>
+
+            <!-- Form Footer -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 rounded-b-lg">
+              <%= link_to "Cancel", "#", 
+                  class: "px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50",
+                  data: { action: "click->milestone-form#close" } %>
+              
+              <%= f.submit submit_button_text, 
+                  class: "px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700",
+                  data: { milestone_form_target: "submitButton" } %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

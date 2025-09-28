@@ -1,0 +1,221 @@
+<% if ActsAsTenant.current_tenant %>
+  <!-- Welcome Header -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-display-lg text-foreground font-bold tracking-tight">
+          Welcome back!
+        </h1>
+        <p class="mt-2 text-base text-muted-foreground">
+          Here's what's happening with <span class="font-semibold text-foreground"><%= ActsAsTenant.current_tenant.name %></span> today.
+        </p>
+      </div>
+      <div class="hidden sm:block">
+        <%= render Ui::ButtonComponent.new(variant: :default, icon: :plus, href: new_task_path) do %>
+          Quick Task
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Organization Overview Card -->
+  <div class="mb-8">
+    <%= render OrganizationCardComponent.new(organization: ActsAsTenant.current_tenant) %>
+  </div>
+
+  <!-- Key Metrics Grid -->
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+    <!-- Tasks Overview -->
+    <%= render Ui::CardComponent.new(variant: :default, hover: true, clickable: true, class: "group") do %>
+      <%= link_to tasks_path, class: "block p-6" do %>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Total Tasks</p>
+            <p class="text-3xl font-bold text-foreground mt-2"><%= @dashboard_metrics.task_stats.total %></p>
+            <p class="text-sm text-success-600 mt-1">
+              <span class="font-medium"><%= @dashboard_metrics.task_stats.completed %></span> completed
+            </p>
+          </div>
+          <div class="p-3 bg-primary-100 dark:bg-primary-900/20 rounded-full">
+            <svg class="h-6 w-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+
+    <!-- Members Overview -->
+    <%= render Ui::CardComponent.new(variant: :default, hover: true, clickable: true, class: "group") do %>
+      <%= link_to members_path, class: "block p-6" do %>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Team Members</p>
+            <p class="text-3xl font-bold text-foreground mt-2"><%= OrganizationMembership.count %></p>
+            <p class="text-sm text-accent-600 mt-1">
+              <span class="font-medium"><%= OrganizationMembership.where(active: true).count %></span> active
+            </p>
+          </div>
+          <div class="p-3 bg-accent-100 dark:bg-accent-900/20 rounded-full">
+            <svg class="h-6 w-6 text-accent-600 dark:text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+            </svg>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+
+    <!-- Progress Card -->
+    <%= render Ui::CardComponent.new(variant: :default, class: "group") do %>
+      <div class="p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-muted-foreground">Progress</p>
+            <% total_tasks = @dashboard_metrics.task_stats.total %>
+            <% completed_tasks = @dashboard_metrics.task_stats.completed %>
+            <% progress = total_tasks > 0 ? (completed_tasks.to_f / total_tasks * 100).round : 0 %>
+            <p class="text-3xl font-bold text-foreground mt-2"><%= progress %>%</p>
+            <p class="text-sm text-muted-foreground mt-1">completion rate</p>
+          </div>
+          <div class="p-3 bg-success-100 dark:bg-success-900/20 rounded-full">
+            <svg class="h-6 w-6 text-success-600 dark:text-success-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Settings Card -->
+    <%= render Ui::CardComponent.new(variant: :default, hover: true, clickable: true, class: "group") do %>
+      <%= link_to settings_organization_path, class: "block p-6" do %>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Settings</p>
+            <p class="text-lg font-semibold text-foreground mt-2">Manage</p>
+            <p class="text-sm text-muted-foreground mt-1">organization settings</p>
+          </div>
+          <div class="p-3 bg-secondary-100 dark:bg-secondary-900/20 rounded-full">
+            <svg class="h-6 w-6 text-secondary-600 dark:text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <!-- Recent Activity Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Recent Tasks -->
+    <%= render Ui::CardComponent.new(variant: :default) do %>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-semibold text-foreground">Recent Tasks</h3>
+          <%= render Ui::ButtonComponent.new(variant: :ghost, size: :sm, href: tasks_path) do %>
+            View All
+          <% end %>
+        </div>
+        
+        <% recent_tasks = @dashboard_metrics.recent_tasks %>
+        <% if recent_tasks.any? %>
+          <div class="space-y-4">
+            <% recent_tasks.each do |task| %>
+              <div class="flex items-center justify-between py-3 border-b border-border last:border-b-0">
+                <div class="flex-1 min-w-0">
+                  <%= link_to task_path(task), class: "block group" do %>
+                    <p class="text-sm font-medium text-foreground group-hover:text-primary-600 truncate transition-colors">
+                      <%= task.title %>
+                    </p>
+                    <p class="text-xs text-muted-foreground mt-1">
+                      <%= task.created_at.strftime("%b %d, %Y") %>
+                    </p>
+                  <% end %>
+                </div>
+                <% status_classes = case task.status
+                   when 'completed' then 'bg-success-100 text-success-800 dark:bg-success-900/20 dark:text-success-200'
+                   when 'in_progress' then 'bg-accent-100 text-accent-800 dark:bg-accent-900/20 dark:text-accent-200'
+                   else 'bg-secondary-100 text-secondary-800 dark:bg-secondary-900/20 dark:text-secondary-200'
+                   end %>
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= status_classes %> ml-3">
+                  <%= task.status&.humanize || 'Pending' %>
+                </span>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="text-center py-8">
+            <svg class="mx-auto h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            <p class="text-sm text-muted-foreground mt-2">No tasks yet</p>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <!-- Team Activity -->
+    <%= render Ui::CardComponent.new(variant: :default) do %>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-semibold text-foreground">Team Activity</h3>
+          <%= render Ui::ButtonComponent.new(variant: :ghost, size: :sm, href: permission_audit_logs_path) do %>
+            View All
+          <% end %>
+        </div>
+        
+        <% recent_members = OrganizationMembership.includes(:user).order(created_at: :desc).limit(5) %>
+        <% if recent_members.any? %>
+          <div class="space-y-4">
+            <% recent_members.each do |membership| %>
+              <div class="flex items-center gap-4 py-3 border-b border-border last:border-b-0">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-primary-400 to-accent-400 flex items-center justify-center flex-shrink-0">
+                  <span class="text-sm font-medium text-white">
+                    <%= membership.user.email.first.upcase %>
+                  </span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-foreground truncate">
+                    <%= membership.user.email %>
+                  </p>
+                  <p class="text-xs text-muted-foreground">
+                    Joined <%= membership.created_at.strftime("%b %d, %Y") %>
+                  </p>
+                </div>
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-200">
+                  <%= membership.role&.titleize || 'Member' %>
+                </span>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="text-center py-8">
+            <svg class="mx-auto h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+            </svg>
+            <p class="text-sm text-muted-foreground mt-2">No team members yet</p>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <!-- No Organization State -->
+  <div class="min-h-[60vh] flex items-center justify-center">
+    <%= render Ui::CardComponent.new(variant: :default, padding: :xl, class: "max-w-md mx-auto text-center") do %>
+      <div class="py-8">
+        <svg class="mx-auto h-12 w-12 text-warning-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+        </svg>
+        <h3 class="mt-4 text-lg font-semibold text-foreground">No Organization Selected</h3>
+        <p class="mt-2 text-muted-foreground mb-6">
+          Please select an organization to access the dashboard and manage your projects.
+        </p>
+        <%= render Ui::ButtonComponent.new(variant: :default, href: organizations_path) do %>
+          Select Organization
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

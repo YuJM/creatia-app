@@ -1,0 +1,247 @@
+<div class="sprint-board-container" data-controller="sprint-board" data-sprint-id="<%= sprint.id %>">
+  <!-- Sprint Header -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+    <div class="p-6">
+      <div class="flex justify-between items-start">
+        <div>
+          <div class="flex items-center gap-3 mb-2">
+            <h2 class="text-2xl font-bold text-gray-900"><%= sprint.name %></h2>
+            <span class="px-3 py-1 rounded-full text-sm font-medium <%= sprint.status == 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700' %>">
+              <%= sprint.status.capitalize %>
+            </span>
+            <span class="text-gray-500">Sprint #<%= sprint.sprint_number %></span>
+          </div>
+          
+          <div class="flex items-center gap-6 text-sm text-gray-600">
+            <div class="flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <%= sprint.start_date&.strftime('%b %d') %> - <%= sprint.end_date&.strftime('%b %d, %Y') %>
+            </div>
+            
+            <div class="flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <%= days_remaining %> days remaining
+            </div>
+            
+            <div class="flex items-center gap-1">
+              <%= velocity_trend_icon %>
+              Velocity: <%= sprint.actual_velocity || 0 %>/<%= sprint.planned_velocity || 0 %>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <%= link_to edit_sprint_path(sprint), 
+              class: "px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50",
+              data: { turbo_frame: "modal" } do %>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Sprint Settings
+          <% end %>
+          
+          <%= link_to new_sprint_task_path(sprint), 
+              class: "px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2",
+              data: { turbo_frame: "modal" } do %>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Task
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Sprint Metrics -->
+      <div class="grid grid-cols-5 gap-4 mt-6 pt-6 border-t border-gray-200">
+        <div>
+          <div class="text-sm text-gray-600">Progress</div>
+          <div class="mt-1">
+            <div class="flex items-center gap-2">
+              <div class="text-2xl font-bold text-gray-900"><%= sprint_progress_percentage %>%</div>
+              <div class="flex-1">
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-blue-600 h-2 rounded-full" style="width: <%= sprint_progress_percentage %>%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <div class="text-sm text-gray-600">Story Points</div>
+          <div class="text-2xl font-bold text-gray-900 mt-1">
+            <%= sprint.completed_points || 0 %>/<%= sprint.committed_points || 0 %>
+          </div>
+        </div>
+        
+        <div>
+          <div class="text-sm text-gray-600">Tasks</div>
+          <div class="text-2xl font-bold text-gray-900 mt-1">
+            <%= sprint.completed_tasks || 0 %>/<%= sprint.total_tasks || 0 %>
+          </div>
+        </div>
+        
+        <div>
+          <div class="text-sm text-gray-600">Team Capacity</div>
+          <div class="text-2xl font-bold text-gray-900 mt-1">
+            <%= sprint.team_capacity || 0 %> hrs
+          </div>
+        </div>
+        
+        <div>
+          <div class="text-sm text-gray-600">Health Score</div>
+          <div class="text-2xl font-bold <%= sprint.health_score >= 80 ? 'text-green-600' : sprint.health_score >= 50 ? 'text-yellow-600' : 'text-red-600' %> mt-1">
+            <%= sprint.health_score || 100 %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sprint Board -->
+  <div class="bg-gray-50 rounded-lg p-4">
+    <div class="grid grid-cols-5 gap-4" data-sprint-board-target="columns">
+      <% status_columns.each do |column| %>
+        <div class="sprint-column" data-status="<%= column[:key] %>">
+          <!-- Column Header -->
+          <div class="<%= column_header_class(column[:color]) %> rounded-t-lg px-4 py-3">
+            <div class="flex justify-between items-center">
+              <h3 class="font-semibold"><%= column[:label] %></h3>
+              <span class="text-sm font-medium">
+                <%= tasks_by_status[column[:key]].size %>
+              </span>
+            </div>
+          </div>
+          
+          <!-- Column Body -->
+          <div class="bg-white border-x border-b border-gray-200 rounded-b-lg min-h-[400px] p-2"
+               data-sprint-board-target="dropzone"
+               data-status="<%= column[:key] %>">
+            
+            <% tasks_by_status[column[:key]].each do |task| %>
+              <%= turbo_frame_tag dom_id(task, :board) do %>
+                <div class="task-card bg-white rounded-lg border border-gray-200 p-3 mb-2 cursor-move hover:shadow-md transition-shadow"
+                     draggable="true"
+                     data-task-id="<%= task.id %>"
+                     data-action="dragstart->sprint-board#dragStart dragend->sprint-board#dragEnd">
+                  
+                  <!-- Task Header -->
+                  <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-2">
+                      <span class="text-lg"><%= task_type_icon(task.task_type) %></span>
+                      <%= link_to task.task_id, 
+                          task_path(task),
+                          class: "text-xs font-mono text-gray-500 hover:text-blue-600",
+                          data: { turbo_frame: "_top" } %>
+                    </div>
+                    <span class="<%= priority_color(task.priority) %>" title="<%= task.priority.capitalize %> Priority">
+                      <%= priority_icon(task.priority) %>
+                    </span>
+                  </div>
+                  
+                  <!-- Task Title -->
+                  <h4 class="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                    <%= task.title %>
+                  </h4>
+                  
+                  <!-- Task Footer -->
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                      <% if task.assignee %>
+                        <% if task.assignee[:avatar_url] %>
+                          <img src="<%= task.assignee[:avatar_url] %>" 
+                               alt="<%= task.assignee[:name] %>"
+                               title="<%= task.assignee[:name] %>"
+                               class="w-6 h-6 rounded-full">
+                        <% else %>
+                          <div class="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center text-xs text-white"
+                               title="<%= task.assignee[:name] %>">
+                            <%= task.assignee[:name].first.upcase %>
+                          </div>
+                        <% end %>
+                      <% else %>
+                        <div class="w-6 h-6 rounded-full border-2 border-dashed border-gray-300"></div>
+                      <% end %>
+                      
+                      <% if task.labels&.any? %>
+                        <div class="flex gap-1">
+                          <% task.labels.first(2).each do |label| %>
+                            <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                              <%= label[:name] %>
+                            </span>
+                          <% end %>
+                        </div>
+                      <% end %>
+                    </div>
+                    
+                    <% if task.story_points %>
+                      <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                        <%= format_points(task.story_points) %> pts
+                      </span>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            <% end %>
+            
+            <!-- Drop Zone Indicator -->
+            <div class="hidden border-2 border-dashed border-blue-400 bg-blue-50 rounded-lg p-4 text-center"
+                 data-sprint-board-target="dropIndicator">
+              <span class="text-blue-600 text-sm">Drop task here</span>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Sprint Footer Actions -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 mt-6 p-4">
+    <div class="flex justify-between items-center">
+      <div class="flex gap-4">
+        <%= link_to sprint_burndown_path(sprint), 
+            class: "text-blue-600 hover:text-blue-700 font-medium text-sm" do %>
+          📊 Burndown Chart
+        <% end %>
+        
+        <%= link_to sprint_retrospective_path(sprint), 
+            class: "text-blue-600 hover:text-blue-700 font-medium text-sm" do %>
+          💭 Retrospective
+        <% end %>
+        
+        <%= link_to sprint_reports_path(sprint), 
+            class: "text-blue-600 hover:text-blue-700 font-medium text-sm" do %>
+          📈 Reports
+        <% end %>
+      </div>
+      
+      <div class="flex gap-2">
+        <% if sprint.status == 'active' %>
+          <%= button_to "Complete Sprint", 
+              complete_sprint_path(sprint),
+              method: :patch,
+              data: { 
+                confirm: "Are you sure you want to complete this sprint?",
+                turbo_method: :patch 
+              },
+              class: "px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700" %>
+        <% elsif sprint.status == 'planning' %>
+          <%= button_to "Start Sprint", 
+              start_sprint_path(sprint),
+              method: :patch,
+              data: { turbo_method: :patch },
+              class: "px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

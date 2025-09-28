@@ -1,0 +1,63 @@
+<div class="min-h-screen bg-background">
+  <!-- Header Section -->
+  <div class="border-b border-border bg-card/50 backdrop-blur-sm">
+    <div class="container mx-auto px-6 py-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 class="text-4xl font-bold text-foreground tracking-tight">Organizations</h1>
+          <p class="mt-2 text-muted-foreground">Manage your organizations and workspaces</p>
+        </div>
+        <% if policy(Organization).create? %>
+          <%= link_to new_organization_path, 
+              class: "inline-flex items-center justify-center px-6 py-3 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md active:scale-95" do %>
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            New Organization
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-6 py-12">
+    <% if @organizations.any? %>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <% @organizations.each do |org| %>
+          <div class="group relative bg-card border border-border rounded-xl p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-300">
+            <%= render OrganizationCardComponent.new(
+              organization: org,
+              action_path: switch_organization_path(org),
+              action_method: :post
+            ) %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <!-- Empty State -->
+      <div class="max-w-2xl mx-auto">
+        <div class="bg-card border border-border rounded-2xl p-12 text-center">
+          <div class="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-6">
+            <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-semibold text-foreground mb-3">No organizations yet</h3>
+          <p class="text-muted-foreground mb-8 max-w-md mx-auto">
+            Create your first organization to start collaborating with your team and managing projects.
+          </p>
+          <% if policy(Organization).create? %>
+            <%= link_to new_organization_path, 
+                class: "inline-flex items-center justify-center px-8 py-4 text-base font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95" do %>
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Create Your First Organization
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

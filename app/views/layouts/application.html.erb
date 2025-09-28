@@ -1,45 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html class="h-full">
   <head>
-    <title><%= content_for(:title) || "Creatia App" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <%= csrf_meta_tags %>
-    <%= csp_meta_tag %>
-
-    <%= yield :head %>
-
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
-    <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
-
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
-    <%= javascript_importmap_tags %>
-    <% if Rails.env.development? %>
-      <%= javascript_include_tag "hotwire-livereload", defer: true %>
-    <% end %>
+    <%= render 'layouts/head' %>
   </head>
 
-  <body>
-    <% if notice.present? %>
-      <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-        <span class="block sm:inline"><%= notice %></span>
+  <body class="h-full bg-background text-foreground antialiased" id="layout-application" data-layout="application">
+    <div class="min-h-full">
+      <!-- Navigation -->
+      <%= render 'layouts/navbar' if user_signed_in? %>
+      
+      <!-- Flash messages -->
+      <div class="relative z-40">
+        <%= render 'layouts/flash_messages' %>
       </div>
-    <% end %>
-    
-    <% if alert.present? %>
-      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-        <span class="block sm:inline"><%= alert %></span>
-      </div>
-    <% end %>
-    
-    <main class="container mx-auto mt-28 px-5 flex">
-      <%= yield %>
-    </main>
+      
+      <!-- Main content -->
+      <main class="<%= user_signed_in? ? 'lg:pl-72' : '' %>">
+        <div class="px-4 py-6 sm:px-6 lg:px-8">
+          <%= yield %>
+        </div>
+      </main>
+    </div>
   </body>
 </html>

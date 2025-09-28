@@ -1,0 +1,246 @@
+<%# Dashboard Widget Component - 개인화 가능한 대시보드 위젯 %>
+<div class="<%= widget_classes %>"
+     style="<%= widget_style %>"
+     data-controller="dashboard-widget"
+     data-dashboard-widget-id-value="<%= widget_id %>"
+     data-dashboard-widget-enabled-value="<%= widget_enabled? %>"
+     data-dashboard-widget-configurable-value="<%= widget_configurable? %>"
+     data-widget-id="<%= widget_id %>">
+
+  <!-- Widget Header -->
+  <div class="widget-header bg-gray-50 px-4 py-3 border-b border-gray-200">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <!-- Drag Handle -->
+        <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600"
+             data-action="mousedown->dashboard-widget#startDrag">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+          </svg>
+        </div>
+
+        <!-- Widget Title -->
+        <h3 class="text-sm font-medium text-gray-900">
+          <%= widget_name %>
+        </h3>
+
+        <!-- Widget Status Indicator -->
+        <% unless widget_enabled? %>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+            비활성
+          </span>
+        <% end %>
+      </div>
+
+      <!-- Widget Controls -->
+      <div class="flex items-center space-x-2">
+        <!-- Refresh Button -->
+        <button type="button"
+                class="text-gray-400 hover:text-gray-600 p-1 rounded"
+                data-action="click->dashboard-widget#refresh"
+                title="새로고침">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+
+        <!-- Settings Button (if configurable) -->
+        <% if widget_configurable? %>
+          <button type="button"
+                  class="text-gray-400 hover:text-gray-600 p-1 rounded"
+                  data-action="click->dashboard-widget#showSettings"
+                  title="설정">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        <% end %>
+
+        <!-- More Options -->
+        <div class="relative" data-controller="dropdown">
+          <button type="button"
+                  class="text-gray-400 hover:text-gray-600 p-1 rounded"
+                  data-action="click->dropdown#toggle"
+                  title="더보기">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+            </svg>
+          </button>
+
+          <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden"
+               data-dropdown-target="menu">
+            <button class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    data-action="click->dashboard-widget#toggleEnable">
+              <span class="mr-2">
+                <% if widget_enabled? %>
+                  ⏸️ 비활성화
+                <% else %>
+                  ▶️ 활성화
+                <% end %>
+              </span>
+            </button>
+            
+            <% if widget_configurable? %>
+              <button class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      data-action="click->dashboard-widget#showSettings">
+                <span class="mr-2">⚙️</span>
+                위젯 설정
+              </button>
+            <% end %>
+            
+            <button class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    data-action="click->dashboard-widget#duplicate">
+              <span class="mr-2">📋</span>
+              복제
+            </button>
+            
+            <hr class="my-1">
+            
+            <button class="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+                    data-action="click->dashboard-widget#remove">
+              <span class="mr-2">🗑️</span>
+              제거
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Widget Content -->
+  <div class="widget-body" data-dashboard-widget-target="content">
+    <% if widget_enabled? %>
+      <%= widget_content %>
+    <% else %>
+      <div class="widget-content p-6 text-center text-gray-500">
+        <div class="text-3xl mb-2">⏸️</div>
+        <p class="text-sm">위젯이 비활성화되어 있습니다</p>
+        <button type="button"
+                class="mt-2 text-xs text-blue-600 hover:text-blue-800"
+                data-action="click->dashboard-widget#toggleEnable">
+          활성화하기
+        </button>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="hidden absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center"
+       data-dashboard-widget-target="loadingOverlay">
+    <div class="flex items-center space-x-3">
+      <svg class="animate-spin h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span class="text-sm text-gray-600">로딩 중...</span>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div class="hidden absolute inset-0 bg-white flex items-center justify-center"
+       data-dashboard-widget-target="errorState">
+    <div class="text-center">
+      <div class="text-3xl mb-2">⚠️</div>
+      <p class="text-sm text-gray-600 mb-3">위젯 로딩에 실패했습니다</p>
+      <button type="button"
+              class="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+              data-action="click->dashboard-widget#refresh">
+        다시 시도
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Widget Settings Modal (if configurable) -->
+<% if widget_configurable? %>
+  <div class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+       data-dashboard-widget-target="settingsModal">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-medium text-gray-900">
+            <%= widget_name %> 설정
+          </h3>
+          <button type="button"
+                  class="text-gray-400 hover:text-gray-600"
+                  data-action="click->dashboard-widget#closeSettings">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Settings Form -->
+        <form data-dashboard-widget-target="settingsForm"
+              data-action="submit->dashboard-widget#saveSettings">
+          
+          <!-- Common Settings -->
+          <div class="space-y-4">
+            <!-- Auto Refresh -->
+            <% if widget_settings[:auto_refresh] != false %>
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-gray-700">자동 새로고침</label>
+                <input type="checkbox" 
+                       name="settings[auto_refresh]"
+                       <%= 'checked' if widget_settings[:auto_refresh] %>
+                       class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+              </div>
+              
+              <div class="ml-4" data-dashboard-widget-target="refreshSettings">
+                <label class="block text-sm text-gray-600">새로고침 간격 (초)</label>
+                <input type="number" 
+                       name="settings[refresh_interval]"
+                       value="<%= (widget_settings[:refresh_interval] || 30000) / 1000 %>"
+                       min="10" max="300"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+              </div>
+            <% end %>
+
+            <!-- Widget-specific settings will be rendered here -->
+            <div data-dashboard-widget-target="specificSettings">
+              <%= render_widget_specific_settings %>
+            </div>
+          </div>
+
+          <!-- Modal Actions -->
+          <div class="flex items-center justify-end space-x-3 mt-6">
+            <button type="button"
+                    class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
+                    data-action="click->dashboard-widget#closeSettings">
+              취소
+            </button>
+            <button type="submit"
+                    class="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700">
+              저장
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<style>
+  .widget-small { min-height: 200px; }
+  .widget-medium { min-height: 300px; }
+  .widget-large { min-height: 400px; }
+  
+  .widget-category-analytics { border-left: 4px solid #3b82f6; }
+  .widget-category-tasks { border-left: 4px solid #10b981; }
+  .widget-category-activity { border-left: 4px solid #f59e0b; }
+  .widget-category-sprints { border-left: 4px solid #8b5cf6; }
+  .widget-category-planning { border-left: 4px solid #ef4444; }
+  .widget-category-team { border-left: 4px solid #06b6d4; }
+  .widget-category-communication { border-left: 4px solid #84cc16; }
+  .widget-category-productivity { border-left: 4px solid #f97316; }
+  
+  .widget-disabled {
+    opacity: 0.6;
+  }
+  
+  .calendar-grid {
+    font-size: 12px;
+  }
+</style>

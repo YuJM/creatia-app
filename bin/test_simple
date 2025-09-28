@@ -1,0 +1,109 @@
+#!/bin/bash
+
+# 색상 설정
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${GREEN}🔧 간단한 시스템 테스트 실행${NC}"
+
+# 기존 프로세스 정리
+echo -e "${YELLOW}기존 프로세스 정리 중...${NC}"
+pkill -f "rails server" 2>/dev/null
+pkill -f "puma" 2>/dev/null
+pkill -f "caddy" 2>/dev/null
+sleep 2
+
+# 테스트 데이터베이스 준비
+echo -e "${YELLOW}테스트 데이터베이스 준비 중...${NC}"
+RAILS_ENV=test bin/rails db:prepare
+
+# Rails 서버를 포그라운드로 시작 (백그라운드 문제 해결)
+echo -e "${YELLOW}Rails 테스트 서버 시작 중...${NC}"
+RAILS_ENV=test bin/rails server -p 3000 > /tmp/rails_test.log 2>&1 &
+RAILS_PID=$!
+
+# Rails 서버가 준비될 때까지 대기
+echo -e "${YELLOW}Rails 서버 시작 대기 중...${NC}"
+for i in {1..30}; do
+  if curl -s http://localhost:3000/up > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Rails 서버 준비 완료${NC}"
+    break
+  fi
+  echo -n "."
+  sleep 1
+done
+
+# Rails 서버 상태 확인
+if ! ps -p $RAILS_PID > /dev/null; then
+  echo -e "${RED}❌ Rails 서버 시작 실패${NC}"
+  cat /tmp/rails_test.log
+  exit 1
+fi
+
+# Caddy 시작
+echo -e "${YELLOW}Caddy 프록시 서버 시작 중...${NC}"
+caddy run --config Caddyfile.test --adapter caddyfile > /tmp/caddy.log 2>&1 &
+CADDY_PID=$!
+
+# Caddy가 준비될 때까지 대기
+sleep 3
+
+# Caddy 상태 확인
+if ps -p $CADDY_PID > /dev/null; then
+  echo -e "${GREEN}✅ Caddy 준비 완료${NC}"
+else
+  echo -e "${RED}❌ Caddy 시작 실패${NC}"
+  cat /tmp/caddy.log
+  kill $RAILS_PID 2>/dev/null
+  exit 1
+fi
+
+# 서버 상태 확인
+echo -e "${YELLOW}서버 상태 확인 중...${NC}"
+echo "Rails PID: $RAILS_PID"
+echo "Caddy PID: $CADDY_PID"
+
+# 간단한 연결 테스트
+echo -e "${YELLOW}연결 테스트 중...${NC}"
+if curl -s http://localhost:3000/up > /dev/null; then
+  echo -e "${GREEN}✅ Rails 직접 연결 성공${NC}"
+else
+  echo -e "${RED}❌ Rails 직접 연결 실패${NC}"
+fi
+
+if curl -s http://localhost.test:8080/up > /dev/null; then
+  echo -e "${GREEN}✅ Caddy 프록시 연결 성공${NC}"
+else
+  echo -e "${RED}❌ Caddy 프록시 연결 실패${NC}"
+fi
+
+# 테스트 실행
+echo ""
+echo -e "${GREEN}🚀 시스템 테스트 실행 중...${NC}"
+echo ""
+
+# 간단한 테스트만 실행
+bundle exec rspec spec/system/basic_functionality_spec.rb --format documentation
+TEST_EXIT_CODE=$?
+
+# 정리
+echo ""
+echo -e "${YELLOW}서버 정리 중...${NC}"
+kill $RAILS_PID 2>/dev/null
+kill $CADDY_PID 2>/dev/null
+
+if [ $TEST_EXIT_CODE -eq 0 ]; then
+  echo -e "${GREEN}✅ 테스트 완료${NC}"
+else
+  echo -e "${RED}❌ 테스트 실패 (Exit code: $TEST_EXIT_CODE)${NC}"
+  echo ""
+  echo -e "${YELLOW}Rails 로그:${NC}"
+  tail -20 /tmp/rails_test.log
+  echo ""
+  echo -e "${YELLOW}Caddy 로그:${NC}"
+  tail -10 /tmp/caddy.log
+fi
+
+exit $TEST_EXIT_CODE

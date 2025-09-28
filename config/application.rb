@@ -21,7 +21,9 @@ module CreatiaApp
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    config.time_zone = "Asia/Seoul"
+    config.i18n.default_locale = :ko
+    config.i18n.available_locales = [:ko, :en]
     # config.eager_load_paths << Rails.root.join("extras")
     
     # Use UUID as primary key for all models
@@ -31,6 +33,14 @@ module CreatiaApp
     
     # Load middleware path
     config.autoload_paths << Rails.root.join('app/middleware')
+    
+    # Load lib directories for dry-rb
+    config.autoload_paths << Rails.root.join('app/lib')
+    config.autoload_paths << Rails.root.join('app/repositories')
+    config.autoload_paths << Rails.root.join('app/contracts')
+    config.autoload_paths << Rails.root.join('app/transactions')
+    config.autoload_paths << Rails.root.join('app/value_objects')
+    config.autoload_paths << Rails.root.join('app/schemas')
     
     # Multi-tenant security middleware (프로덕션과 필요시에만)
     if Rails.env.production? || ENV['ENABLE_RATE_LIMITING'] == 'true'
@@ -48,12 +58,14 @@ module CreatiaApp
       }
     }
     
-    # Session security
-    config.session_store :cookie_store, 
-                        key: '_creatia_session',
-                        secure: Rails.env.production?,
-                        httponly: true,
-                        same_site: :lax,
-                        expire_after: 8.hours
+    # HTTP Basic Authentication middleware for development and test environments
+    if Rails.env.development? || Rails.env.test?
+      require Rails.root.join('app/middleware/basic_auth_middleware')
+      config.middleware.insert_before Warden::Manager, BasicAuthMiddleware
+    end
+    
+    # Session security - 환경별 설정은 environments/*.rb에서 관리
+    # development.rb: domain: '.creatia.local'
+    # production.rb: domain을 환경변수로 설정 가능
   end
 end

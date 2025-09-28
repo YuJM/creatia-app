@@ -1,0 +1,313 @@
+<%# Dashboard Metrics Component - 실시간 메트릭 표시 %>
+<%= turbo_frame_tag "dashboard_metrics",
+                    class: "dashboard-metrics",
+                    data: {
+                      controller: "dashboard-metrics",
+                      dashboard_metrics_auto_refresh_value: true,
+                      dashboard_metrics_refresh_interval_value: 30000,
+                      turbo_permanent: true
+                    } do %>
+  
+  <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-white">실시간 팀 메트릭</h2>
+          <p class="text-blue-100 text-sm mt-1">
+            <%= Time.current.strftime("%Y년 %m월 %d일 %H:%M") %> 기준
+          </p>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+          <button type="button" 
+                  data-action="click->dashboard-metrics#refresh"
+                  class="text-blue-100 hover:text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
+                  title="새로고침">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+          
+          <div class="text-blue-100 text-xs">
+            <span data-dashboard-metrics-target="lastUpdated">방금 전</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="p-6">
+      <!-- 핵심 지표 그리드 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- 팀 속도 -->
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border-l-4 border-blue-500">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-medium text-gray-700">팀 속도</h3>
+            <span class="text-2xl"><%= velocity_status[:icon] %></span>
+          </div>
+          
+          <div class="flex items-end space-x-2">
+            <span class="text-3xl font-bold text-blue-600">
+              <%= dashboard_metrics.velocity.round(1) %>
+            </span>
+            <span class="text-sm text-gray-500 mb-1">작업/주</span>
+          </div>
+          
+          <div class="mt-2">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= velocity_status[:class] %>">
+              <%= velocity_status[:text] %>
+            </span>
+          </div>
+          
+          <p class="text-xs text-gray-600 mt-2">
+            <%= velocity_status[:description] %>
+          </p>
+        </div>
+        
+        <!-- 용량 활용도 -->
+        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-l-4 border-green-500">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-medium text-gray-700">용량 활용도</h3>
+            <span class="text-2xl">⚖️</span>
+          </div>
+          
+          <% if show_capacity_utilization? %>
+            <div class="flex items-end space-x-2">
+              <span class="text-3xl font-bold text-green-600">
+                <%= capacity_utilization[:percentage] %>%
+              </span>
+            </div>
+            
+            <div class="mt-2">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= capacity_utilization[:status][:class] %>">
+                <%= capacity_utilization[:status][:text] %>
+              </span>
+            </div>
+            
+            <p class="text-xs text-gray-600 mt-2">
+              <%= capacity_utilization[:status][:description] %>
+            </p>
+          <% else %>
+            <div class="flex items-end space-x-2">
+              <span class="text-3xl font-bold text-gray-400">-</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">데이터 없음</p>
+          <% end %>
+        </div>
+        
+        <!-- 완료율 -->
+        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border-l-4 border-purple-500">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-medium text-gray-700">완료율</h3>
+            <span class="text-2xl">📊</span>
+          </div>
+          
+          <div class="flex items-end space-x-2">
+            <span class="text-3xl font-bold text-purple-600">
+              <%= dashboard_metrics.completion_rate.round(1) %>%
+            </span>
+          </div>
+          
+          <% if show_completion_trend? %>
+            <div class="mt-2">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= completion_trend[:class] %> bg-gray-50">
+                <%= completion_trend[:icon] %> <%= completion_trend[:trend] %>
+              </span>
+            </div>
+            
+            <p class="text-xs text-gray-600 mt-2">
+              <%= completion_trend[:description] %>
+            </p>
+          <% else %>
+            <p class="text-xs text-gray-500 mt-2">트렌드 분석 준비 중</p>
+          <% end %>
+        </div>
+        
+        <!-- 평균 처리 시간 -->
+        <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border-l-4 border-yellow-500">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-medium text-gray-700">평균 처리 시간</h3>
+            <span class="text-2xl">⏱️</span>
+          </div>
+          
+          <div class="flex items-end space-x-2">
+            <span class="text-3xl font-bold text-yellow-600">
+              <%= dashboard_metrics.average_cycle_time.round(1) %>
+            </span>
+            <span class="text-sm text-gray-500 mb-1">일</span>
+          </div>
+          
+          <div class="mt-2">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= cycle_time_status[:class] %> bg-gray-50">
+              <%= cycle_time_status[:status] %>
+            </span>
+          </div>
+          
+          <p class="text-xs text-gray-600 mt-2">
+            <%= cycle_time_status[:description] %>
+          </p>
+        </div>
+      </div>
+      
+      <!-- 세부 정보 섹션 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 오늘의 진행 상황 -->
+        <div class="bg-gray-50 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">📅 오늘의 진행 상황</h3>
+          
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+              <div>
+                <p class="text-sm font-medium text-gray-700">완료된 작업</p>
+                <p class="text-xs text-gray-500">오늘</p>
+              </div>
+              <div class="text-right">
+                <p class="text-2xl font-bold text-blue-600">
+                  <%= today_progress[:today] %>
+                </p>
+                <div class="flex items-center space-x-1">
+                  <span class="text-xs <%= today_progress[:performance][:class] %>">
+                    <%= today_progress[:performance][:icon] %>
+                    <%= today_progress[:performance][:status] %>
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+              <div>
+                <p class="text-sm font-medium text-gray-700">주간 평균</p>
+                <p class="text-xs text-gray-500">지난 7일</p>
+              </div>
+              <div class="text-right">
+                <p class="text-2xl font-bold text-gray-600">
+                  <%= today_progress[:average] %>
+                </p>
+                <p class="text-xs text-gray-500">작업/일</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 업무 분배 현황 -->
+        <div class="bg-gray-50 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">👥 업무 분배 현황</h3>
+          
+          <% if show_workload_balance? %>
+            <div class="mb-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-700">분배 균형도</span>
+                <span class="text-lg font-bold <%= workload_balance[:class] %>">
+                  <%= workload_balance[:score] %>%
+                </span>
+              </div>
+              
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="<%= workload_balance[:status] == '균형' ? 'bg-green-500' : workload_balance[:status] == '보통' ? 'bg-yellow-500' : 'bg-red-500' %> h-2 rounded-full transition-all duration-300"
+                     style="width: <%= workload_balance[:score] %>%"></div>
+              </div>
+              
+              <p class="text-xs text-gray-600 mt-2">
+                <%= workload_balance[:description] %>
+              </p>
+            </div>
+            
+            <!-- 업무량 분포 -->
+            <% if dashboard_metrics.workload_distribution.present? %>
+              <div class="space-y-2">
+                <% dashboard_metrics.workload_distribution.sort_by { |_, hours| -hours }.first(5).each do |user_id, hours| %>
+                  <% user = User.find_by(id: user_id) %>
+                  <% next unless user %>
+                  
+                  <div class="flex items-center justify-between p-2 bg-white rounded shadow-sm">
+                    <div class="flex items-center space-x-2">
+                      <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span class="text-white text-xs font-medium">
+                          <%= user.email.first.upcase %>
+                        </span>
+                      </div>
+                      <span class="text-sm text-gray-700">
+                        <%= truncate(user.email, length: 20) %>
+                      </span>
+                    </div>
+                    
+                    <div class="text-right">
+                      <span class="text-sm font-medium text-gray-900">
+                        <%= hours.round(1) %>h
+                      </span>
+                      <% if hours > 40 %>
+                        <span class="text-xs text-red-600">⚠️</span>
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          <% else %>
+            <p class="text-sm text-gray-500">업무 분배 데이터를 수집하고 있습니다...</p>
+          <% end %>
+        </div>
+      </div>
+      
+      <!-- 알림 및 경고 섹션 -->
+      <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 지연 작업 알림 -->
+        <div class="p-4 rounded-lg border-l-4 <%= overdue_alert_level[:level] == 'safe' ? 'border-green-500 bg-green-50' : overdue_alert_level[:level] == 'warning' ? 'border-yellow-500 bg-yellow-50' : 'border-red-500 bg-red-50' %>">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <% if overdue_alert_level[:level] == 'safe' %>
+                <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              <% else %>
+                <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+              <% end %>
+            </div>
+            <div class="ml-3">
+              <h4 class="text-sm font-medium <%= overdue_alert_level[:class] %>">
+                지연 작업 현황
+              </h4>
+              <p class="text-sm <%= overdue_alert_level[:class] %>">
+                <%= overdue_alert_level[:message] %>
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 우선순위 작업 요약 -->
+        <div class="p-4 rounded-lg border-l-4 border-purple-500 bg-purple-50">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <span class="text-xl">🔥</span>
+            </div>
+            <div class="ml-3">
+              <h4 class="text-sm font-medium text-purple-800">
+                높은 우선순위 작업
+              </h4>
+              <p class="text-sm text-purple-700">
+                <span class="font-semibold <%= priority_task_summary[:urgency_level][:class] %>">
+                  <%= priority_task_summary[:count] %>개
+                </span>
+                의 긴급/높음 우선순위 작업이 있습니다
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 로딩 상태 -->
+    <div class="hidden absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center" 
+         data-dashboard-metrics-target="loadingOverlay">
+      <div class="flex items-center space-x-3">
+        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-sm text-gray-600">메트릭을 업데이트하고 있습니다...</span>
+      </div>
+    </div>
+  </div>
+<% end %>

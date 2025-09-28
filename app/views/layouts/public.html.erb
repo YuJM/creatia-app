@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html class="h-full">
+  <head>
+    <%= render 'layouts/head' %>
+  </head>
+
+  <body class="min-h-screen bg-background flex flex-col" id="layout-public" data-layout="public">
+    <%= render 'layouts/flash_messages' %>
+    
+    <!-- Public Navigation -->
+    <nav class="bg-card border-b border-border">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <%= link_to root_path, class: "flex items-center gap-2" do %>
+              <div class="h-8 w-8 bg-gradient-to-r from-primary to-accent rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold">C</span>
+              </div>
+              <span class="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Creatia</span>
+            <% end %>
+          </div>
+          
+          <div class="flex items-center space-x-4">
+            <% if user_signed_in? %>
+              <%= link_to "대시보드", root_path, class: "text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors" %>
+              <%= link_to "로그아웃", AppRoutes::Auth.logout_url, 
+                  method: :delete, 
+                  data: { turbo: false },
+                  class: "bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm font-medium transition-all" %>
+            <% else %>
+              <%= link_to "로그인", AppRoutes::Auth.login_url, 
+                  data: { turbo: false },
+                  class: "text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors" %>
+              <%= link_to "회원가입", AppRoutes::Auth.register_url, 
+                  data: { turbo: false },
+                  class: "bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm font-medium transition-all shadow-sm hover:shadow-md" %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="flex-grow">
+      <%= yield %>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-card border-t border-border mt-auto">
+      <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div class="col-span-1 md:col-span-2">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="h-10 w-10 bg-gradient-to-r from-primary to-accent rounded-xl flex items-center justify-center">
+                <span class="text-white font-bold text-xl">C</span>
+              </div>
+              <h3 class="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Creatia</h3>
+            </div>
+            <p class="text-muted-foreground">혁신적인 프로젝트 관리 플랫폼으로 팀의 생산성을 극대화하세요.</p>
+          </div>
+          
+          <div>
+            <h4 class="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">제품</h4>
+            <ul class="space-y-2">
+              <li><%= link_to "기능", "#features", class: "text-muted-foreground hover:text-primary transition-colors" %></li>
+              <li><%= link_to "가격", "#pricing", class: "text-muted-foreground hover:text-primary transition-colors" %></li>
+              <li><%= link_to "고객사례", "#testimonials", class: "text-muted-foreground hover:text-primary transition-colors" %></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 class="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">회사</h4>
+            <ul class="space-y-2">
+              <li><%= link_to "소개", "#about", class: "text-muted-foreground hover:text-primary transition-colors" %></li>
+              <li><%= link_to "블로그", "#blog", class: "text-muted-foreground hover:text-primary transition-colors" %></li>
+              <li><%= link_to "문의", "#contact", class: "text-muted-foreground hover:text-primary transition-colors" %></li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="mt-8 pt-8 border-t border-border">
+          <p class="text-center text-muted-foreground text-sm">
+            &copy; <%= Date.current.year %> Creatia. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

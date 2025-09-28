@@ -1,0 +1,29 @@
+ko:
+  dry_validation:
+    errors:
+      filled?: "필수 항목입니다"
+      str?: "문자열이어야 합니다"
+      hash?: "해시 객체여야 합니다"
+      array?: "배열이어야 합니다"
+      bool?: "불리언 값이어야 합니다"
+      key?: "필수 필드입니다"
+      format?: "형식이 올바르지 않습니다"
+      size?:
+        arg:
+          default: "크기는 %{num}이어야 합니다"
+          range: "크기는 %{left}에서 %{right} 사이여야 합니다"
+      rules:
+        task_id:
+          format: "Task ID는 SHOP-123 형식이어야 합니다"
+        email:
+          format: "올바른 이메일 형식이 아닙니다"
+        ref:
+          format: "브랜치명에 유효한 Task ID가 없습니다"
+        commits:
+          format: "커밋 메시지에 Task ID가 포함되어야 합니다"
+        end_date:
+          after_start: "종료일은 시작일 이후여야 합니다"
+        tasks_count:
+          minimum: "스프린트에 최소 1개 이상의 태스크가 필요합니다"
+        team_size:
+          minimum: "스프린트에 최소 1명 이상의 팀원이 필요합니다"

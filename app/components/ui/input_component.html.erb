@@ -1,0 +1,44 @@
+<div class="<%= wrapper_classes %>">
+  <% if show_label? %>
+    <label for="<%= id %>" class="<%= label_classes %>">
+      <%= label %>
+      <% if required %>
+        <span class="text-danger-500 ml-1">*</span>
+      <% end %>
+    </label>
+  <% end %>
+  
+  <div class="<%= input_wrapper_classes %>">
+    <% if prefix.present? %>
+      <div class="<%= prefix_suffix_classes_for_element %> left-0">
+        <% if prefix.is_a?(Symbol) %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<%= icon_path(prefix) %>"></path>
+          </svg>
+        <% else %>
+          <%= prefix %>
+        <% end %>
+      </div>
+    <% end %>
+    
+    <input <%= tag.attributes(input_attributes) %> />
+    
+    <% if suffix.present? %>
+      <div class="<%= prefix_suffix_classes_for_element %> right-0">
+        <% if suffix.is_a?(Symbol) %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<%= icon_path(suffix) %>"></path>
+          </svg>
+        <% else %>
+          <%= suffix %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+  
+  <% if show_help_text? %>
+    <p class="<%= help_text_classes %>">
+      <%= display_help_text %>
+    </p>
+  <% end %>
+</div>

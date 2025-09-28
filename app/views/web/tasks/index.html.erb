@@ -1,0 +1,274 @@
+<!-- Page Header -->
+<div class="mb-8">
+  <div class="sm:flex sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-4xl font-bold text-foreground tracking-tight">Tasks</h1>
+      <p class="mt-2 text-base text-muted-foreground">
+        Manage all project tasks and track progress efficiently.
+      </p>
+    </div>
+    <div class="mt-4 sm:mt-0">
+      <%= render Ui::ButtonComponent.new(
+            variant: :primary,
+            size: :default,
+            icon: :plus,
+            href: new_task_path
+          ) do %>
+        New Task
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Task Metrics -->
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+  <%= render Ui::CardComponent.new(variant: :default, hover: true, class: "group") do %>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Total Tasks</p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.dig(:total) || 0 %></p>
+      </div>
+      <div class="p-3 bg-primary/10 rounded-full">
+        <svg class="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+        </svg>
+      </div>
+    </div>
+  <% end %>
+
+  <%= render Ui::CardComponent.new(variant: :default, hover: true, class: "group") do %>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Completed</p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.dig(:by_status, :done) || 0 %></p>
+      </div>
+      <div class="p-3 bg-success/10 rounded-full">
+        <svg class="h-6 w-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+    </div>
+  <% end %>
+
+  <%= render Ui::CardComponent.new(variant: :default, hover: true, class: "group") do %>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">In Progress</p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.dig(:by_status, :in_progress) || 0 %></p>
+      </div>
+      <div class="p-3 bg-accent/10 rounded-full">
+        <svg class="h-6 w-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        </svg>
+      </div>
+    </div>
+  <% end %>
+
+  <%= render Ui::CardComponent.new(variant: :default, hover: true, class: "group") do %>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Overdue</p>
+        <p class="text-3xl font-bold text-foreground mt-2"><%= @statistics&.dig(:overdue) || 0 %></p>
+      </div>
+      <div class="p-3 bg-destructive/10 rounded-full">
+        <svg class="h-6 w-6 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<!-- Filters -->
+<%= render Ui::CardComponent.new(variant: :default, padding: :default, class: "mb-8") do %>
+  <div class="flex items-center justify-between mb-6">
+    <h3 class="text-lg font-semibold text-foreground">Filter Tasks</h3>
+    <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z"></path>
+    </svg>
+  </div>
+  
+  <%= form_with url: tasks_path, method: :get, local: true, class: "space-y-6" do |f| %>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <%= render Ui::InputComponent.new(
+              label: "Status",
+              name: "status",
+              type: "select",
+              value: params[:status]
+            ) do %>
+          <%= f.select :status,
+                       options_for_select([
+                         ["All", ""],
+                         ["Pending", "pending"],
+                         ["In Progress", "in_progress"],
+                         ["Completed", "completed"],
+                         ["On Hold", "on_hold"]
+                       ], params[:status]),
+                       {},
+                       class: "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background" %>
+        <% end %>
+      </div>
+      
+      <div>
+        <%= render Ui::InputComponent.new(
+              label: "Priority",
+              name: "priority",
+              type: "select",
+              value: params[:priority]
+            ) do %>
+          <%= f.select :priority,
+                       options_for_select([
+                         ["All", ""],
+                         ["High", "high"],
+                         ["Medium", "medium"],
+                         ["Low", "low"]
+                       ], params[:priority]),
+                       {},
+                       class: "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background" %>
+        <% end %>
+      </div>
+      
+      <div>
+        <%= render Ui::InputComponent.new(
+              label: "Assignee",
+              name: "assignee_id",
+              type: "select",
+              value: params[:assignee_id]
+            ) do %>
+          <%= f.select :assignee_id,
+                       options_for_select(
+                         [["All", ""]] + User.all.pluck(:email, :id),
+                         params[:assignee_id]
+                       ),
+                       {},
+                       class: "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background" %>
+        <% end %>
+      </div>
+      
+      <div>
+        <%= render Ui::InputComponent.new(
+              label: "Search",
+              name: "search",
+              placeholder: "Search tasks...",
+              value: params[:search],
+              prefix: :search
+            ) %>
+      </div>
+    </div>
+    
+    <div class="flex items-center justify-end space-x-3 pt-4 border-t border-border">
+      <%= render Ui::ButtonComponent.new(variant: :outline, href: tasks_path) do %>
+        Clear Filters
+      <% end %>
+      <%= render Ui::ButtonComponent.new(variant: :primary, type: "submit") do %>
+        Apply Filters
+      <% end %>
+    </div>
+  <% end %>
+<% end %>
+
+<!-- Tasks List -->
+<div class="space-y-4">
+  <% if @paginated_tasks && @paginated_tasks.any? %>
+    <% @paginated_tasks.each do |task| %>
+      <%= render Ui::CardComponent.new(variant: :default, hover: true, clickable: true, class: "group") do %>
+        <%= link_to task_path(task), class: "block p-6" do %>
+          <div class="flex items-start justify-between">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-3 mb-3">
+                <span class="text-sm font-mono text-primary bg-primary/10 px-2 py-1 rounded-md">
+                  #<%= task.id %>
+                </span>
+                <h3 class="text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                  <%= task.title %>
+                </h3>
+              </div>
+              
+              <div class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <% if task.assignee.present? %>
+                  <div class="flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center">
+                      <span class="text-xs font-medium text-white">
+                        <%= task.assignee.email.first.upcase %>
+                      </span>
+                    </div>
+                    <span><%= task.assignee.email %></span>
+                  </div>
+                <% else %>
+                  <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    <span>Unassigned</span>
+                  </div>
+                <% end %>
+                
+                <% if task.due_date.present? %>
+                  <div class="flex items-center gap-2 <%= task.due_date < Date.current && task.status != 'completed' ? 'text-destructive' : '' %>">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <span><%= task.due_date.strftime("%b %d, %Y") %></span>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-3 ml-4">
+              <!-- Priority Badge -->
+              <%= render Shared::PriorityBadgeComponent.new(
+                priority: task.priority || 'low'
+              ) %>
+              
+              <!-- Status Badge -->
+              <%= render Shared::StatusBadgeComponent.new(
+                status: task.status || 'pending'
+              ) %>
+              
+              <!-- Arrow Icon -->
+              <svg class="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% else %>
+    <!-- Empty State -->
+    <%= render Ui::CardComponent.new do %>
+      <%= render Shared::EmptyStateComponent.new(
+        title: "No tasks found",
+        description: "Get started by creating your first task.",
+        icon: :clipboard,
+        action_text: "Create Task",
+        action_url: new_task_path
+      ) %>
+    <% end %>
+  <% end %>
+</div>
+
+<!-- Pagination -->
+<% if @paginated_tasks && @paginated_tasks.total_pages > 1 %>
+  <div class="mt-8">
+    <div class="flex items-center justify-between mb-4">
+      <div class="text-sm text-muted-foreground">
+        Showing 
+        <span class="font-medium"><%= @paginated_tasks.offset_value + 1 %></span>
+        to 
+        <span class="font-medium"><%= [@paginated_tasks.offset_value + @paginated_tasks.limit_value, @paginated_tasks.total_count].min %></span>
+        of 
+        <span class="font-medium"><%= @paginated_tasks.total_count %></span>
+        results
+      </div>
+    </div>
+    <%= paginate @paginated_tasks, 
+        window: 2,
+        outer_window: 1,
+        params: request.query_parameters %>
+  </div>
+<% end %>
+
+<!-- Modal Frame -->
+<%= turbo_frame_tag "modal" %>

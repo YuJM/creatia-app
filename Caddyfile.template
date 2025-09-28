@@ -1,0 +1,13 @@
+# Caddyfile 템플릿
+# 사용방법: envsubst < Caddyfile.template > Caddyfile
+# 또는 bin/setup_domains 스크립트 실행
+
+{
+	auto_https off
+}
+
+http://${BASE_DOMAIN} {
+	reverse_proxy localhost:3000 {
+		header_up Host {http.request.host}
+	}
+}

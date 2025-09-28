@@ -3,6 +3,9 @@
 # 멀티테넌트 Creatia 시드 데이터
 # 이 파일은 개발 및 테스트 환경에서 사용할 수 있는 샘플 데이터를 생성합니다.
 
+# BASE_DOMAIN 환경변수 사용 (기본값: creatia.local)
+base_domain = ENV.fetch('BASE_DOMAIN', 'creatia.local')
+
 puts "\n🌱 Creatia 멀티테넌트 시드 데이터 생성 중..."
 puts "=" * 60
 
@@ -13,35 +16,35 @@ puts "\n👥 사용자 생성 중..."
 
 users = [
   {
-    email: "admin@creatia.local",
+    email: "admin@#{base_domain}",
     password: "password123",
     name: "관리자",
     role: "admin",
     username: "admin"
   },
   {
-    email: "john@creatia.local", 
+    email: "john@#{base_domain}", 
     password: "password123",
     name: "John Doe",
     role: "user",
     username: "johndoe"
   },
   {
-    email: "jane@creatia.local",
+    email: "jane@#{base_domain}",
     password: "password123", 
     name: "Jane Smith",
     role: "user",
     username: "janesmith"
   },
   {
-    email: "mike@creatia.local",
+    email: "mike@#{base_domain}",
     password: "password123",
     name: "Mike Johnson", 
     role: "user",
     username: "mikejohnson"
   },
   {
-    email: "sarah@creatia.local",
+    email: "sarah@#{base_domain}",
     password: "password123",
     name: "Sarah Wilson",
     role: "user", 
@@ -78,28 +81,28 @@ organizations_data = [
     subdomain: "demo", 
     description: "데모용 조직입니다. 멀티테넌트 시스템을 체험해보세요.",
     plan: "team",
-    owner_email: "admin@creatia.local"
+    owner_email: "admin@#{base_domain}"
   },
   {
     name: "Acme Corporation",
     subdomain: "acme",
     description: "Acme Corporation의 프로젝트 관리 워크스페이스",
     plan: "pro", 
-    owner_email: "john@creatia.local"
+    owner_email: "john@#{base_domain}"
   },
   {
     name: "Startup Inc",
     subdomain: "startup",
     description: "빠르게 성장하는 스타트업을 위한 협업 공간",
     plan: "team",
-    owner_email: "jane@creatia.local"
+    owner_email: "jane@#{base_domain}"
   },
   {
     name: "Test Organization",
     subdomain: "test",
     description: "테스트용 조직",
     plan: "free",
-    owner_email: "mike@creatia.local"
+    owner_email: "mike@#{base_domain}"
   }
 ]
 
@@ -143,11 +146,11 @@ puts "\n👨‍👩‍👧‍👦 조직 멤버십 생성 중..."
 demo_org = created_organizations.find { |org| org.subdomain == "demo" }
 if demo_org
   created_users.each do |user|
-    next if user.email == "admin@creatia.local" # 이미 소유자로 설정됨
+    next if user.email == "admin@#{base_domain}" # 이미 소유자로 설정됨
     
     role = case user.email
-           when "john@creatia.local" then "admin"
-           when "jane@creatia.local" then "admin" 
+           when "john@#{base_domain}" then "admin"
+           when "jane@#{base_domain}" then "admin" 
            else "member"
            end
     
@@ -167,9 +170,9 @@ end
 acme_org = created_organizations.find { |org| org.subdomain == "acme" }
 if acme_org
   [
-    { email: "jane@creatia.local", role: "admin" },
-    { email: "mike@creatia.local", role: "member" },
-    { email: "sarah@creatia.local", role: "member" }
+    { email: "jane@#{base_domain}", role: "admin" },
+    { email: "mike@#{base_domain}", role: "member" },
+    { email: "sarah@#{base_domain}", role: "member" }
   ].each do |member_data|
     user = created_users.find { |u| u.email == member_data[:email] }
     next unless user
@@ -200,88 +203,37 @@ created_organizations.each do |organization|
   # 조직 멤버들 가져오기
   members = organization.users.includes(:organization_memberships)
   
-  # 샘플 태스크 데이터
-  tasks_data = [
-    {
-      title: "프로젝트 초기 설정",
-      description: "새로운 프로젝트를 위한 기본 설정을 완료합니다.",
-      status: "done",
-      priority: "high",
-      position: 1
-    },
-    {
-      title: "사용자 인터페이스 디자인",
-      description: "메인 페이지와 대시보드의 UI/UX 디자인을 완성합니다.",
-      status: "in_progress", 
-      priority: "high",
-      position: 2,
-      due_date: 1.week.from_now
-    },
-    {
-      title: "백엔드 API 개발",
-      description: "RESTful API 엔드포인트를 개발하고 테스트합니다.",
-      status: "in_progress",
-      priority: "urgent",
-      position: 3,
-      due_date: 5.days.from_now
-    },
-    {
-      title: "데이터베이스 스키마 최적화",
-      description: "성능 향상을 위한 데이터베이스 인덱스 및 쿼리 최적화",
-      status: "todo",
-      priority: "medium", 
-      position: 4,
-      due_date: 2.weeks.from_now
-    },
-    {
-      title: "보안 검토 및 테스트",
-      description: "애플리케이션 보안 취약점을 점검하고 보완합니다.",
-      status: "todo",
-      priority: "high",
-      position: 5
-    },
-    {
-      title: "문서화 작업",
-      description: "API 문서 및 사용자 가이드를 작성합니다.",
-      status: "todo", 
-      priority: "low",
-      position: 6
-    },
-    {
-      title: "배포 환경 구축",
-      description: "프로덕션 환경 설정 및 CI/CD 파이프라인 구축",
-      status: "review",
-      priority: "medium",
-      position: 7
-    }
-  ]
-  
-  tasks_data.each_with_index do |task_data, index|
-    # 랜덤하게 멤버에게 할당 (50% 확률)
-    assigned_user = members.sample if rand < 0.5
-    
-    task = Task.find_or_create_by(
-      title: task_data[:title],
-      organization: organization
-    ) do |t|
-      t.description = task_data[:description]
-      t.status = task_data[:status]
-      t.priority = task_data[:priority] 
-      t.position = task_data[:position]
-      t.due_date = task_data[:due_date]
-      t.assigned_user = assigned_user
-    end
-    
-    if task.persisted?
-      assigned_info = assigned_user ? " (→ #{assigned_user.name})" : " (미할당)"
-      puts "    ✓ #{task.title}#{assigned_info}"
-    else
-      puts "    ✗ #{task_data[:title]} 생성 실패: #{task.errors.full_messages.join(', ')}"
-    end
-  end
+  # PostgreSQL Task는 더 이상 사용하지 않음
+  # MongoDB Task는 mongodb_seeds.rb에서 생성됨
+  puts "    PostgreSQL Task 생성 건너뜀 (MongoDB로 이전됨)"
   
   # acts_as_tenant 컨텍스트 초기화
   ActsAsTenant.current_tenant = nil
+end
+
+# ============================================================================
+# MongoDB 실행 데이터 생성
+# ============================================================================
+puts "\n🏗️ MongoDB 실행 데이터 생성..."
+require_relative 'seeds/mongodb_seeds'
+
+# ============================================================================
+# Demo 조직 전용 데이터 생성 (Faker 사용)
+# ============================================================================
+puts "\n🎯 Demo 조직 전용 데이터 생성..."
+# 기본 버전 또는 Faker 버전 선택
+if ENV['USE_FAKER'] == 'false'
+  require_relative 'seeds/demo_organization_seeds'
+else
+  require_relative 'seeds/demo_organization_seeds_with_faker'
+end
+
+# ============================================================================
+# 데모 데이터 로드 (옵션)
+# ============================================================================
+if ENV['LOAD_DEMO_DATA'] == 'true' || ENV['LOAD_ADVANCED_DEMO'] == 'true'
+  puts "\n🚀 추가 데모 데이터 로드 중..."
+  require_relative 'seeds/basic_demo_data'
 end
 
 # ============================================================================
@@ -295,7 +247,7 @@ puts "\n📊 생성된 데이터 요약:"
 puts "  • 사용자: #{created_users.count}명"
 puts "  • 조직: #{created_organizations.count}개"
 puts "  • 멤버십: #{OrganizationMembership.count}개"
-puts "  • 태스크: #{Task.count}개"
+puts "  • PostgreSQL 태스크: 0개 (MongoDB로 이전됨)"
 
 puts "\n🔗 접속 정보:"
 puts "  기본 도메인: #{DomainService.base_domain}"

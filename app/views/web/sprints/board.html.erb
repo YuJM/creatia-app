@@ -1,0 +1,172 @@
+<%# Sprint Board (Kanban) View %>
+<div class="min-h-screen bg-gray-50 py-8" data-controller="sprint-board">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Board Header -->
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900"><%= @sprint.name %> Board</h1>
+        <p class="text-gray-600 mt-1">
+          <%= @sprint.start_date&.strftime('%b %d') %> - <%= @sprint.end_date&.strftime('%b %d, %Y') %>
+          • <%= @sprint.completed_points %>/<%= @sprint.committed_points %> points
+        </p>
+      </div>
+      
+      <div class="flex gap-2">
+        <%= link_to sprint_path(@sprint), 
+            class: "px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300" do %>
+          Sprint Details
+        <% end %>
+        
+        <%= link_to new_sprint_task_path(@sprint), 
+            class: "px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center gap-2" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Add Task
+        <% end %>
+      </div>
+    </div>
+    
+    <!-- Kanban Board -->
+    <div class="grid grid-cols-5 gap-4 min-h-96">
+      <% %w[todo in_progress review done blocked].each do |status| %>
+        <div class="bg-white rounded-lg shadow">
+          <!-- Column Header -->
+          <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+            <div class="flex justify-between items-center">
+              <h3 class="font-semibold text-gray-900 capitalize">
+                <%= status.humanize %>
+              </h3>
+              <span class="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full">
+                <%= @tasks_by_status[status].count %>
+              </span>
+            </div>
+          </div>
+          
+          <!-- Column Content -->
+          <div class="p-4 space-y-3 min-h-96" 
+               data-status="<%= status %>"
+               data-sprint-board-target="column">
+            <% @tasks_by_status[status].each do |task| %>
+              <div class="task-card bg-white border border-gray-200 rounded-lg p-3 cursor-move hover:shadow-md transition-shadow"
+                   data-task-id="<%= task.id %>"
+                   data-sprint-board-target="taskCard">
+                
+                <!-- Task Header -->
+                <div class="flex justify-between items-start mb-2">
+                  <%= link_to task.title, 
+                      task_path(task),
+                      class: "font-medium text-gray-900 hover:text-blue-600 text-sm flex-1",
+                      data: { turbo_frame: "_top" } %>
+                  
+                  <% if task.story_points %>
+                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded ml-2">
+                      <%= task.story_points %> pts
+                    </span>
+                  <% end %>
+                </div>
+                
+                <!-- Task Details -->
+                <% if task.description.present? %>
+                  <p class="text-xs text-gray-600 mb-2 line-clamp-2"><%= task.description %></p>
+                <% end %>
+                
+                <!-- Task Meta -->
+                <div class="flex justify-between items-center text-xs text-gray-500">
+                  <div class="flex items-center gap-2">
+                    <% if task.assignee %>
+                      <span class="flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        <%= task.assignee.name.split.map(&:first).join %>
+                      </span>
+                    <% end %>
+                    
+                    <% if task.priority %>
+                      <span class="priority-<%= task.priority %>">
+                        <%= priority_icon(task.priority) %>
+                      </span>
+                    <% end %>
+                  </div>
+                  
+                  <span><%= task.task_id %></span>
+                </div>
+                
+                <!-- Labels/Tags -->
+                <% if task.labels&.any? %>
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    <% task.labels.each do |label| %>
+                      <span class="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded">
+                        <%= label %>
+                      </span>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+            
+            <!-- Add Task Button (for each column) -->
+            <button class="w-full border-2 border-dashed border-gray-300 rounded-lg p-3 text-gray-500 hover:border-gray-400 hover:text-gray-600 text-sm"
+                    data-action="sprint-board#addTask"
+                    data-status="<%= status %>">
+              + Add Task
+            </button>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    
+    <!-- Board Footer -->
+    <div class="bg-white rounded-lg shadow mt-6 p-4">
+      <div class="flex justify-between items-center">
+        <div class="flex gap-6 text-sm">
+          <div>
+            <span class="font-medium">Total Tasks:</span>
+            <span class="text-gray-600"><%= @tasks_by_status.values.flatten.count %></span>
+          </div>
+          <div>
+            <span class="font-medium">Story Points:</span>
+            <span class="text-gray-600"><%= @sprint.completed_points %>/<%= @sprint.committed_points %></span>
+          </div>
+          <div>
+            <span class="font-medium">Progress:</span>
+            <span class="text-gray-600">
+              <% progress = @sprint.committed_points > 0 ? (@sprint.completed_points.to_f / @sprint.committed_points * 100).round : 0 %>
+              <%= progress %>%
+            </span>
+          </div>
+        </div>
+        
+        <div class="flex gap-2">
+          <%= link_to burndown_sprint_path(@sprint), 
+              class: "px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm" do %>
+            Burndown Chart
+          <% end %>
+          
+          <%= link_to retrospective_sprint_path(@sprint), 
+              class: "px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 text-sm" do %>
+            Retrospective
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Helper methods %>
+<% 
+def priority_icon(priority)
+  case priority
+  when 'high'
+    '🔴'
+  when 'medium'
+    '🟡'
+  when 'low'
+    '🟢'
+  else
+    ''
+  end
+end
+%>

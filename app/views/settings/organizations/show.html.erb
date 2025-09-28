@@ -1,0 +1,45 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-8">Organization Settings</h1>
+  
+  <div class="bg-white shadow rounded-lg p-6">
+    <div class="mb-6">
+      <h2 class="text-xl font-semibold mb-4">Organization Information</h2>
+      
+      <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <dt class="font-medium text-gray-500">Organization Name</dt>
+          <dd class="text-lg text-gray-900"><%= @organization.name %></dd>
+        </div>
+        
+        <div>
+          <dt class="font-medium text-gray-500">Subdomain</dt>
+          <dd class="text-lg text-gray-900"><%= @organization.subdomain %></dd>
+        </div>
+        
+        <% if @organization.description.present? %>
+        <div class="sm:col-span-2">
+          <dt class="font-medium text-gray-500">Description</dt>
+          <dd class="text-lg text-gray-900"><%= @organization.description %></dd>
+        </div>
+        <% end %>
+        
+        <div>
+          <dt class="font-medium text-gray-500">Created</dt>
+          <dd class="text-lg text-gray-900"><%= @organization.created_at.strftime("%B %d, %Y") %></dd>
+        </div>
+        
+        <div>
+          <dt class="font-medium text-gray-500">Members</dt>
+          <dd class="text-lg text-gray-900"><%= @organization.organization_memberships.active.count %></dd>
+        </div>
+      </dl>
+    </div>
+    
+    <div class="flex space-x-4">
+      <%= link_to "Edit Settings", edit_settings_organization_path, 
+          class: "bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" %>
+      <%= link_to "Back to Dashboard", root_path, 
+          class: "bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" %>
+    </div>
+  </div>
+</div>

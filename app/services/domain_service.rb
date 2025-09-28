@@ -4,25 +4,27 @@
 # 환경변수를 기반으로 동적 도메인 설정을 제공합니다.
 class DomainService
   class << self
-    # 기본 도메인 반환 (환경변수에서 가져옴)
-    def base_domain
-      @base_domain ||= ENV.fetch('BASE_DOMAIN', default_domain)
+    prepend MemoWise
+    
+    # 기본 도메인 반환 (환경변수에서 가져옴) - 메모이제이션 적용
+    memo_wise def base_domain
+      ENV.fetch('BASE_DOMAIN', default_domain)
     end
     
-    # HTTPS 사용 여부
-    def use_https?
+    # HTTPS 사용 여부 - 메모이제이션 적용
+    memo_wise def use_https?
       Rails.env.production? || ENV['USE_HTTPS'] == 'true'
     end
     
-    # 프로토콜 반환
-    def protocol
+    # 프로토콜 반환 - 메모이제이션 적용
+    memo_wise def protocol
       use_https? ? 'https' : 'http'
     end
     
     # 메인 도메인 URL 생성
     def main_url(path = nil)
       url = "#{protocol}://#{base_domain}"
-      url += ":#{port}" if include_port?
+      url += port if include_port?  # port에 이미 ':' 포함됨
       url += "/#{path}" if path.present?
       url
     end
@@ -30,7 +32,7 @@ class DomainService
     # 서브도메인 URL 생성
     def subdomain_url(subdomain, path = nil)
       url = "#{protocol}://#{subdomain}.#{base_domain}"
-      url += ":#{port}" if include_port?
+      url += port if include_port?  # port에 이미 ':' 포함됨
       url += "/#{path}" if path.present?
       url
     end
@@ -105,13 +107,21 @@ class DomainService
     
     # 서브도메인 추출
     def extract_subdomain(request)
-      if Rails.env.development?
-        # 개발환경에서는 localhost:3000 형태이므로 HOST 헤더에서 추출
+      if Rails.env.development? || Rails.env.test?
+        # 개발/테스트 환경에서는 HOST 헤더에서 추출
         host = request.host
         return nil if host == 'localhost' || host.match?(/^\d+\.\d+\.\d+\.\d+$/)
         
-        # {subdomain}.creatia.local 형태에서 subdomain 추출
-        host.sub(".#{base_domain}", '')
+        # 메인 도메인 자체인 경우 nil 반환 (서브도메인 없음)
+        return nil if host == base_domain
+        
+        # {subdomain}.base_domain 형태에서 subdomain 추출
+        if host.end_with?(".#{base_domain}")
+          host.sub(".#{base_domain}", '')
+        else
+          # 예상하지 못한 호스트인 경우 nil 반환
+          nil
+        end
       else
         request.subdomain
       end
@@ -161,15 +171,33 @@ class DomainService
     private
     
     def default_domain
-      Rails.env.production? ? 'creatia.io' : 'localhost'
+      if Rails.env.production?
+        'creatia.io'
+      elsif Rails.env.test?
+        'localhost.test'
+      else
+        'creatia.local'  # 개발환경 기본값
+      end
     end
     
     def port
-      @port ||= Rails.env.development? ? ':3000' : nil
+      @port ||= if use_caddy_proxy?
+        nil  # No port needed when using Caddy proxy (uses port 80)
+      elsif Rails.env.development?
+        ':3000'  # Direct Rails server access without Caddy
+      else
+        nil
+      end
     end
     
     def include_port?
-      Rails.env.development? && !base_domain.include?(':')
+      # Caddy proxy를 사용하면 포트 없음 (80 사용)
+      # Caddy proxy를 사용하지 않고 개발 환경이면 포트 3000 포함
+      !use_caddy_proxy? && Rails.env.development? && !base_domain.include?(':')
+    end
+    
+    def use_caddy_proxy?
+      ENV.fetch('USE_CADDY_PROXY', Rails.env.test?).to_s == 'true'
     end
   end
 end

@@ -1,0 +1,135 @@
+<%= turbo_frame_tag dom_id(membership) do %>
+  <tr class="hover:bg-gray-50">
+    <td class="px-6 py-4 whitespace-nowrap">
+      <div class="flex items-center">
+        <div class="flex-shrink-0 h-10 w-10">
+          <div class="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center">
+            <span class="text-white font-medium">
+              <%= member.email.first.upcase %>
+            </span>
+          </div>
+        </div>
+        <div class="ml-4">
+          <div class="text-sm font-medium text-gray-900">
+            <%= member.email %>
+            <% if is_current_user? %>
+              <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                You
+              </span>
+            <% end %>
+          </div>
+          <div class="text-sm text-gray-500">
+            가입일: <%= membership.created_at.strftime("%Y년 %m월 %d일") %>
+          </div>
+        </div>
+      </div>
+    </td>
+    
+    <td class="px-6 py-4 whitespace-nowrap">
+      <% if can_change_role? %>
+        <div class="relative" data-controller="role-selector">
+          <button type="button"
+                  data-action="click->role-selector#toggle"
+                  class="<%= role_badge_color %> px-3 py-1 text-sm font-semibold rounded-full hover:opacity-80 transition-opacity cursor-pointer flex items-center">
+            <%= role_display_name %>
+            <svg class="ml-1 -mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          
+          <div data-role-selector-target="dropdown"
+               class="hidden absolute z-10 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+            <div class="py-1" role="menu">
+              <% available_roles.each do |role| %>
+                <% next if role.owner_level? && !current_user.organization_memberships.find_by(organization: organization, role: 'owner') %>
+                
+                <%= button_to organization_organization_membership_path(organization, membership),
+                              method: :patch,
+                              params: { organization_membership: { role_id: role.id } },
+                              form: { data: { turbo_frame: dom_id(membership) } },
+                              class: "block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" do %>
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <div class="font-medium"><%= role.name %></div>
+                      <div class="text-xs text-gray-500"><%= role.description %></div>
+                    </div>
+                    <% if current_role == role %>
+                      <svg class="h-5 w-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                      </svg>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <span class="<%= role_badge_color %> px-3 py-1 text-sm font-semibold rounded-full">
+          <%= role_display_name %>
+        </span>
+      <% end %>
+    </td>
+    
+    <td class="px-6 py-4 whitespace-nowrap">
+      <% if membership.active? %>
+        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+          활성
+        </span>
+      <% else %>
+        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+          비활성
+        </span>
+      <% end %>
+    </td>
+    
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <div class="flex items-center">
+        <svg class="h-4 w-4 text-gray-400 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <%= membership.role_object&.permissions&.count || 0 %> 권한
+      </div>
+    </td>
+    
+    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+      <% if can_manage? %>
+        <div class="flex justify-end space-x-2">
+          <% if membership.active? %>
+            <%= button_to toggle_active_organization_organization_membership_path(organization, membership),
+                          method: :patch,
+                          form: { data: { turbo_frame: dom_id(membership) } },
+                          class: "text-yellow-600 hover:text-yellow-900" do %>
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+              </svg>
+            <% end %>
+          <% else %>
+            <%= button_to toggle_active_organization_organization_membership_path(organization, membership),
+                          method: :patch,
+                          form: { data: { turbo_frame: dom_id(membership) } },
+                          class: "text-green-600 hover:text-green-900" do %>
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            <% end %>
+          <% end %>
+          
+          <% if can_remove? %>
+            <%= button_to organization_organization_membership_path(organization, membership),
+                          method: :delete,
+                          form: { data: { 
+                            turbo_confirm: "정말 이 멤버를 제거하시겠습니까?",
+                            turbo_frame: dom_id(membership)
+                          } },
+                          class: "text-red-600 hover:text-red-900" do %>
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </td>
+  </tr>
+<% end %>

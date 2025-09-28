@@ -1,0 +1,11 @@
+<%# Link showing page number %>
+<% if page.current? %>
+  <span class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-primary bg-primary/10 border border-primary rounded-md" aria-current="page">
+    <%= page %>
+  </span>
+<% else %>
+  <%= link_to page, url, 
+      remote: remote,
+      rel: page.rel,
+      class: "relative inline-flex items-center px-4 py-2 text-sm font-medium text-muted-foreground bg-background border border-border rounded-md hover:bg-muted transition-colors" %>
+<% end %>

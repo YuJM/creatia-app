@@ -1,0 +1,49 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Users</h1>
+    <% if policy(User).create? %>
+      <%= link_to "Invite User", new_organization_organization_membership_path(ActsAsTenant.current_tenant), class: "bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" %>
+    <% end %>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <% @users.each do |user| %>
+          <tr>
+            <td class="px-6 py-4 whitespace-nowrap"><%= user.email %></td>
+            <td class="px-6 py-4 whitespace-nowrap"><%= user.name || "N/A" %></td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= user.admin? ? 'red' : (user.moderator? ? 'yellow' : 'green') %>-100 text-<%= user.admin? ? 'red' : (user.moderator? ? 'yellow' : 'green') %>-800">
+                <%= user.role.humanize %>
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <%= user.created_at.strftime("%Y-%m-%d") %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <%= link_to "View", user_path(user), class: "text-indigo-600 hover:text-indigo-900 mr-2" %>
+              <% if policy(user).edit? %>
+                <%= link_to "Edit", edit_user_path(user), class: "text-yellow-600 hover:text-yellow-900 mr-2" %>
+              <% end %>
+              <% if policy(user).destroy? %>
+                <%= link_to "Delete", user_path(user), method: :delete, 
+                    data: { confirm: "Are you sure?" }, 
+                    class: "text-red-600 hover:text-red-900" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

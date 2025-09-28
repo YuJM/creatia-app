@@ -1,0 +1,130 @@
+<div class="px-4 sm:px-6 lg:px-8">
+  <div class="sm:flex sm:items-center">
+    <div class="sm:flex-auto">
+      <h1 class="text-3xl font-bold text-foreground">역할 관리</h1>
+      <p class="mt-2 text-base text-muted-foreground">
+        조직의 역할과 권한을 관리합니다. 각 역할에 필요한 권한을 할당하여 세밀한 접근 제어를 구현할 수 있습니다.
+      </p>
+    </div>
+    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+      <% if can? :create, Role %>
+        <%= link_to new_role_path,
+                    class: "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors" do %>
+          <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          새 역할 만들기
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="mt-8">
+    <div class="mb-6">
+      <nav class="flex space-x-4" aria-label="Tabs">
+        <button type="button"
+                data-controller="tab"
+                data-action="click->tab#switch"
+                data-tab-target="system"
+                class="tab-button px-3 py-2 font-medium text-sm rounded-md bg-primary/10 text-primary transition-colors">
+          시스템 역할
+        </button>
+        <button type="button"
+                data-controller="tab"
+                data-action="click->tab#switch"
+                data-tab-target="custom"
+                class="tab-button px-3 py-2 font-medium text-sm rounded-md text-muted-foreground hover:text-foreground transition-colors">
+          커스텀 역할
+        </button>
+      </nav>
+    </div>
+
+    <%= turbo_frame_tag "roles_list" do %>
+      <div id="system-roles" class="tab-content">
+        <% if @system_roles.any? %>
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <% @system_roles.each do |role| %>
+              <%= render Roles::RoleCardComponent.new(
+                role: role,
+                organization: @organization,
+                current_user: current_user
+              ) %>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-foreground">시스템 역할이 없습니다</h3>
+            <p class="mt-1 text-sm text-muted-foreground">시스템 역할이 초기화되지 않았습니다.</p>
+          </div>
+        <% end %>
+      </div>
+
+      <div id="custom-roles" class="tab-content hidden">
+        <% if @custom_roles.any? %>
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <% @custom_roles.each do |role| %>
+              <%= render Roles::RoleCardComponent.new(
+                role: role,
+                organization: @organization,
+                current_user: current_user
+              ) %>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-foreground">커스텀 역할이 없습니다</h3>
+            <p class="mt-1 text-sm text-muted-foreground">새로운 역할을 만들어 조직에 맞는 권한을 설정하세요.</p>
+            <% if can? :create, Role %>
+              <div class="mt-6">
+                <%= link_to new_role_path,
+                            class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors" do %>
+                  <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  첫 번째 역할 만들기
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+  // Simple tab switching logic
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const target = this.dataset.tabTarget;
+        
+        // Update button styles
+        tabButtons.forEach(btn => {
+          btn.classList.remove('bg-primary/10', 'text-primary');
+          btn.classList.add('text-muted-foreground', 'hover:text-foreground');
+        });
+        this.classList.remove('text-muted-foreground', 'hover:text-foreground');
+        this.classList.add('bg-primary/10', 'text-primary');
+        
+        // Show/hide content
+        tabContents.forEach(content => {
+          if (content.id === `${target}-roles`) {
+            content.classList.remove('hidden');
+          } else {
+            content.classList.add('hidden');
+          }
+        });
+      });
+    });
+  });
+</script>

@@ -2,6 +2,8 @@
 
 # Users::SessionsController - SSO 중앙 인증을 처리하는 커스텀 Devise 컨트롤러
 class Users::SessionsController < Devise::SessionsController
+  layout :determine_layout
+  before_action :set_current_attributes
   before_action :check_auth_domain, except: [:destroy]
   before_action :store_return_organization, only: [:new, :create]
   
@@ -40,8 +42,23 @@ class Users::SessionsController < Devise::SessionsController
   
   # DELETE /users/sign_out
   def destroy
+    # 로그아웃 전 사용자 정보 저장
+    user = current_user
+    
+    # devise_mapping이 nil인 경우 안전하게 처리
+    if request.env['devise.mapping'].nil?
+      # Devise 매핑이 없으면 직접 로그아웃 처리
+      sign_out(user) if user_signed_in?
+      clear_cross_domain_session
+      clear_all_sessions
+      redirect_to DomainService.main_url, allow_other_host: true
+      return
+    end
+    
     # 로그아웃 후 메인 도메인으로 리다이렉트
     super do
+      # 추가 세션 정리
+      clear_all_sessions
       store_location_for(:user, DomainService.main_url)
     end
   end
@@ -60,7 +77,7 @@ class Users::SessionsController < Devise::SessionsController
     respond_to do |format|
       format.html # organization_selection.html.erb
       format.json do
-        render json: {
+        render_serialized(SessionResponseSerializer, {
           success: true,
           user: UserSerializer.new(
             current_user, 
@@ -71,7 +88,7 @@ class Users::SessionsController < Devise::SessionsController
             params: { current_user: current_user }
           ).serializable_hash,
           return_organization: @return_organization
-        }
+        })
       end
     end
   end
@@ -80,7 +97,7 @@ class Users::SessionsController < Devise::SessionsController
   # 선택된 조직으로 이동
   def switch_to_organization
     unless user_signed_in?
-      render json: { error: "로그인이 필요합니다." }, status: :unauthorized
+      render_serialized(SessionResponseSerializer, { success: false, error: "로그인이 필요합니다." }, status: :unauthorized)
       return
     end
     
@@ -88,12 +105,12 @@ class Users::SessionsController < Devise::SessionsController
     organization = current_user.organizations.find_by(subdomain: organization_subdomain)
     
     unless organization
-      render json: { error: "해당 조직에 접근할 권한이 없습니다." }, status: :forbidden
+      render_serialized(SessionResponseSerializer, { success: false, error: "해당 조직에 접근할 권한이 없습니다." }, status: :forbidden)
       return
     end
     
     unless current_user.can_access?(organization)
-      render json: { error: "비활성화된 조직이거나 접근할 수 없습니다." }, status: :forbidden
+      render_serialized(SessionResponseSerializer, { success: false, error: "비활성화된 조직이거나 접근할 수 없습니다." }, status: :forbidden)
       return
     end
     
@@ -106,7 +123,7 @@ class Users::SessionsController < Devise::SessionsController
     respond_to do |format|
       format.html { redirect_to organization_url }
       format.json do
-        render json: {
+        render_serialized(SessionResponseSerializer, {
           success: true,
           message: "#{organization.display_name}으로 이동합니다.",
           redirect_url: organization_url,
@@ -114,7 +131,7 @@ class Users::SessionsController < Devise::SessionsController
             organization,
             params: { current_user: current_user }
           ).serializable_hash
-        }
+        })
       end
     end
   end
@@ -123,21 +140,46 @@ class Users::SessionsController < Devise::SessionsController
   # 조직 접근이 거부되었을 때의 페이지
   def access_denied
     @organization_subdomain = params[:org]
-    @organization = Organization.find_by(subdomain: @organization_subdomain) if @organization_subdomain
+    @organization = ::Organization.find_by(subdomain: @organization_subdomain) if @organization_subdomain
     
     respond_to do |format|
       format.html # access_denied.html.erb
       format.json do
-        render json: {
+        render_serialized(SessionResponseSerializer, {
+          success: false,
           error: "조직에 접근할 권한이 없습니다.",
           organization: @organization_subdomain,
-          available_organizations: current_user&.organizations&.active&.pluck(:subdomain, :name) || []
-        }, status: :forbidden
+          organizations: current_user&.organizations&.active&.pluck(:subdomain, :name) || []
+        }, status: :forbidden)
       end
     end
   end
   
   private
+  
+  # Current 속성 설정
+  def set_current_attributes
+    # 로그아웃 과정에서는 Current.user를 nil로 설정하여 안전하게 처리
+    Current.user = user_signed_in? ? current_user : nil
+    Current.organization = nil  # SessionsController에서는 조직 컨텍스트 없음
+  rescue => e
+    # Current 설정 중 에러가 발생하면 안전하게 nil로 설정
+    Current.user = nil
+    Current.organization = nil
+    Rails.logger.error "Failed to set current attributes: #{e.message}"
+  end
+  
+  # 액션별로 레이아웃 결정
+  def determine_layout
+    case action_name
+    when 'new', 'create'
+      'auth'
+    when 'organization_selection', 'access_denied'
+      'public'
+    else
+      'application'
+    end
+  end
   
   # auth 서브도메인에서만 접근 가능하도록 확인
   def check_auth_domain
@@ -145,7 +187,7 @@ class Users::SessionsController < Devise::SessionsController
       # auth 도메인이 아니면 auth 도메인으로 리다이렉트
       intended_org = DomainService.extract_subdomain(request)
       return_param = intended_org.present? ? "?return_to=#{intended_org}" : ""
-      redirect_to DomainService.auth_url("login#{return_param}")
+      redirect_to DomainService.auth_url("login#{return_param}"), allow_other_host: true
     end
   end
   
@@ -157,6 +199,9 @@ class Users::SessionsController < Devise::SessionsController
   
   # 로그인 성공 후 처리
   def handle_successful_login(user)
+    # 크로스 도메인 세션 쿠키 설정
+    set_cross_domain_session(user)
+    
     return_org = session[:return_organization]
     
     if return_org.present?
@@ -167,7 +212,7 @@ class Users::SessionsController < Devise::SessionsController
         # 직접 조직으로 이동
         session[:current_organization_id] = organization.id
         session.delete(:return_organization)
-        redirect_to DomainService.organization_url(organization.subdomain, 'dashboard')
+        redirect_to DomainService.organization_url(organization.subdomain, 'dashboard'), allow_other_host: true
         return
       else
         # 권한이 없거나 조직이 없으면 액세스 거부 페이지로
@@ -182,12 +227,12 @@ class Users::SessionsController < Devise::SessionsController
     case user_organizations.count
     when 0
       # 조직이 없으면 메인 페이지로 (조직 생성 안내)
-      redirect_to DomainService.main_url
+      redirect_to DomainService.main_url, allow_other_host: true
     when 1
       # 조직이 하나뿐이면 바로 이동
       organization = user_organizations.first
       session[:current_organization_id] = organization.id
-      redirect_to DomainService.organization_url(organization.subdomain, 'dashboard')
+      redirect_to DomainService.organization_url(organization.subdomain, 'dashboard'), allow_other_host: true
     else
       # 여러 조직이 있으면 선택 페이지로
       redirect_to organization_selection_path
@@ -197,6 +242,15 @@ class Users::SessionsController < Devise::SessionsController
   # 조직 선택 페이지로 리다이렉트
   def redirect_to_organization_selection
     redirect_to organization_selection_path
+  end
+  
+  # Devise mapping이 없을 때 안전하게 처리
+  def resource_name
+    devise_mapping&.name || :user
+  end
+  
+  def devise_mapping
+    request.env["devise.mapping"] || Devise.mappings[:user]
   end
   
   protected
@@ -209,6 +263,94 @@ class Users::SessionsController < Devise::SessionsController
   
   # Devise 기본 after_sign_out_path 오버라이드  
   def after_sign_out_path_for(resource_or_scope)
-    DomainService.main_url
+    # 크로스 도메인 세션 쿠키 삭제
+    clear_cross_domain_session
+    # Turbo 캐시 무효화를 위한 파라미터 추가
+    "#{DomainService.main_url}?from_logout=true"
+  end
+  
+  # Devise 로그아웃 후 리다이렉트 처리
+  def respond_to_on_destroy
+    respond_to do |format|
+      format.html do
+        # Turbo 캐시 무효화를 위한 헤더 설정
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        redirect_to after_sign_out_path_for(resource_name), allow_other_host: true
+      end
+      format.all do
+        redirect_to after_sign_out_path_for(resource_name), allow_other_host: true
+      end
+    end
+  end
+  
+  # JWT 기반 크로스 도메인 세션 설정
+  def set_cross_domain_session(user)
+    # JWT 액세스 토큰 생성
+    access_token = JwtService.generate_sso_token(user, session[:current_organization])
+    refresh_token = JwtService.generate_refresh_token(user)
+    
+    # HttpOnly 쿠키로 안전하게 저장 (크로스 도메인)
+    domain = Rails.env.production? ? ".creatia.io" : ".creatia.local"
+    
+    # 액세스 토큰 (짧은 수명)
+    cookies[:jwt_access_token] = {
+      value: access_token,
+      domain: domain,
+      httponly: true,
+      secure: Rails.env.production?,
+      same_site: :lax,
+      expires: 8.hours.from_now
+    }
+    
+    # 리프레시 토큰 (긴 수명)
+    cookies[:jwt_refresh_token] = {
+      value: refresh_token,
+      domain: domain,
+      httponly: true,
+      secure: Rails.env.production?,
+      same_site: :strict,
+      expires: 30.days.from_now
+    }
+    
+    # 추가 보안: CSRF 토큰 생성
+    session[:jwt_csrf] = SecureRandom.hex(16)
+  end
+  
+  # JWT 기반 크로스 도메인 세션 삭제
+  def clear_cross_domain_session
+    domain = Rails.env.production? ? ".creatia.io" : ".creatia.local"
+    
+    # JWT 토큰 무효화 (블랙리스트 추가)
+    if cookies[:jwt_access_token]
+      JwtService.revoke_token(cookies[:jwt_access_token])
+    end
+    
+    # 쿠키 삭제
+    cookies.delete(:jwt_access_token, domain: domain)
+    cookies.delete(:jwt_refresh_token, domain: domain)
+    
+    # CSRF 토큰 삭제
+    session.delete(:jwt_csrf)
+  end
+  
+  # 모든 세션 데이터 정리
+  def clear_all_sessions
+    # Rails 세션 정리
+    session.clear
+    
+    # Warden 세션 정리
+    if warden
+      warden.logout(:user)
+      warden.clear_strategies_cache!
+    end
+    
+    # Current 객체 정리
+    Current.user = nil
+    Current.organization = nil
+    
+    # 인스턴스 변수 정리
+    @current_user = nil
   end
 end

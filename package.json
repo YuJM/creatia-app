@@ -4,6 +4,7 @@
   "description": "This README would normally document whatever steps are necessary to get the application up and running.",
   "main": "index.js",
   "directories": {
+    "doc": "docs",
     "lib": "lib",
     "test": "test"
   },
@@ -21,6 +22,19 @@
   "devDependencies": {
     "@playwright/test": "^1.55.0",
     "@types/node": "^24.3.0",
+    "playwright": "^1.55.0",
     "typescript": "^5.9.2"
-  }
+  },
+  "dependencies": {
+    "playwright-core": "^1.55.0",
+    "undici-types": "^7.10.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YuJM/creatia-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YuJM/creatia-app/issues"
+  },
+  "homepage": "https://github.com/YuJM/creatia-app#readme"
 }

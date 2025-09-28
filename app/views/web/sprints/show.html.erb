@@ -1,0 +1,310 @@
+<%# Sprint Detail View %>
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Sprint Header -->
+    <div class="bg-white shadow-lg rounded-lg mb-6">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex justify-between items-start">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-2">
+              <h1 class="text-3xl font-bold text-gray-900"><%= @sprint.name %></h1>
+              <span class="px-3 py-1 rounded-full text-sm font-medium <%= status_badge_class(@sprint.status) %>">
+                <%= @sprint.status.humanize %>
+              </span>
+            </div>
+            
+            <% if @sprint.goal.present? %>
+              <p class="text-gray-600 mb-4"><%= @sprint.goal %></p>
+            <% end %>
+            
+            <div class="flex gap-6 text-sm text-gray-500">
+              <div>
+                <span class="font-medium">Duration:</span> 
+                <%= @sprint.start_date&.strftime('%b %d') %> - <%= @sprint.end_date&.strftime('%b %d, %Y') %>
+              </div>
+              <div>
+                <span class="font-medium">Velocity:</span> 
+                <%= @sprint.completed_points %>/<%= @sprint.committed_points %> points
+              </div>
+              <% if @sprint.milestone_id.present? %>
+                <div>
+                  <span class="font-medium">Milestone ID:</span> 
+                  <%= link_to @sprint.milestone_id, 
+                      milestone_path(@sprint.milestone_id),
+                      class: "text-blue-600 hover:text-blue-800" %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <% if @sprint.status == 'planning' %>
+              <%= link_to start_sprint_path(@sprint), 
+                  method: :patch,
+                  class: "px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600",
+                  data: { confirm: "Start this sprint?" } do %>
+                Start Sprint
+              <% end %>
+            <% elsif @sprint.status == 'active' %>
+              <%= link_to complete_sprint_path(@sprint), 
+                  method: :patch,
+                  class: "px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600",
+                  data: { confirm: "Complete this sprint?" } do %>
+                Complete Sprint
+              <% end %>
+            <% end %>
+            
+            <%= link_to board_sprint_path(@sprint), 
+                class: "px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 flex items-center gap-2" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+              </svg>
+              Board
+            <% end %>
+            
+            <%= link_to edit_sprint_path(@sprint), 
+                class: "px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300" do %>
+              Edit
+            <% end %>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sprint Metrics -->
+      <div class="px-6 py-4">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900"><%= @metrics[:total_tasks] %></div>
+            <div class="text-sm text-gray-600">Total Tasks</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-green-600"><%= @metrics[:completed_tasks] %></div>
+            <div class="text-sm text-gray-600">Completed</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-blue-600"><%= @metrics[:in_progress_tasks] %></div>
+            <div class="text-sm text-gray-600">In Progress</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-yellow-600"><%= @metrics[:todo_tasks] %></div>
+            <div class="text-sm text-gray-600">To Do</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-purple-600"><%= @metrics[:completion_percentage] %>%</div>
+            <div class="text-sm text-gray-600">Complete</div>
+          </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="mt-4">
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="bg-green-500 h-3 rounded-full transition-all duration-300" 
+                 style="width: <%= @metrics[:completion_percentage] %>%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sprint Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Tasks List -->
+      <div class="lg:col-span-2">
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-900">Tasks</h2>
+            <%= link_to new_sprint_task_path(@sprint), 
+                class: "px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm flex items-center gap-1" do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Add Task
+            <% end %>
+          </div>
+          
+          <div class="divide-y divide-gray-200">
+            <% if @tasks.any? %>
+              <% @tasks.each do |task| %>
+                <div class="px-6 py-4 hover:bg-gray-50">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <%= link_to task.title, 
+                          task_path(task),
+                          class: "font-medium text-gray-900 hover:text-blue-600" %>
+                      <div class="flex gap-4 mt-1 text-sm text-gray-500">
+                        <span class="px-2 py-1 rounded text-xs font-medium <%= task_status_class(task.status) %>">
+                          <%= task.status.humanize %>
+                        </span>
+                        <% if task.assignee %>
+                          <span>Assigned to <%= task.assignee.name %></span>
+                        <% end %>
+                        <% if task.story_points %>
+                          <span><%= task.story_points %> pts</span>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="px-6 py-8 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No tasks yet</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by adding tasks to this sprint.</p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        <!-- Quick Actions -->
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Quick Actions</h2>
+          </div>
+          <div class="px-6 py-4 space-y-3">
+            <%= link_to board_sprint_path(@sprint), 
+                class: "w-full flex items-center gap-3 px-3 py-2 text-left border border-gray-200 rounded hover:bg-gray-50" do %>
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+              </svg>
+              <span>Sprint Board</span>
+            <% end %>
+            
+            <%= link_to burndown_sprint_path(@sprint), 
+                class: "w-full flex items-center gap-3 px-3 py-2 text-left border border-gray-200 rounded hover:bg-gray-50" do %>
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+              <span>Burndown Chart</span>
+            <% end %>
+            
+            <%= link_to retrospective_sprint_path(@sprint), 
+                class: "w-full flex items-center gap-3 px-3 py-2 text-left border border-gray-200 rounded hover:bg-gray-50" do %>
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+              </svg>
+              <span>Retrospective</span>
+            <% end %>
+          </div>
+        </div>
+        
+        <!-- Sprint Details -->
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Details</h2>
+          </div>
+          <div class="px-6 py-4 space-y-3">
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wider">Sprint Number</p>
+              <p class="text-sm text-gray-900"><%= @sprint.sprint_number || 'N/A' %></p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wider">Team</p>
+              <p class="text-sm text-gray-900"><%= @sprint.team_id || 'No team assigned' %></p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wider">Created</p>
+              <p class="text-sm text-gray-900"><%= @sprint.created_at.strftime('%B %d, %Y') %></p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 uppercase tracking-wider">Last Updated</p>
+              <p class="text-sm text-gray-900"><%= @sprint.updated_at.strftime('%B %d, %Y at %I:%M %p') %></p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Sprint Statistics -->
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Statistics</h2>
+          </div>
+          <div class="px-6 py-4 space-y-4">
+            <!-- Task Distribution -->
+            <div>
+              <h4 class="text-sm font-medium text-gray-700 mb-2">Task Distribution</h4>
+              <div class="space-y-2">
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">Completed</span>
+                  <span class="text-sm font-medium"><%= @metrics[:completed_tasks] %></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">In Progress</span>
+                  <span class="text-sm font-medium"><%= @metrics[:in_progress_tasks] %></span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-sm text-gray-600">To Do</span>
+                  <span class="text-sm font-medium"><%= @metrics[:todo_tasks] %></span>
+                </div>
+                <% if @metrics[:blocked_tasks] > 0 %>
+                  <div class="flex justify-between">
+                    <span class="text-sm text-red-600">Blocked</span>
+                    <span class="text-sm font-medium text-red-600"><%= @metrics[:blocked_tasks] %></span>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+            
+            <!-- Velocity Chart -->
+            <div>
+              <h4 class="text-sm font-medium text-gray-700 mb-2">Velocity</h4>
+              <div class="w-full bg-gray-200 rounded-full h-4">
+                <% velocity_percentage = @sprint.committed_points > 0 ? (@sprint.completed_points.to_f / @sprint.committed_points * 100).round : 0 %>
+                <div class="bg-blue-500 h-4 rounded-full flex items-center justify-center text-xs text-white font-medium" 
+                     style="width: <%= [velocity_percentage, 100].min %>%">
+                  <% if velocity_percentage > 20 %>
+                    <%= velocity_percentage %>%
+                  <% end %>
+                </div>
+              </div>
+              <p class="text-xs text-gray-600 mt-1">
+                <%= @sprint.completed_points %> of <%= @sprint.committed_points %> points completed
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Helper methods for styling %>
+<% 
+def status_badge_class(status)
+  case status
+  when 'completed'
+    'bg-green-100 text-green-800'
+  when 'active'
+    'bg-blue-100 text-blue-800'
+  when 'planning'
+    'bg-gray-100 text-gray-800'
+  when 'cancelled'
+    'bg-red-100 text-red-800'
+  else
+    'bg-gray-100 text-gray-800'
+  end
+end
+
+def task_status_class(status)
+  case status
+  when 'done'
+    'bg-green-100 text-green-800'
+  when 'in_progress'
+    'bg-blue-100 text-blue-800'
+  when 'review'
+    'bg-purple-100 text-purple-800'
+  when 'blocked'
+    'bg-red-100 text-red-800'
+  else
+    'bg-gray-100 text-gray-800'
+  end
+end
+%>

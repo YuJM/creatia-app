@@ -10,24 +10,30 @@ class BaseSerializer
   
   # 멀티테넌트 관련 공통 속성들
   
+  # params 헬퍼 메서드 - Alba에서 params가 nil일 수 있음
+  def params
+    @params || {}
+  end
+  
   # 현재 조직 정보를 params에서 가져오는 헬퍼
   def current_organization
     params[:current_organization] || ActsAsTenant.current_tenant
   end
   
+  # 현재 사용자 정보를 가져오는 헬퍼
+  def current_user
+    params[:current_user]
+  end
+  
   # 현재 사용자의 멤버십 정보를 가져오는 헬퍼
   def current_membership
     return nil unless current_user && current_organization
+    
     params[:current_membership] || 
       current_user.organization_memberships.find_by(
         organization: current_organization, 
         active: true
       )
-  end
-  
-  # 현재 사용자 정보를 가져오는 헬퍼
-  def current_user
-    params[:current_user]
   end
   
   # 권한 확인 헬퍼

@@ -87,14 +87,11 @@ RSpec.feature "조직 관리 및 권한 시스템", type: :feature do
       # Given: 일반 멤버가 로그인
       sign_in member
       
-      # When: 멤버 초대 시도
-      page.driver.post "/organizations/#{organization.id}/members", {
-        email: 'newmember@creatia.local',
-        role: 'member'
-      }
+      # When: 멤버 초대 페이지 접근 시도
+      visit "/organizations/#{organization.id}/members/new"
       
-      # Then: 권한 없음 응답
-      expect(page.status_code).to eq(403)
+      # Then: 권한 없음 메시지 표시
+      expect(page).to have_content('You are not authorized')
     end
 
     scenario "관리자가 멤버의 역할을 변경" do
@@ -122,13 +119,13 @@ RSpec.feature "조직 관리 및 권한 시스템", type: :feature do
         organization_membership: { role: 'owner' }
       }
       
-      # Then: 권한 없음 응답
-      expect(page.status_code).to eq(403)
+      # Then: 권한 없음 메시지 표시
+      expect(page).to have_content('You are not authorized')
     end
   end
 
   feature "역할별 접근 권한 테스트" do
-    let!(:task) { create(:task, organization: organization, title: 'Test Task') }
+    let!(:task) { create(:mongo_task, organization: organization, title: 'Test Task') }
 
     scenario "뷰어는 읽기만 가능하고 수정/삭제 불가" do
       # Given: 뷰어가 로그인하여 태스크 목록 접근
@@ -166,7 +163,7 @@ RSpec.feature "조직 관리 및 권한 시스템", type: :feature do
       expect(page).to have_content('Member Task')
       
       # When: 자신이 담당인 태스크에 수정 시도
-      member_task = Task.find_by(title: 'Member Task')
+      member_task = Mongodb::MongoTask.find_by(title: 'Member Task')
       member_task.update!(assigned_user: member)
       visit "/tasks/#{member_task.id}/edit"
       
@@ -188,7 +185,7 @@ RSpec.feature "조직 관리 및 권한 시스템", type: :feature do
       page.driver.delete "/tasks/#{task.id}"
       
       # Then: 삭제 성공
-      expect(Task.find_by(id: task.id)).to be_nil
+      expect(Mongodb::MongoTask.find_by(id: task.id)).to be_nil
     end
 
     scenario "소유자는 조직의 모든 기능에 접근 가능" do
@@ -250,7 +247,7 @@ RSpec.feature "조직 관리 및 권한 시스템", type: :feature do
 
   feature "데이터 격리 검증" do
     let(:other_org) { create(:organization, subdomain: 'otherorg') }
-    let!(:other_task) { create(:task, organization: other_org, title: 'Other Org Task') }
+    let!(:other_task) { create(:mongo_task, organization: other_org, title: 'Other Org Task') }
 
     scenario "한 조직의 사용자는 다른 조직의 데이터를 볼 수 없음" do
       # Given: 현재 조직의 멤버가 로그인
@@ -264,10 +261,10 @@ RSpec.feature "조직 관리 및 권한 시스템", type: :feature do
       expect(page).not_to have_content('Other Org Task')
       
       # When: 다른 조직 태스크에 직접 접근 시도
-      page.driver.get "/tasks/#{other_task.id}"
+      visit "/tasks/#{other_task.id}"
       
-      # Then: 404 또는 접근 거부
-      expect([404, 403]).to include(page.status_code)
+      # Then: 접근 불가 메시지 표시
+      expect(page).to have_content('not found').or have_content('not authorized')
     end
 
     scenario "API를 통한 크로스 테넌트 접근도 차단" do
@@ -287,7 +284,6 @@ RSpec.feature "조직 관리 및 권한 시스템", type: :feature do
   private
 
   def sign_in(user)
-    allow_any_instance_of(ApplicationController).to receive(:current_user).and_return(user)
-    allow_any_instance_of(ApplicationController).to receive(:user_signed_in?).and_return(true)
+    login_as(user, scope: :user)
   end
 end

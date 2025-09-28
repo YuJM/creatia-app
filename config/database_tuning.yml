@@ -1,0 +1,46 @@
+# config/database_tuning.yml
+# PostgreSQL 캐싱 관련 튜닝 파라미터
+
+# PostgreSQL 자체 캐싱 설정 (postgresql.conf 또는 ALTER SYSTEM)
+# 이 설정들을 DBA나 시스템 관리자에게 전달하세요
+
+production:
+  # 메모리 관련 캐싱
+  shared_buffers: "2GB"              # 전체 RAM의 25% (8GB RAM 기준)
+  effective_cache_size: "6GB"        # OS 캐시 포함 전체 캐시 크기
+  work_mem: "16MB"                   # 정렬/해시 작업용 메모리
+  maintenance_work_mem: "512MB"      # 인덱스 생성, VACUUM용
+  
+  # 쿼리 플래너 캐싱
+  random_page_cost: 1.1              # SSD 사용시 낮춤 (캐시 히트율 향상)
+  effective_io_concurrency: 200      # SSD 사용시
+  
+  # 통계 및 캐싱
+  default_statistics_target: 100     # 더 정확한 쿼리 플랜
+  track_io_timing: on                # I/O 성능 모니터링
+  
+  # Statement 캐싱
+  max_prepared_transactions: 100     # Prepared transaction 수
+  
+development:
+  shared_buffers: "256MB"            
+  effective_cache_size: "1GB"        
+  work_mem: "4MB"                    
+  maintenance_work_mem: "64MB"       
+  
+# Rails database.yml에 추가할 설정
+rails_connection_settings:
+  prepared_statements: true           # 쿼리 플랜 캐싱
+  statement_limit: 1000              # 캐시할 statement 수
+  idle_timeout: 300                  # 유휴 연결 타임아웃 (캐시 유지)
+  checkout_timeout: 5                 # 연결 획득 타임아웃
+  reaping_frequency: 10              # 연결 정리 주기
+  
+# 캐시 워밍 쿼리 (애플리케이션 시작시 실행)
+cache_warming_queries:
+  - "SELECT pg_prewarm('users');"
+  - "SELECT pg_prewarm('organizations');"
+  - "SELECT pg_prewarm('services');"
+  - "SELECT pg_prewarm('teams');"
+  - "SELECT pg_prewarm('users_pkey');"
+  - "SELECT pg_prewarm('index_users_on_email');"

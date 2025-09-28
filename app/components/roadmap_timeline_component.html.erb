@@ -1,0 +1,295 @@
+<%# Roadmap Timeline Component - 프로젝트 로드맵 시각화 %>
+<%= turbo_frame_tag "roadmap_timeline",
+                    class: "roadmap-timeline",
+                    data: {
+                      controller: "roadmap-timeline",
+                      roadmap_timeline_view_value: view_mode,
+                      roadmap_timeline_roadmap_id_value: roadmap.id,
+                      turbo_permanent: true
+                    } do %>
+
+  <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-white">📋 <%= roadmap.name %> 로드맵</h2>
+          <p class="text-purple-100 text-sm mt-1">
+            <%= timeline_span[:start_date] ? formatted_date(timeline_span[:start_date]) : '시작일 미정' %> ~ 
+            <%= timeline_span[:end_date] ? formatted_date(timeline_span[:end_date]) : '종료일 미정' %>
+            <% if timeline_span[:total_weeks] %>
+              • <%= timeline_span[:total_weeks] %>주 예상
+            <% end %>
+          </p>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <!-- View Mode Selector -->
+          <div class="relative" data-controller="dropdown">
+            <button type="button"
+                    data-action="click->dropdown#toggle"
+                    class="text-purple-100 hover:text-white p-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2">
+              <span class="text-sm"><%= view_mode_options.find { |o| o[:value] == view_mode }&.dig(:label) || '분기별 보기' %></span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden"
+                 data-dropdown-target="menu">
+              <% view_mode_options.each do |option| %>
+                <%= link_to roadmap_path(roadmap, view: option[:value]), 
+                           class: "flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 #{'bg-gray-50' if option[:value] == view_mode}",
+                           data: { turbo_frame: "roadmap_timeline" } do %>
+                  <span class="mr-2"><%= option[:icon] %></span>
+                  <%= option[:label] %>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Refresh Button -->
+          <button type="button"
+                  data-action="click->roadmap-timeline#refresh"
+                  class="text-purple-100 hover:text-white p-2 rounded-full hover:bg-purple-700 transition-colors"
+                  title="새로고침">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <!-- Timeline Health Summary -->
+      <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Overall Health -->
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="flex items-center space-x-2 mb-2">
+            <span class="text-lg">💚</span>
+            <h3 class="text-sm font-medium text-gray-700">전체 상태</h3>
+          </div>
+          <p class="text-lg font-semibold <%= timeline_health_status[:class] %>">
+            <%= timeline_health_status[:status].humanize %>
+          </p>
+          <p class="text-xs text-gray-600 mt-1">
+            <%= timeline_health_status[:message] %>
+          </p>
+        </div>
+
+        <!-- Completion Status -->
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="flex items-center space-x-2 mb-2">
+            <span class="text-lg">📊</span>
+            <h3 class="text-sm font-medium text-gray-700">완료 현황</h3>
+          </div>
+          <p class="text-lg font-semibold text-blue-600">
+            <%= completion_summary[:percentage] %>%
+          </p>
+          <p class="text-xs text-gray-600 mt-1">
+            <%= completion_summary[:completed] %>/<%= completion_summary[:total] %> 마일스톤 완료
+          </p>
+        </div>
+
+        <!-- Risk Alert -->
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="flex items-center space-x-2 mb-2">
+            <span class="text-lg">⚠️</span>
+            <h3 class="text-sm font-medium text-gray-700">주의 사항</h3>
+          </div>
+          <% if overdue_milestones.any? %>
+            <p class="text-lg font-semibold text-red-600">
+              <%= overdue_milestones.count %>개 지연
+            </p>
+            <p class="text-xs text-red-600 mt-1">조치가 필요합니다</p>
+          <% else %>
+            <p class="text-lg font-semibold text-green-600">정상</p>
+            <p class="text-xs text-gray-600 mt-1">지연된 마일스톤이 없습니다</p>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Timeline Visualization -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">타임라인</h3>
+          <% if show_timeline_navigation? %>
+            <div class="flex items-center space-x-2">
+              <button type="button" 
+                      class="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+                      data-action="click->roadmap-timeline#navigateTimeline"
+                      data-direction="prev">
+                ← 이전
+              </button>
+              <button type="button" 
+                      class="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+                      data-action="click->roadmap-timeline#navigateTimeline"
+                      data-direction="next">
+                다음 →
+              </button>
+            </div>
+          <% end %>
+        </div>
+
+        <!-- SVG Timeline -->
+        <div class="relative bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-6 overflow-x-auto">
+          <%= generate_timeline_svg.html_safe %>
+          
+          <!-- Milestone Cards (positioned absolutely) -->
+          <div class="relative mt-8" style="min-height: 120px;">
+            <% milestone_positions.each do |position| %>
+              <%= render_milestone_card(position[:milestone], position) %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Milestones Details -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Upcoming Milestones -->
+        <div class="bg-blue-50 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">🎯 다가오는 마일스톤</h3>
+          
+          <% if upcoming_milestones.any? %>
+            <div class="space-y-3">
+              <% upcoming_milestones.each do |milestone| %>
+                <div class="bg-white rounded-lg p-3 shadow-sm">
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-gray-900 text-sm"><%= milestone[:name] %></h4>
+                    <span class="text-xs px-2 py-1 rounded-full <%= milestone[:status] == 'completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' %>">
+                      <%= milestone[:status].humanize %>
+                    </span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between text-xs text-gray-600">
+                    <span><%= formatted_date(milestone[:target_date]) %></span>
+                    <span class="<%= days_until_milestone(milestone).include?('지연') ? 'text-red-600' : 'text-blue-600' %>">
+                      <%= days_until_milestone(milestone) %>
+                    </span>
+                  </div>
+                  
+                  <div class="mt-2">
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>진행률</span>
+                      <span><%= milestone[:progress] %>%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                      <div class="<%= progress_color(milestone[:progress]) %> h-1.5 rounded-full transition-all duration-300" 
+                           style="width: <%= milestone[:progress] %>%"></div>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="text-gray-500 text-sm">2주 내에 예정된 마일스톤이 없습니다.</p>
+          <% end %>
+        </div>
+
+        <!-- At Risk Milestones -->
+        <div class="bg-red-50 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">🚨 위험 마일스톤</h3>
+          
+          <% at_risk_milestones = timeline_milestones.select { |m| %w[high critical].include?(m[:risk_level]) } %>
+          <% if at_risk_milestones.any? %>
+            <div class="space-y-3">
+              <% at_risk_milestones.each do |milestone| %>
+                <% risk = milestone_risk_indicator(milestone) %>
+                <div class="bg-white rounded-lg p-3 shadow-sm border-l-4 border-red-500">
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-gray-900 text-sm"><%= milestone[:name] %></h4>
+                    <span class="<%= risk[:class] %>"><%= risk[:icon] %></span>
+                  </div>
+                  
+                  <div class="flex items-center justify-between text-xs text-gray-600 mb-2">
+                    <span><%= formatted_date(milestone[:target_date]) %></span>
+                    <span class="font-medium <%= risk[:class] %>">
+                      <%= risk[:label] %>
+                    </span>
+                  </div>
+                  
+                  <div class="text-xs text-gray-500">
+                    <%= milestone[:completed_tasks] %>/<%= milestone[:tasks_count] %> 작업 완료 
+                    (<%= milestone[:progress] %>%)
+                  </div>
+                  
+                  <!-- Epic Labels -->
+                  <% if milestone[:epic_labels] && milestone[:epic_labels].any? %>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                      <% milestone_epic_labels(milestone).each do |epic| %>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                              style="background-color: <%= epic[:color] %>20; color: <%= epic[:color] %>;">
+                          <%= epic[:name] %>
+                        </span>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="text-center py-8">
+              <span class="text-4xl">✅</span>
+              <p class="text-green-600 font-medium mt-2">모든 마일스톤이 정상입니다</p>
+              <p class="text-gray-500 text-sm mt-1">위험 상태의 마일스톤이 없습니다.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Quarter/Month View (for quarterly/monthly views) -->
+      <% if view_mode == 'quarterly' && quarter_labels.any? %>
+        <div class="mt-8">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">분기별 상세</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <% quarter_labels.each do |quarter| %>
+              <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-900 mb-2"><%= quarter[:label] %></h4>
+                <div class="text-sm text-gray-600">
+                  <%= formatted_date(quarter[:start_date]) %> ~ <%= formatted_date(quarter[:end_date]) %>
+                </div>
+                
+                <% quarter_milestones = timeline_milestones.select { |m| 
+                     milestone_date = Date.parse(m[:target_date].to_s)
+                     milestone_date >= quarter[:start_date] && milestone_date <= quarter[:end_date]
+                   } %>
+                
+                <div class="mt-3 text-xs text-gray-500">
+                  <%= quarter_milestones.count %>개 마일스톤
+                </div>
+                
+                <% if quarter_milestones.any? %>
+                  <div class="mt-2 space-y-1">
+                    <% quarter_milestones.first(3).each do |milestone| %>
+                      <div class="text-xs text-gray-700 truncate">
+                        • <%= milestone[:name] %>
+                      </div>
+                    <% end %>
+                    <% if quarter_milestones.count > 3 %>
+                      <div class="text-xs text-gray-500">
+                        +<%= quarter_milestones.count - 3 %>개 더
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="hidden absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center"
+         data-roadmap-timeline-target="loadingOverlay">
+      <div class="flex items-center space-x-3">
+        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-sm text-gray-600">로드맵을 업데이트하고 있습니다...</span>
+      </div>
+    </div>
+  </div>
+<% end %>

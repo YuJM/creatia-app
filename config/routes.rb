@@ -1,6 +1,17 @@
 Rails.application.routes.draw do
+  # 테스트 환경 전용 라우트
+  if Rails.env.development? || Rails.env.test?
+    get 'test_auth/login', to: 'test_auth#login'
+  end
   # Health check and system routes (모든 서브도메인에서 접근 가능)
   get "up" => "rails/health#show", as: :rails_health_check
+  
+  # Webhook routes (모든 서브도메인에서 접근 가능)
+  namespace :webhooks do
+    post 'github/push', to: 'github#push'
+    post 'github/issues', to: 'github#issues'
+    post 'github/pull_request', to: 'github#pull_request'
+  end
   
   # Development routes
   mount Hotwire::Livereload::Engine => "/hotwire-livereload" if Rails.env.development?
@@ -28,28 +39,62 @@ Rails.application.routes.draw do
   # 메인 도메인 라우팅 (www 또는 서브도메인 없음)
   # =============================================================================
   constraints subdomain: /^(www)?$/ do
-    devise_for :users, controllers: { 
-      omniauth_callbacks: 'users/omniauth_callbacks'
-    }, path_names: {
-      sign_in: 'login',
-      sign_out: 'logout',
-      sign_up: 'register'
-    }
+    # 메인 도메인에서는 registration과 session 라우트를 모두 skip
+    # SSO를 위해 모든 인증은 auth 서브도메인에서 처리
+    devise_for :users, as: :main_user, skip: [:sessions, :registrations, :passwords, :confirmations, :unlocks, :omniauth_callbacks]
+    
+    # 필요한 경우 로그아웃만 메인 도메인에서 처리 가능하도록
+    devise_scope :user do
+      delete 'logout', to: redirect { |_params, request| DomainService.auth_url('logout') }
+    end
     
     get "pages/home"
     
-    # 조직 관리 (전역)
-    resources :organizations, only: [:index, :create, :show, :update, :destroy] do
-      member do
-        post :switch
+    # Design System Showcase (development only)
+    get "design_system", to: "design_system#index" if Rails.env.development?
+    
+    # 조직 관리 (전역) - Web 네임스페이스
+    namespace :web do
+      resources :organizations, only: [:index, :new, :create, :show, :update, :destroy] do
+        member do
+          post :switch
+        end
+      end
+      
+      # 사용자 관리 (전역)
+      resources :users, only: [:index, :show, :edit, :update, :destroy]
+      
+      # Services with nested Sprints and Tasks
+      resources :services do
+        resources :sprints do
+          member do
+            get :board
+            get :burndown
+            post :start
+            post :complete
+          end
+        end
+        
+        resources :tasks do
+          member do
+            post :assign
+            patch :update_status
+            post :block
+            post :unblock
+            post :add_comment
+            post :add_subtask
+            patch :complete_subtask
+          end
+          
+          collection do
+            patch :bulk_update
+          end
+        end
       end
     end
     
-    # 사용자 관리 (전역)
-    resources :users, only: [:index, :show, :edit, :update, :destroy]
-    
     # 메인 랜딩 페이지
-    root "pages#home"
+    root "landing#index"
   end
   
   # =============================================================================
@@ -58,18 +103,24 @@ Rails.application.routes.draw do
   constraints subdomain: 'auth' do
     devise_for :users, controllers: {
       omniauth_callbacks: 'users/omniauth_callbacks',
-      sessions: 'users/sessions'
-    }, path_names: {
+      sessions: 'users/sessions',
+      registrations: 'users/registrations',
+      passwords: 'users/passwords',
+      confirmations: 'users/confirmations',
+      unlocks: 'users/unlocks'
+    }, path: '', path_names: {
       sign_in: 'login',
       sign_out: 'logout',
       sign_up: 'register'
-    }
+    }, as: :auth_user
     
     # SSO 관련 라우트들
     devise_scope :user do
       get 'organization_selection', to: 'users/sessions#organization_selection', as: :organization_selection
       post 'switch_to_organization', to: 'users/sessions#switch_to_organization', as: :switch_to_organization
       get 'access_denied', to: 'users/sessions#access_denied', as: :access_denied
+      # GET logout 지원 (브라우저 직접 접근용)
+      get 'logout', to: 'users/sessions#destroy'
     end
     
     # 조직 선택 및 전환 (기존 조직 컨트롤러 루트)
@@ -82,7 +133,7 @@ Rails.application.routes.draw do
     # 백워드 호환성을 위한 추가 라우트
     get 'switch/:subdomain', to: 'users/sessions#switch_to_organization', as: :legacy_switch_to_organization
     
-    root "pages#home"
+    root "pages#home", as: :auth_root
   end
   
   # =============================================================================
@@ -95,42 +146,120 @@ Rails.application.routes.draw do
         subdomain = DomainService.extract_subdomain(request)
         DomainService.login_url(subdomain)
       }
-      delete 'logout', to: 'devise/sessions#destroy'
+      get 'users/login', to: redirect { |params, request|
+        subdomain = DomainService.extract_subdomain(request)
+        DomainService.login_url(subdomain)
+      }
+      delete 'logout', to: redirect { |_params, request| DomainService.auth_url('logout') }
     end
     
     # 조직 대시보드
-    root "organizations#dashboard"
-    get 'dashboard', to: 'organizations#dashboard'
+    root "web/organizations#dashboard", as: :tenant_root
+    get 'dashboard', to: 'web/organizations#dashboard'
     
     # 현재 조직 정보
-    resource :organization, only: [:show, :edit, :update] do
-      resources :organization_memberships, path: 'members', except: [:new] do
-        member do
-          patch :toggle_active
-        end
-        collection do
-          post :invite
-        end
+    resource :organization, only: [:show, :edit, :update]
+    
+    # Web 인터페이스 라우트 확장 (URL에서 /web 접두사 제거)
+    resources :roles, controller: 'web/roles' do
+      member do
+        get :permissions
+        post :duplicate
       end
     end
     
-    # 테넌트별 리소스들
-    resources :tasks do
+    resources :permission_audit_logs, controller: 'web/permission_audit_logs', only: [:index, :show] do
+      collection do
+        get :export
+      end
+    end
+    
+    # Web 인터페이스 라우트 (URL에서 /web 접두사 제거)
+    # 컨트롤러는 web 네임스페이스를 사용하지만 URL은 깔끔하게 유지
+    resources :tasks, controller: 'web/tasks' do
       member do
         patch :assign
         patch :change_status, path: 'status'
         patch :reorder
+        get :metrics
       end
       collection do
         get :stats
       end
     end
     
+    resources :members, controller: 'web/organization_memberships' do
+      member do
+        patch :toggle_active
+      end
+      collection do
+        post :invite
+      end
+    end
+    
     # 추후 추가될 테넌트별 리소스들
     # resources :projects
-    # resources :sprints
-    # resources :teams
-    # resources :reports
+    # Timeline View
+    get 'timeline', to: 'web/timeline#index', as: :timeline
+    
+    # Milestones with nested Sprints
+    resources :milestones, controller: 'web/milestones' do
+      member do
+        get :risks
+        get :objectives
+        get :dependencies
+        patch :update_progress
+      end
+      
+      resources :sprints, controller: 'web/sprints' do
+        member do
+          patch :start
+          patch :complete
+          get :board
+          get :burndown
+          get :retrospective
+          get :reports
+        end
+        
+        resources :tasks, only: [:new, :create]
+      end
+    end
+    
+    # Sprints (standalone)
+    resources :sprints, controller: 'web/sprints' do
+      member do
+        patch :start
+        patch :complete
+        get :board
+        get :burndown
+        get :retrospective
+        get :reports
+      end
+      
+      resources :tasks do
+        member do
+          patch :update_status
+          post :assign
+        end
+      end
+    end
+    
+    # Tasks
+    resources :tasks do
+      member do
+        patch :update_status
+        post :assign
+        post :add_comment
+      end
+      
+      collection do
+        patch :bulk_update
+      end
+    end
+    
+    # Teams and Reports
+    resources :teams
+    resources :reports
     
     # 사용자 프로필 (조직 컨텍스트)
     resource :profile, controller: 'users', only: [:show, :edit, :update]
@@ -155,10 +284,60 @@ Rails.application.routes.draw do
         post 'auth/logout', to: 'auth#logout'
         get 'auth/me', to: 'auth#me'
         
+        # Health Check Endpoints
+        namespace :health do
+          get 'status', to: 'health#status'
+          get 'ping', to: 'health#ping'
+          get 'mongodb', to: 'health#mongodb'
+          get 'postgresql', to: 'health#postgresql'
+          get 'detailed', to: 'health#detailed'
+        end
+
+        # Notification Endpoints
+        resources :notifications, only: [:index, :show] do
+          member do
+            post 'read', to: 'notifications#mark_as_read'
+            post 'dismiss'
+            post 'archive'
+            post 'interaction', to: 'notifications#track_interaction'
+          end
+          
+          collection do
+            get 'summary'
+            get 'unread_count'
+            post 'mark_all_read', to: 'notifications#mark_all_as_read'
+            get 'preferences'
+            put 'preferences', to: 'notifications#update_preferences'
+            post 'test', to: 'notifications#send_test'
+          end
+        end
+        
         # 조직 API
-        resources :organizations, only: [:index, :show] do
-          resources :tasks
-          resources :organization_memberships, path: 'members'
+        resources :organizations do
+          # 중첩된 리소스는 사용하지 않고 current_organization 사용
+        end
+        
+        # Task API
+        resources :tasks do
+          member do
+            patch :assign
+            patch 'status', to: 'tasks#change_status'
+            patch :reorder
+            get :metrics
+          end
+          collection do
+            get :stats
+          end
+        end
+        
+        # Organization Membership API
+        resources :organization_memberships, path: 'members' do
+          member do
+            patch :toggle_active
+          end
+          collection do
+            post :invite
+          end
         end
       end
     end
@@ -169,7 +348,20 @@ Rails.application.routes.draw do
   # =============================================================================
   constraints subdomain: 'admin' do
     namespace :admin do
-      root "dashboard#index"
+      root "dashboard#index", as: :admin_root
+      
+      # MongoDB Monitoring Dashboard
+      resources :mongodb_monitoring, only: [:index] do
+        collection do
+          get 'metrics'
+          get 'trends'
+          get 'slow_queries'
+          get 'collections'
+          get 'connections'
+          post 'refresh'
+          get 'export'
+        end
+      end
       
       resources :organizations do
         resources :organization_memberships, path: 'members'

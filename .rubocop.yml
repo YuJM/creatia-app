@@ -2,6 +2,16 @@
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
 # Overwrite or add rules to create your own house style
+
+# 네임스페이스 충돌 방지를 위한 커스텀 규칙
+# 모델 클래스는 항상 루트 네임스페이스에서 참조
+Style/RedundantConstantBase:
+  Enabled: false  # ::Task 형태를 허용
+
+# 모듈과 모델명 충돌 방지를 위한 네이밍 규칙
+Naming/FileName:
+  Exclude:
+    - 'app/lib/app_routes.rb'
 #
 # # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`
 # Layout/SpaceInsideArrayLiteralBrackets:

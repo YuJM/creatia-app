@@ -1,0 +1,115 @@
+<%= turbo_frame_tag dom_id(role) do %>
+  <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200">
+    <div class="px-4 py-5 sm:p-6">
+      <div class="flex items-start justify-between">
+        <div class="flex-1">
+          <div class="flex items-center space-x-2">
+            <h3 class="text-lg font-medium text-gray-900">
+              <%= role.name %>
+            </h3>
+            <%= role_level_badge %>
+            <%= system_badge %>
+          </div>
+          
+          <p class="mt-1 text-sm text-gray-500">
+            <%= role.key %>
+          </p>
+          
+          <% if role.description.present? %>
+            <p class="mt-2 text-sm text-gray-600">
+              <%= role.description %>
+            </p>
+          <% end %>
+          
+          <div class="mt-4 flex items-center space-x-4 text-sm text-gray-500">
+            <div class="flex items-center">
+              <svg class="mr-1.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+              </svg>
+              <span><%= members_count %> 멤버</span>
+            </div>
+            
+            <div class="flex items-center">
+              <svg class="mr-1.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span><%= permissions_count %> 권한</span>
+            </div>
+            
+            <div class="flex items-center">
+              <svg class="mr-1.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
+              </svg>
+              <span>우선순위: <%= role.priority %></span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="ml-4 flex-shrink-0">
+          <div class="relative" data-controller="dropdown">
+            <button type="button" 
+                    data-action="click->dropdown#toggle click@window->dropdown#hide"
+                    class="bg-white rounded-full p-1 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+              </svg>
+            </button>
+            
+            <div data-dropdown-target="menu"
+                 class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+              <div class="py-1" role="menu">
+                <%= link_to organization_role_path(organization, role),
+                            class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100",
+                            role: "menuitem" do %>
+                  <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                  </svg>
+                  상세보기
+                <% end %>
+                
+                <% if can_edit? %>
+                  <%= link_to edit_organization_role_path(organization, role),
+                              class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100",
+                              role: "menuitem" do %>
+                    <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    수정
+                  <% end %>
+                <% end %>
+                
+                <% if can_duplicate? %>
+                  <%= link_to duplicate_organization_role_path(organization, role),
+                              method: :post,
+                              class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100",
+                              role: "menuitem" do %>
+                    <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    복제
+                  <% end %>
+                <% end %>
+                
+                <% if can_delete? %>
+                  <div class="border-t border-gray-100 mt-1 pt-1">
+                    <%= button_to organization_role_path(organization, role),
+                                  method: :delete,
+                                  form: { data: { turbo_confirm: "정말 이 역할을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다." } },
+                                  class: "block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50",
+                                  role: "menuitem" do %>
+                      <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                      삭제
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

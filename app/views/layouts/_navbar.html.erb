@@ -1,0 +1,257 @@
+<!-- Desktop Sidebar -->
+<div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+  <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-card border-r border-border px-6 pb-4">
+    <!-- Logo and Organization Info -->
+    <div class="flex h-16 shrink-0 items-center">
+      <div class="flex items-center gap-3 w-full">
+        <%= link_to root_path, class: "flex items-center gap-2" do %>
+          <div class="h-10 w-10 bg-gradient-to-r from-primary to-accent rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
+            <span class="text-white text-xl font-bold">C</span>
+          </div>
+          <span class="text-lg font-semibold text-foreground">Creatia</span>
+        <% end %>
+        
+        <!-- Organization Switcher -->
+        <% if ActsAsTenant.current_tenant %>
+          <div class="ml-auto relative" data-controller="dropdown">
+            <button type="button" 
+                    class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-muted transition-colors"
+                    data-action="click->dropdown#toggle"
+                    aria-expanded="false"
+                    aria-haspopup="true">
+              <span class="text-xs text-muted-foreground truncate max-w-32">
+                <%= ActsAsTenant.current_tenant.name %>
+              </span>
+              <%= icon "caret-down", class: "h-4 w-4 text-muted-foreground" %>
+            </button>
+            
+            <div class="hidden absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-card shadow-lg border border-border"
+                 data-dropdown-target="menu">
+              <div class="py-1">
+                <div class="px-4 py-2 text-xs font-semibold text-muted-foreground border-b border-border">
+                  조직 전환
+                </div>
+                <% current_user.organizations.each do |org| %>
+                  <% if org != ActsAsTenant.current_tenant %>
+                    <%= link_to org.name, 
+                        "#{request.protocol}#{org.subdomain}.#{DomainService.base_domain}",
+                        class: "block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors",
+                        data: { turbo: false } %>
+                  <% else %>
+                    <div class="px-4 py-2 text-sm text-foreground bg-muted/50">
+                      <%= org.name %> <span class="text-xs text-muted-foreground">(현재)</span>
+                    </div>
+                  <% end %>
+                <% end %>
+                <div class="border-t border-border mt-1 pt-1">
+                  <%= link_to "새 조직 만들기", 
+                      "#{request.protocol}www.#{DomainService.base_domain}/web/organizations/new",
+                      class: "block px-4 py-2 text-sm text-primary hover:bg-muted transition-colors",
+                      data: { turbo: false } %>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex flex-1 flex-col">
+      <ul role="list" class="flex flex-1 flex-col gap-y-7">
+        <li>
+          <ul role="list" class="-mx-2 space-y-1">
+            <!-- Dashboard -->
+            <li>
+              <%= link_to dashboard_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(dashboard_path)}" do %>
+                <%= icon "squares-four", class: "h-5 w-5 shrink-0" %>
+                Dashboard
+              <% end %>
+            </li>
+
+            <!-- Tasks -->
+            <li>
+              <%= link_to tasks_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(tasks_path)}" do %>
+                <%= icon "clipboard-text", class: "h-5 w-5 shrink-0" %>
+                Tasks
+                <% if defined?(@tasks_count) && @tasks_count > 0 %>
+                  <span class="ml-auto bg-primary/10 text-primary rounded-full px-2 py-1 text-xs font-medium">
+                    <%= @tasks_count %>
+                  </span>
+                <% end %>
+              <% end %>
+            </li>
+
+            <!-- Timeline -->
+            <li>
+              <%= link_to timeline_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(timeline_path)}" do %>
+                <%= icon "calendar", class: "h-5 w-5 shrink-0" %>
+                Timeline
+              <% end %>
+            </li>
+
+            <!-- Milestones -->
+            <li>
+              <%= link_to milestones_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(milestones_path)}" do %>
+                <%= icon "flag", class: "h-5 w-5 shrink-0" %>
+                Milestones
+              <% end %>
+            </li>
+
+            <!-- Sprints -->
+            <li>
+              <%= link_to sprints_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors #{'bg-primary text-primary-foreground' if current_page?(sprints_path)}" do %>
+                <%= icon "lightning", class: "h-5 w-5 shrink-0" %>
+                Sprints
+              <% end %>
+            </li>
+
+            <!-- Members (if current organization) -->
+            <% if ActsAsTenant.current_tenant %>
+              <li>
+                <%= link_to members_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors" do %>
+                  <%= icon "users", class: "h-5 w-5 shrink-0" %>
+                  Members
+                <% end %>
+              </li>
+            <% end %>
+
+            <!-- Permission Audit Logs -->
+            <li>
+              <%= link_to permission_audit_logs_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors" do %>
+                <%= icon "file-text", class: "h-5 w-5 shrink-0" %>
+                Audit Logs
+              <% end %>
+            </li>
+          </ul>
+        </li>
+
+        <!-- Settings Section -->
+        <li class="mt-auto">
+          <div class="text-xs font-semibold leading-6 text-muted-foreground mb-2">Settings</div>
+          <ul role="list" class="-mx-2 space-y-1">
+            <li>
+              <%= link_to settings_organization_path, class: "group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium hover:bg-muted hover:text-foreground transition-colors" do %>
+                <%= icon "gear", class: "h-5 w-5 shrink-0" %>
+                Organization
+              <% end %>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- User Profile -->
+    <div class="flex items-center gap-x-4 px-2 py-3 border-t border-border">
+      <div class="h-8 w-8 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center">
+        <span class="text-xs font-medium text-white">
+          <%= current_user.email.first.upcase %>
+        </span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-medium text-foreground truncate">
+          <%= current_user.email %>
+        </div>
+      </div>
+      
+      <!-- Theme Toggle -->
+      <%= render Ui::ThemeToggleComponent.new %>
+      
+      <!-- User Menu -->
+      <div class="relative" data-controller="dropdown">
+        <button type="button" 
+                class="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                data-action="click->dropdown#toggle"
+                aria-expanded="false"
+                aria-haspopup="true">
+          <%= icon "dots-three-vertical", class: "h-5 w-5" %>
+        </button>
+
+        <div class="hidden absolute right-0 bottom-12 z-10 mt-2 w-48 origin-bottom-right rounded-md bg-card shadow-hard border border-border py-1"
+             data-dropdown-target="menu">
+          <%= link_to AppRoutes::Auth.profile_edit_url, class: "block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors", data: { turbo: false } do %>
+            <%= icon "user", class: "h-4 w-4 inline mr-2" %>
+            Profile Settings
+          <% end %>
+          <%= link_to AppRoutes::Auth.logout_url, 
+              data: { turbo: false, turbo_action: "replace" },
+              class: "block w-full text-left px-4 py-2 text-sm text-destructive hover:bg-muted transition-colors" do %>
+            <%= icon "sign-out", class: "h-4 w-4 inline mr-2" %>
+            Sign out
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile menu -->
+<div class="lg:hidden">
+  <!-- Mobile menu button -->
+  <div class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card px-4 shadow-sm sm:gap-x-6 sm:px-6">
+    <button type="button" class="-m-2.5 p-2.5 text-muted-foreground lg:hidden" data-controller="mobile-menu" data-action="click->mobile-menu#toggle">
+      <span class="sr-only">Open sidebar</span>
+      <%= icon "list", class: "h-6 w-6" %>
+    </button>
+
+    <!-- Logo for mobile -->
+    <div class="flex-1 flex items-center gap-x-3">
+      <div class="h-8 w-8 bg-gradient-to-r from-primary to-accent rounded-lg flex items-center justify-center shadow">
+        <span class="text-white text-lg font-bold">C</span>
+      </div>
+      <div>
+        <span class="text-lg font-semibold text-foreground">Creatia</span>
+      </div>
+    </div>
+
+    <!-- User avatar -->
+    <div class="h-8 w-8 rounded-full bg-gradient-to-r from-primary-400 to-accent-400 flex items-center justify-center">
+      <span class="text-sm font-medium text-white">
+        <%= current_user.email.first.upcase %>
+      </span>
+    </div>
+  </div>
+
+  <!-- Mobile menu overlay -->
+  <div class="relative z-50 lg:hidden hidden" data-mobile-menu-target="overlay" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-background/80 backdrop-blur-sm"></div>
+    <div class="fixed inset-0 flex">
+      <div class="relative mr-16 flex w-full max-w-xs flex-1">
+        <div class="absolute left-full top-0 flex w-16 justify-center pt-5">
+          <button type="button" class="-m-2.5 p-2.5" data-action="click->mobile-menu#close">
+            <span class="sr-only">Close sidebar</span>
+            <%= icon "x", class: "h-6 w-6 text-white" %>
+          </button>
+        </div>
+
+        <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-card px-6 pb-4">
+          <!-- Same content as desktop sidebar -->
+          <div class="flex h-16 shrink-0 items-center">
+            <div class="flex items-center gap-3 w-full">
+              <%= link_to root_path, class: "flex items-center gap-2" do %>
+                <div class="h-10 w-10 bg-gradient-to-r from-primary-500 to-accent-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <span class="text-white text-xl font-bold">C</span>
+                </div>
+                <span class="text-lg font-semibold text-foreground">Creatia</span>
+              <% end %>
+              
+              <!-- Organization Info for Mobile -->
+              <% if ActsAsTenant.current_tenant %>
+                <div class="ml-auto">
+                  <span class="text-xs text-muted-foreground truncate max-w-32 block">
+                    <%= ActsAsTenant.current_tenant.name %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <nav class="flex flex-1 flex-col">
+            <!-- Same navigation content as desktop -->
+            <!-- (Include the same navigation structure here) -->
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

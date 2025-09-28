@@ -1,0 +1,116 @@
+<div class="min-h-screen flex items-center justify-center bg-background px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <!-- Logo and Title -->
+    <div class="text-center">
+      <div class="mx-auto h-16 w-16 bg-gradient-to-r from-primary to-accent rounded-xl flex items-center justify-center shadow-lg transform -rotate-3 hover:-rotate-6 transition-transform">
+        <span class="text-white text-2xl font-bold">C</span>
+      </div>
+      <h2 class="mt-6 text-display-xl text-foreground font-bold tracking-tight">
+        Create your account
+      </h2>
+      <p class="mt-2 text-base text-muted-foreground">
+        Join Creatia and start managing projects
+      </p>
+    </div>
+
+    <!-- Registration Form Card -->
+    <%= render Ui::CardComponent.new(variant: :elevated, padding: :lg, class: "animate-fade-in") do %>
+      <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-6" }) do |f| %>
+        
+        <% if resource.errors.any? %>
+          <%= render AlertComponent.new(variant: :danger) do %>
+            <h3 class="font-medium">Please fix the following errors:</h3>
+            <ul class="mt-2 space-y-1">
+              <% resource.errors.full_messages.each do |message| %>
+                <li>• <%= message %></li>
+              <% end %>
+            </ul>
+          <% end %>
+        <% end %>
+
+        <!-- Name Field -->
+        <%= render Ui::InputComponent.new(
+              type: 'text',
+              label: 'Full Name',
+              name: "#{resource_name}[name]",
+              id: "#{resource_name}_name",
+              placeholder: 'John Doe',
+              required: true,
+              prefix: :user,
+              value: resource.name
+            ) %>
+
+        <!-- Email Field -->
+        <%= render Ui::InputComponent.new(
+              type: 'email',
+              label: 'Email Address',
+              name: "#{resource_name}[email]",
+              id: "#{resource_name}_email",
+              placeholder: 'your@email.com',
+              required: true,
+              prefix: :email,
+              value: resource.email
+            ) %>
+
+        <!-- Password Field -->
+        <% password_label = minimum_password_length ? "Password (#{minimum_password_length} characters minimum)" : "Password" %>
+        <%= render Ui::InputComponent.new(
+              type: 'password',
+              label: password_label,
+              name: "#{resource_name}[password]",
+              id: "#{resource_name}_password",
+              placeholder: '••••••••',
+              required: true,
+              prefix: :lock
+            ) %>
+
+        <!-- Password Confirmation Field -->
+        <%= render Ui::InputComponent.new(
+              type: 'password',
+              label: 'Confirm Password',
+              name: "#{resource_name}[password_confirmation]",
+              id: "#{resource_name}_password_confirmation",
+              placeholder: '••••••••',
+              required: true,
+              prefix: :lock
+            ) %>
+
+        <!-- Terms and Conditions -->
+        <div class="flex items-start">
+          <div class="flex items-center h-5">
+            <input type="checkbox" required class="h-4 w-4 text-primary focus:ring-ring border-input rounded">
+          </div>
+          <div class="ml-3 text-sm">
+            <label class="text-muted-foreground">
+              I agree to the 
+              <%= link_to "Terms and Conditions", "#", class: "font-medium text-primary hover:text-primary/80 transition-colors" %> and 
+              <%= link_to "Privacy Policy", "#", class: "font-medium text-primary hover:text-primary/80 transition-colors" %>
+            </label>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div>
+          <%= render Ui::ButtonComponent.new(
+                variant: :default,
+                size: :lg,
+                full_width: true,
+                type: "submit",
+                icon: :plus
+              ) do %>
+            Create Account
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+
+    <!-- Sign In Link -->
+    <div class="text-center">
+      <span class="text-sm text-muted-foreground">
+        Already have an account?
+        <%= link_to "Sign in", new_session_path(resource_name), 
+            class: "font-medium text-primary hover:text-primary/80 transition-colors" %>
+      </span>
+    </div>
+  </div>
+</div>

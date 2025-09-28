@@ -1,0 +1,107 @@
+#!/bin/bash
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${GREEN}🚀 Starting test environment with Caddy...${NC}"
+
+# Function to cleanup on exit
+cleanup() {
+    echo -e "${YELLOW}🧹 Cleaning up...${NC}"
+    
+    # Kill Caddy
+    if [ ! -z "$CADDY_PID" ]; then
+        echo "Stopping Caddy (PID: $CADDY_PID)..."
+        kill $CADDY_PID 2>/dev/null || true
+    fi
+    
+    # Kill Rails server
+    if [ ! -z "$RAILS_PID" ]; then
+        echo "Stopping Rails server (PID: $RAILS_PID)..."
+        kill $RAILS_PID 2>/dev/null || true
+    fi
+    
+    # Additional cleanup for any remaining processes
+    pkill -f "caddy run" 2>/dev/null || true
+    pkill -f "puma.*3000" 2>/dev/null || true
+    
+    echo -e "${GREEN}✅ Cleanup complete${NC}"
+}
+
+# Set trap to cleanup on script exit
+trap cleanup EXIT INT TERM
+
+# Check if Caddy is installed
+if ! command -v caddy &> /dev/null; then
+    echo -e "${RED}❌ Caddy is not installed. Please install Caddy first:${NC}"
+    echo "brew install caddy"
+    exit 1
+fi
+
+# Setup hosts entries reminder
+echo -e "${YELLOW}⚠️  Make sure you have the following entries in /etc/hosts:${NC}"
+echo "127.0.0.1 localhost.test www.localhost.test auth.localhost.test api.localhost.test"
+echo "127.0.0.1 admin.localhost.test org1.localhost.test org2.localhost.test"
+echo "127.0.0.1 testorg.localhost.test unauthorized.localhost.test"
+echo ""
+echo "Press Enter to continue or Ctrl+C to exit..."
+read
+
+# Prepare test database
+echo -e "${GREEN}📊 Preparing test database...${NC}"
+RAILS_ENV=test bin/rails db:prepare
+
+# Start Rails server in test environment
+echo -e "${GREEN}🚂 Starting Rails server on port 3000...${NC}"
+RAILS_ENV=test bin/rails server -p 3000 -d
+RAILS_PID=$(lsof -ti:3000)
+echo "Rails server started (PID: $RAILS_PID)"
+
+# Wait for Rails to be ready
+echo "Waiting for Rails server to be ready..."
+until curl -s http://localhost:3000/up > /dev/null 2>&1; do
+    sleep 1
+done
+echo "Rails server is ready!"
+
+# Start Caddy with test configuration
+echo -e "${GREEN}🔗 Starting Caddy reverse proxy...${NC}"
+caddy run --config Caddyfile.test --adapter caddyfile &
+CADDY_PID=$!
+echo "Caddy started (PID: $CADDY_PID)"
+
+# Wait for Caddy to be ready
+echo "Waiting for Caddy to be ready..."
+sleep 3
+
+# Verify Caddy is responding
+if curl -s -o /dev/null -w "%{http_code}" http://localhost.test:8080 | grep -q "200\|302"; then
+    echo -e "${GREEN}✅ Caddy is ready and responding!${NC}"
+else
+    echo -e "${YELLOW}⚠️  Caddy might not be responding correctly, but continuing...${NC}"
+fi
+
+# Run the tests
+echo -e "${GREEN}🧪 Running system tests...${NC}"
+
+# If specific test file is provided as argument, run that; otherwise run all system tests
+if [ $# -gt 0 ]; then
+    bundle exec rspec "$@"
+else
+    bundle exec rspec spec/system
+fi
+
+TEST_RESULT=$?
+
+# Show test results
+if [ $TEST_RESULT -eq 0 ]; then
+    echo -e "${GREEN}✅ All tests passed!${NC}"
+else
+    echo -e "${RED}❌ Some tests failed. Check the output above.${NC}"
+fi
+
+exit $TEST_RESULT

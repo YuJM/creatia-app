@@ -24,18 +24,62 @@ gem "alba", "~> 3.5"
 
 # Authentication
 gem "devise", "~> 4.9"
+gem "devise-i18n", "~> 1.12"
+
+# Internationalization
+gem "rails-i18n", "~> 8.0"
 
 # Authorization
-gem "pundit", "~> 2.4"
+# gem "pundit", "~> 2.4"  # Replaced with CanCanCan for dynamic RBAC
+gem "cancancan", "~> 3.6"
+
+# JWT for secure cross-domain authentication
+gem "jwt", "~> 2.7"
+
+# Service object utilities
+gem "attr_extras", "~> 7.1"
+gem "memo_wise", "~> 1.8"
+
+# dry-rb ecosystem for functional programming
+gem "dry-monads", "~> 1.6"
+gem "dry-validation", "~> 1.10"
+gem "dry-struct", "~> 1.6"
+gem "dry-types", "~> 1.7"
+gem "dry-container", "~> 0.11"
+gem "dry-auto_inject", "~> 1.0"
+gem "dry-transaction", "~> 0.16"
+gem "dry-initializer", "~> 3.1"
+gem "dry-schema", "~> 1.13"
+gem "hashie", "~> 5.0"
+
+# Connection management and caching
+gem "connection_pool", "~> 2.4"
 
 # Multi-tenancy
 gem "acts_as_tenant", "~> 1.0"
+
+# Pagination
+gem "kaminari", "~> 1.2"
+gem "kaminari-mongoid", "~> 1.0"  # Required for Mongoid support
 
 # OAuth authentication
 gem "omniauth", "~> 2.1"
 gem "omniauth-google-oauth2", "~> 1.2"
 gem "omniauth-github", "~> 2.0"
 gem "omniauth-rails_csrf_protection", "~> 1.0"
+
+# ViewComponent for reusable view components [https://github.com/viewcomponent/view_component]
+gem "view_component", "~> 3.20"
+
+# Time management and tracking
+gem 'business_time', '~> 0.13.0'  # Business time calculations
+gem 'working_hours', '~> 1.4'     # Team-specific working hours
+gem 'ice_cube', '~> 0.17'          # Recurring schedules (Sprint, meetings)
+gem 'local_time', '~> 3.0'         # Client timezone conversion
+gem 'chronic', '~> 0.10.2'         # Natural language time parsing
+gem 'groupdate', '~> 6.6'          # Time series data grouping
+
+# Notifications
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
@@ -59,6 +103,12 @@ gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
+
+# MongoDB ORM
+gem "mongoid", "~> 9.0"
+
+# Browser detection for user action tracking
+gem "browser", "~> 6.0"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -105,3 +155,5 @@ group :test do
 end
 
 gem "tailwindcss-ruby", "~> 4.1"
+
+gem "rails_icons", "~> 1.4"

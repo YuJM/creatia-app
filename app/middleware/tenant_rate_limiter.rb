@@ -6,7 +6,7 @@
 # - 조직별 API 요청 제한
 # - IP별 요청 제한
 # - 사용자별 요청 제한
-# - Redis 기반 분산 Rate Limiting
+# - Rails.cache 기반 Rate Limiting
 class TenantRateLimiter
   class RateLimitExceeded < StandardError
     attr_reader :retry_after, :limit_type
@@ -20,10 +20,6 @@ class TenantRateLimiter
   
   def initialize(app)
     @app = app
-    @redis = Redis.new(url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0'))
-  rescue Redis::CannotConnectError
-    Rails.logger.warn "Redis not available for rate limiting"
-    @redis = nil
   end
   
   def call(env)
@@ -53,9 +49,6 @@ class TenantRateLimiter
   
   # Rate limiting 대상인지 확인
   def should_rate_limit?(request)
-    # Redis가 없으면 비활성화
-    return false unless @redis
-    
     # 개발 환경에서는 선택적 활성화
     return false if Rails.env.development? && ENV['ENABLE_RATE_LIMITING'] != 'true'
     
@@ -193,27 +186,21 @@ class TenantRateLimiter
     end
   end
   
-  # Redis 카운터 조회
+  # Rails.cache 카운터 조회
   def get_counter(key, window)
-    return 0 unless @redis
-    @redis.get(key).to_i
+    Rails.cache.read(key) || 0
   end
   
-  # Redis 카운터 증가
+  # Rails.cache 카운터 증가
   def increment_counter(key, window)
-    return unless @redis
-    
-    @redis.multi do |multi|
-      multi.incr(key)
-      multi.expire(key, window)
-    end
+    current_count = Rails.cache.read(key) || 0
+    Rails.cache.write(key, current_count + 1, expires_in: window.seconds)
   end
   
   # 재시도 가능 시간 계산
   def get_retry_after(key, window)
-    return window unless @redis
-    ttl = @redis.ttl(key)
-    ttl > 0 ? ttl : window
+    # Rails.cache는 TTL 조회가 어려우므로 window 반환
+    window
   end
   
   # API 요청 여부 확인

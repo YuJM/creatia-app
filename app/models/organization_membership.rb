@@ -2,6 +2,7 @@ class OrganizationMembership < ApplicationRecord
   # Associations
   belongs_to :user
   belongs_to :organization
+  belongs_to :role_object, class_name: 'Role', foreign_key: 'role_id', optional: true
   
   # Constants
   ROLES = %w[owner admin member viewer].freeze
@@ -39,6 +40,11 @@ class OrganizationMembership < ApplicationRecord
   
   def can_manage_organization?
     owner?
+  end
+  
+  def developer_role?
+    # 개발자 관련 역할인지 확인 (admin과 member은 개발 작업을 할 수 있다고 가정)
+    role.in?(%w[owner admin member])
   end
   
   def display_role

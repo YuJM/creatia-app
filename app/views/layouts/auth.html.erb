@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html class="h-full">
+  <head>
+    <%= render 'layouts/head' %>
+  </head>
+
+  <body class="h-full bg-background" id="layout-auth" data-layout="auth">
+    <%= render 'layouts/flash_messages' %>
+    
+    <!-- Auth Content -->
+    <%= yield %>
+  </body>
+</html>

@@ -17,11 +17,23 @@ default: &default
   encoding: unicode
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 20 } %>
   host: <%= ENV.fetch("DATABASE_HOST", "localhost") %>
   port: <%= ENV.fetch("DATABASE_PORT", 5432) %>
   username: <%= ENV["DATABASE_USERNAME"] %>
   password: <%= ENV["DATABASE_PASSWORD"] %>
+  # PostgreSQL 캐싱 최적화
+  prepared_statements: true
+  statement_limit: 1000
+  # 연결 관리 최적화 설정
+  idle_timeout: 300
+  checkout_timeout: 15  # 10초 → 15초 (여유 확보)
+  reaping_frequency: 10
+  # 연결 검증 및 복구 설정
+  verify_timeout: 2
+  connection_timeout: 5
+  # 멀티테넌트 환경에서 연결 재사용 최적화
+  enable_shared_connections: true
 
 
 development:

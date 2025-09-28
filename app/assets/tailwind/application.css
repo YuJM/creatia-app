@@ -1,1 +1,304 @@
+/* 
+ * Tailwind CSS v4 - Creatia Design System
+ * Modern color system using oklch color space
+ */
+
 @import "tailwindcss";
+
+@theme {
+  /* Base radius for rounded corners */
+  --radius: 0.5rem;
+
+  /* Light mode colors */
+  --color-background: oklch(0.99 0 0);
+  --color-foreground: oklch(0.15 0.005 285);
+
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.15 0.005 285);
+
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.15 0.005 285);
+
+  /* Primary - Creatia Blue */
+  --color-primary: oklch(0.55 0.24 250);
+  --color-primary-foreground: oklch(0.98 0.01 250);
+
+  /* Secondary - Neutral */
+  --color-secondary: oklch(0.96 0.001 285);
+  --color-secondary-foreground: oklch(0.21 0.006 285);
+
+  --color-muted: oklch(0.96 0.001 285);
+  --color-muted-foreground: oklch(0.55 0.016 285);
+
+  /* Accent - Emerald */
+  --color-accent: oklch(0.65 0.18 165);
+  --color-accent-foreground: oklch(0.98 0.01 165);
+
+  /* Destructive - Red */
+  --color-destructive: oklch(0.58 0.24 27);
+  --color-destructive-foreground: oklch(0.98 0.01 27);
+
+  /* Borders and inputs */
+  --color-border: oklch(0.92 0.004 285);
+  --color-input: oklch(0.92 0.004 285);
+  --color-ring: oklch(0.55 0.24 250);
+
+  /* Success - Green */
+  --color-success: oklch(0.65 0.18 165);
+  --color-success-foreground: oklch(0.98 0.01 165);
+
+  /* Warning - Amber */
+  --color-warning: oklch(0.68 0.19 85);
+  --color-warning-foreground: oklch(0.15 0.005 85);
+
+  /* Info - Blue */
+  --color-info: oklch(0.6 0.18 230);
+  --color-info-foreground: oklch(0.98 0.01 230);
+
+  /* Chart colors */
+  --color-chart-1: oklch(0.65 0.22 41);
+  --color-chart-2: oklch(0.6 0.12 185);
+  --color-chart-3: oklch(0.4 0.07 227);
+  --color-chart-4: oklch(0.83 0.19 84);
+  --color-chart-5: oklch(0.77 0.19 70);
+
+  /* Sidebar colors */
+  --color-sidebar: oklch(0.985 0 0);
+  --color-sidebar-foreground: oklch(0.15 0.005 285);
+  --color-sidebar-primary: oklch(0.55 0.24 250);
+  --color-sidebar-primary-foreground: oklch(0.98 0.01 250);
+  --color-sidebar-accent: oklch(0.96 0.001 285);
+  --color-sidebar-accent-foreground: oklch(0.21 0.006 285);
+  --color-sidebar-border: oklch(0.92 0.004 285);
+  --color-sidebar-ring: oklch(0.55 0.24 250);
+
+  /* Semantic colors for tasks/status */
+  --color-task-active: oklch(0.55 0.24 250);
+  --color-task-completed: oklch(0.65 0.18 165);
+  --color-task-blocked: oklch(0.58 0.24 27);
+  --color-task-pending: oklch(0.68 0.19 85);
+  --color-task-draft: oklch(0.55 0.016 285);
+
+  /* Priority levels */
+  --color-priority-critical: oklch(0.58 0.24 27);
+  --color-priority-high: oklch(0.6 0.22 30);
+  --color-priority-medium: oklch(0.68 0.19 85);
+  --color-priority-low: oklch(0.65 0.18 165);
+  --color-priority-none: oklch(0.55 0.016 285);
+
+  /* Status indicators */
+  --color-status-online: oklch(0.65 0.18 165);
+  --color-status-away: oklch(0.68 0.19 85);
+  --color-status-busy: oklch(0.58 0.24 27);
+  --color-status-offline: oklch(0.55 0.016 285);
+}
+
+/* Dark mode colors */
+.dark {
+  --color-background: oklch(0.14 0.005 285);
+  --color-foreground: oklch(0.985 0 0);
+
+  --color-card: oklch(0.21 0.006 285);
+  --color-card-foreground: oklch(0.985 0 0);
+
+  --color-popover: oklch(0.21 0.006 285);
+  --color-popover-foreground: oklch(0.985 0 0);
+
+  /* Primary - Creatia Blue (adjusted for dark) */
+  --color-primary: oklch(0.65 0.2 250);
+  --color-primary-foreground: oklch(0.15 0.005 250);
+
+  /* Secondary - Neutral */
+  --color-secondary: oklch(0.27 0.006 285);
+  --color-secondary-foreground: oklch(0.985 0 0);
+
+  --color-muted: oklch(0.27 0.006 285);
+  --color-muted-foreground: oklch(0.7 0.015 285);
+
+  /* Accent - Emerald (adjusted for dark) */
+  --color-accent: oklch(0.7 0.15 165);
+  --color-accent-foreground: oklch(0.15 0.005 165);
+
+  /* Destructive - Red */
+  --color-destructive: oklch(0.7 0.19 22);
+  --color-destructive-foreground: oklch(0.15 0.005 22);
+
+  /* Borders and inputs */
+  --color-border: oklch(1 0 0 / 10%);
+  --color-input: oklch(1 0 0 / 15%);
+  --color-ring: oklch(0.65 0.2 250);
+
+  /* Success - Green */
+  --color-success: oklch(0.7 0.15 165);
+  --color-success-foreground: oklch(0.15 0.005 165);
+
+  /* Warning - Amber */
+  --color-warning: oklch(0.73 0.16 85);
+  --color-warning-foreground: oklch(0.15 0.005 85);
+
+  /* Info - Blue */
+  --color-info: oklch(0.65 0.15 230);
+  --color-info-foreground: oklch(0.15 0.005 230);
+
+  /* Chart colors (adjusted for dark) */
+  --color-chart-1: oklch(0.49 0.24 264);
+  --color-chart-2: oklch(0.7 0.17 162);
+  --color-chart-3: oklch(0.77 0.19 70);
+  --color-chart-4: oklch(0.63 0.26 304);
+  --color-chart-5: oklch(0.65 0.25 16);
+
+  /* Sidebar colors */
+  --color-sidebar: oklch(0.21 0.006 285);
+  --color-sidebar-foreground: oklch(0.985 0 0);
+  --color-sidebar-primary: oklch(0.65 0.2 250);
+  --color-sidebar-primary-foreground: oklch(0.15 0.005 250);
+  --color-sidebar-accent: oklch(0.27 0.006 285);
+  --color-sidebar-accent-foreground: oklch(0.985 0 0);
+  --color-sidebar-border: oklch(1 0 0 / 10%);
+  --color-sidebar-ring: oklch(0.65 0.2 250);
+
+  /* Semantic colors for tasks/status (dark mode) */
+  --color-task-active: oklch(0.65 0.2 250);
+  --color-task-completed: oklch(0.7 0.15 165);
+  --color-task-blocked: oklch(0.7 0.19 22);
+  --color-task-pending: oklch(0.73 0.16 85);
+  --color-task-draft: oklch(0.7 0.015 285);
+
+  /* Priority levels (dark mode) */
+  --color-priority-critical: oklch(0.7 0.19 22);
+  --color-priority-high: oklch(0.7 0.2 30);
+  --color-priority-medium: oklch(0.73 0.16 85);
+  --color-priority-low: oklch(0.7 0.15 165);
+  --color-priority-none: oklch(0.7 0.015 285);
+
+  /* Status indicators (dark mode) */
+  --color-status-online: oklch(0.7 0.15 165);
+  --color-status-away: oklch(0.73 0.16 85);
+  --color-status-busy: oklch(0.7 0.19 22);
+  --color-status-offline: oklch(0.7 0.015 285);
+}
+
+/* Utility classes for common patterns */
+@layer utilities {
+  /* Text colors */
+  .text-primary {
+    color: var(--color-primary);
+  }
+  .text-secondary {
+    color: var(--color-secondary);
+  }
+  .text-accent {
+    color: var(--color-accent);
+  }
+  .text-destructive {
+    color: var(--color-destructive);
+  }
+  .text-success {
+    color: var(--color-success);
+  }
+  .text-warning {
+    color: var(--color-warning);
+  }
+  .text-info {
+    color: var(--color-info);
+  }
+
+  /* Background colors */
+  .bg-primary {
+    background-color: var(--color-primary);
+  }
+  .bg-secondary {
+    background-color: var(--color-secondary);
+  }
+  .bg-accent {
+    background-color: var(--color-accent);
+  }
+  .bg-destructive {
+    background-color: var(--color-destructive);
+  }
+  .bg-success {
+    background-color: var(--color-success);
+  }
+  .bg-warning {
+    background-color: var(--color-warning);
+  }
+  .bg-info {
+    background-color: var(--color-info);
+  }
+
+  /* Border colors */
+  .border-primary {
+    border-color: var(--color-primary);
+  }
+  .border-secondary {
+    border-color: var(--color-secondary);
+  }
+  .border-accent {
+    border-color: var(--color-accent);
+  }
+  .border-destructive {
+    border-color: var(--color-destructive);
+  }
+  .border-success {
+    border-color: var(--color-success);
+  }
+  .border-warning {
+    border-color: var(--color-warning);
+  }
+  .border-info {
+    border-color: var(--color-info);
+  }
+
+  /* Ring colors */
+  .ring-primary {
+    --tw-ring-color: var(--color-primary);
+  }
+  .ring-secondary {
+    --tw-ring-color: var(--color-secondary);
+  }
+  .ring-accent {
+    --tw-ring-color: var(--color-accent);
+  }
+  .ring-destructive {
+    --tw-ring-color: var(--color-destructive);
+  }
+  .ring-success {
+    --tw-ring-color: var(--color-success);
+  }
+  .ring-warning {
+    --tw-ring-color: var(--color-warning);
+  }
+  .ring-info {
+    --tw-ring-color: var(--color-info);
+  }
+}
+
+/* Animation keyframes */
+@keyframes pulse-primary {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes pulse-success {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Custom animations */
+.animate-pulse-primary {
+  animation: pulse-primary 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-pulse-success {
+  animation: pulse-success 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

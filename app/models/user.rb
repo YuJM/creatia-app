@@ -1,9 +1,15 @@
 class User < ApplicationRecord
+  include UserCacheable
+  
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable, :trackable,
          :omniauthable, omniauth_providers: [:google_oauth2, :github]
+  
+  # Callbacks for MongoDB snapshot synchronization
+  after_update :sync_mongodb_snapshots
+  after_destroy :cleanup_mongodb_references
          
   # Validations
   validates :username, uniqueness: { case_sensitive: false }, length: { minimum: 3, maximum: 30 }, format: { with: /\A[a-zA-Z0-9_-]+\z/ }, allow_nil: true, allow_blank: true
@@ -12,6 +18,8 @@ class User < ApplicationRecord
   # Multi-tenant associations
   has_many :organization_memberships, dependent: :destroy
   has_many :organizations, through: :organization_memberships
+  has_many :team_members, dependent: :destroy
+  has_many :teams, through: :team_members
   
   # Role helper methods
   def admin?
@@ -55,6 +63,10 @@ class User < ApplicationRecord
     member_of?(organization) && organization.active?
   end
   
+  def team_ids
+    teams.pluck(:id)
+  end
+  
   def owned_organizations
     organizations.joins(:organization_memberships)
                  .where(organization_memberships: { user: self, role: 'owner', active: true })
@@ -79,5 +91,33 @@ class User < ApplicationRecord
       )
     end
     user
+  end
+  
+  private
+  
+  # MongoDB 스냅샷 동기화 (User 정보 변경 시)
+  def sync_mongodb_snapshots
+    # 중요한 필드가 변경되었는지 확인
+    important_fields_changed = saved_change_to_name? || saved_change_to_email? || saved_change_to_role?
+    
+    # avatar_url, department, position은 필드가 있는 경우에만 체크
+    important_fields_changed ||= saved_change_to_avatar_url? if respond_to?(:avatar_url)
+    important_fields_changed ||= saved_change_to_department? if respond_to?(:department)
+    important_fields_changed ||= saved_change_to_position? if respond_to?(:position)
+    
+    if important_fields_changed
+      # 비동기로 MongoDB 스냅샷 업데이트
+      MongodbSnapshotSyncJob.perform_later(self)
+      
+      Rails.logger.info "[User] ID: #{id} 정보 변경 - MongoDB 동기화 예약"
+    end
+  end
+  
+  # MongoDB 참조 정리 (User 삭제 시)
+  def cleanup_mongodb_references
+    # 비동기로 MongoDB Task의 참조 정리
+    CleanupMongoDbReferencesJob.perform_later(id)
+    
+    Rails.logger.info "[User] ID: #{id} 삭제 - MongoDB 참조 정리 예약"
   end
 end

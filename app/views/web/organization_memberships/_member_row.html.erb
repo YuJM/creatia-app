@@ -1,0 +1,40 @@
+<tr id="membership_<%= membership.id %>">
+  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+    <div class="flex items-center">
+      <div class="h-10 w-10 flex-shrink-0">
+        <div class="h-10 w-10 rounded-full bg-gradient-to-r from-primary-400 to-accent-400 flex items-center justify-center">
+          <span class="text-sm font-medium text-white">
+            <%= membership.user.email.first.upcase %>
+          </span>
+        </div>
+      </div>
+      <div class="ml-4">
+        <div class="font-medium text-gray-900"><%= membership.user.email %></div>
+        <div class="text-gray-500"><%= membership.user.name if membership.user.respond_to?(:name) && membership.user.name.present? %></div>
+      </div>
+    </div>
+  </td>
+  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+    <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 <%= membership.owner? ? 'bg-purple-100 text-purple-800' : membership.admin? ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' %>">
+      <%= membership.display_role %>
+    </span>
+  </td>
+  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+    <%= membership.created_at.strftime("%Y-%m-%d") %>
+  </td>
+  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+    <% if membership.user.respond_to?(:last_sign_in_at) && membership.user.last_sign_in_at %>
+      <%= membership.user.last_sign_in_at.strftime("%Y-%m-%d %H:%M") %>
+    <% else %>
+      <span class="text-gray-400">Never</span>
+    <% end %>
+  </td>
+  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+    <% if can?(:manage, membership) %>
+      <%= link_to "Edit", edit_member_path(membership), class: "text-indigo-600 hover:text-indigo-900" %>
+      <% unless membership.owner? && membership.user == current_user %>
+        <%= link_to "Remove", member_path(membership), data: { "turbo-method": :delete, "turbo-confirm": "Are you sure?" }, class: "ml-2 text-red-600 hover:text-red-900" %>
+      <% end %>
+    <% end %>
+  </td>
+</tr>
