@@ -103,24 +103,27 @@ curl http://localhost:3000/up
 
 ### 🏗️ 이중 데이터베이스 아키텍처
 
-| 데이터베이스   | 용도                                      | 저장 데이터                           |
-| -------------- | ----------------------------------------- | ------------------------------------- |
-| **PostgreSQL** | 메타데이터, 관계형 데이터                 | 사용자, 조직, 권한, 설정             |
-| **MongoDB**    | 실행 데이터, 로그, 실시간 협업 데이터     | 태스크, 스프린트, 활동로그, 성능지표 |
+| 데이터베이스   | 용도                                  | 저장 데이터                          |
+| -------------- | ------------------------------------- | ------------------------------------ |
+| **PostgreSQL** | 메타데이터, 관계형 데이터             | 사용자, 조직, 권한, 설정             |
+| **MongoDB**    | 실행 데이터, 로그, 실시간 협업 데이터 | 태스크, 스프린트, 활동로그, 성능지표 |
 
 ### 🎯 핵심 도메인 모델
 
 #### 📋 태스크 관리
+
 - **Task**: MongoDB 기반 실행 데이터, 스냅샷 기반 성능 최적화
 - **Sprint**: 애자일 스프린트 관리, 번다운 차트
 - **Milestone**: 프로젝트 마일스톤 추적
 
 #### 🏢 조직 관리
+
 - **Organization**: 멀티테넌트 컨테이너, 서브도메인 기반
 - **User**: Devise 인증, OAuth 지원 (Google, GitHub)
 - **Team**: 팀 기반 협업, 권한 위임
 
 #### 🔐 권한 시스템
+
 - **Role**: 동적 역할 생성, 시스템/커스텀 역할
 - **Permission**: 세분화된 권한 제어
 - **PermissionAuditLog**: 권한 변경 추적
@@ -263,60 +266,22 @@ bin/rails tailwindcss:watch  # CSS 컴파일
 bin/caddy                 # 리버스 프록시 (서브도메인용)
 ```
 
-### 🔧 IDE 설정 권장사항
-
-#### VS Code 확장 프로그램
-```json
-// .vscode/extensions.json
-{
-  "recommendations": [
-    "shopify.ruby-lsp",
-    "bradlc.vscode-tailwindcss",
-    "ms-vscode.vscode-typescript-next",
-    "esbenp.prettier-vscode",
-    "streetsidesoftware.code-spell-checker"
-  ]
-}
-```
-
-#### VS Code 설정
-```json
-// .vscode/settings.json
-{
-  "ruby.lsp.enabledFeatures": {
-    "diagnostics": true,
-    "formatting": true,
-    "codeActions": true
-  },
-  "tailwindCSS.includeLanguages": {
-    "erb": "html"
-  },
-  "emmet.includeLanguages": {
-    "erb": "html"
-  }
-}
-```
-
-### 🔍 디버깅 도구
+### 🛠️ 개발자 도구
 
 ```bash
-# Rails 콘솔에서 디버깅
+# 개발 서버 시작
+bin/dev  # 모든 서비스 (Rails + CSS + MongoDB)
+
+# 디버깅
 bin/rails console
 > Rails.logger.level = :debug
 
-# 브라우저 디버깅 (개발환경)
-# 코드에 추가:
-# binding.pry    # pry gem 사용 시
-# debugger       # debug gem 사용 시
-
-# 성능 프로파일링
-bin/rails console
-> require 'benchmark'
-> Benchmark.measure { Task.includes(:assignee).limit(100).to_a }
-
-# 메모리 사용량 확인
-> ObjectSpace.each_object.group_by(&:class).transform_values(&:count)
+# 코드 품질 검사
+bundle exec rubocop
+bundle exec brakeman
 ```
+
+**📖 상세 가이드**: [개발환경 설정 가이드](docs/development_setup_guide.md)에서 IDE 설정, 디버깅 도구, 성능 최적화 등을 확인하세요.
 
 ### 📊 유용한 명령어
 
@@ -418,44 +383,16 @@ SESSION_TIMEOUT=480  # 8시간
 JWT_EXPIRATION=24h  # 24시간
 ```
 
-### 🔒 보안 체크리스트
-
-#### 🔐 인증 보안
-- [ ] JWT 시크릿 키가 충분히 복잡한지 확인
-- [ ] OAuth 클라이언트 시크릿이 안전하게 보관되는지 확인
-- [ ] 세션 타임아웃이 적절히 설정되었는지 확인
-- [ ] 비밀번호 정책이 강력한지 확인 (Devise 설정)
-
-#### 🌐 네트워크 보안
-- [ ] HTTPS 사용 (프로덕션 환경)
-- [ ] CORS 설정이 올바른지 확인
-- [ ] API Rate Limiting 설정
-- [ ] 서브도메인별 접근 제어 확인
-
-#### 🗄️ 데이터베이스 보안
-- [ ] PostgreSQL 접속 계정에 최소 권한 부여
-- [ ] MongoDB 인증 활성화
-- [ ] 데이터베이스 연결 암호화 (SSL/TLS)
-- [ ] 백업 데이터 암호화
-
-#### 📝 로그 보안
-- [ ] 민감한 정보가 로그에 기록되지 않는지 확인
-- [ ] 로그 접근 권한 제한
-- [ ] 로그 로테이션 설정
+### 🔒 보안 설정
 
 ```bash
-# 보안 취약점 검사
-bundle exec brakeman
-
-# 의존성 보안 검사
-bundle audit
-
-# 코드 품질 검사
-bundle exec rubocop --only Security/
-
-# MongoDB 보안 설정 확인
-bin/rails runner "puts Mongoid.default_client.cluster.servers.first.address"
+# 보안 검사 도구
+bundle exec brakeman     # 보안 취약점 검사
+bundle audit            # 의존성 보안 검사
+bundle exec rubocop --only Security/  # 코드 보안 규칙
 ```
+
+**📖 상세 가이드**: [보안 가이드](docs/security_guide.md)에서 인증 보안, 네트워크 보안, 데이터베이스 보안 등 포괄적인 보안 설정을 확인하세요.
 
 ## 🧪 테스트
 
@@ -758,227 +695,38 @@ bin/rails mongoid:stats
 
 ## 🚀 API 사용법
 
-### 🔑 인증 방법
+Creatia App은 RESTful API를 통해 모든 기능에 접근할 수 있습니다.
 
-#### 1. HTTP Basic Auth (개발/테스트용)
-
-```bash
-# 기본 인증으로 API 호출
-curl -u "user@example.com:password123" \
-  http://api.creatia.local:3000/api/v1/tasks
-```
-
-#### 2. JWT 토큰 인증 (프로덕션용)
+### 🔑 빠른 시작
 
 ```bash
-# 1. 로그인으로 토큰 발급
+# 1. JWT 토큰 발급
 curl -X POST http://api.creatia.local:3000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "password123",
-    "organization_subdomain": "demo"
-  }'
+  -d '{"email": "admin@creatia.local", "password": "password123", "organization_subdomain": "demo"}'
 
-# 응답 예시:
-# {
-#   "token": "eyJhbGciOiJIUzI1NiIs...",
-#   "user": { "id": "123", "email": "user@example.com" },
-#   "organization": { "id": "456", "name": "Demo Org" }
-# }
-
-# 2. 토큰을 사용해 API 호출
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
+# 2. API 호출
+curl -H "Authorization: Bearer YOUR_TOKEN" \
   http://api.creatia.local:3000/api/v1/tasks
-```
 
-### 📋 태스크 API 예제
-
-```bash
-# 태스크 목록 조회
-GET /api/v1/tasks
-
-# 응답 예시:
-{
-  "tasks": [
-    {
-      "id": "task_001",
-      "title": "새로운 기능 개발",
-      "description": "사용자 대시보드 개선",
-      "status": "in_progress",
-      "priority": "high",
-      "assignee": {
-        "id": "user_123",
-        "name": "김개발",
-        "email": "dev@example.com"
-      },
-      "estimated_hours": 8.0,
-      "actual_hours": 3.5,
-      "due_date": "2025-10-01",
-      "created_at": "2025-09-28T10:00:00Z",
-      "updated_at": "2025-09-28T14:30:00Z"
-    }
-  ],
-  "meta": {
-    "total": 25,
-    "page": 1,
-    "per_page": 10
-  }
-}
-
-# 새 태스크 생성
-POST /api/v1/tasks
-Content-Type: application/json
-
-{
-  "task": {
-    "title": "새로운 태스크",
-    "description": "태스크 설명",
-    "priority": "medium",
-    "assignee_id": "user_123",
-    "due_date": "2025-10-15",
-    "estimated_hours": 4.0
-  }
-}
-
-# 태스크 상태 변경
-PATCH /api/v1/tasks/:id/status
-Content-Type: application/json
-
-{
-  "status": "completed"
-}
-
-# 태스크 할당
-PATCH /api/v1/tasks/:id/assign
-Content-Type: application/json
-
-{
-  "assignee_id": "user_456"
-}
-```
-
-### 🏢 조직 API 예제
-
-```bash
-# 조직 정보 조회
-GET /api/v1/organizations/current
-
-# 응답:
-{
-  "organization": {
-    "id": "org_123",
-    "name": "Demo 조직",
-    "subdomain": "demo",
-    "plan": "team",
-    "active": true,
-    "member_count": 15,
-    "task_count": 142,
-    "created_at": "2025-01-15T09:00:00Z"
-  }
-}
-
-# 조직 멤버 조회
-GET /api/v1/members
-
-# 응답:
-{
-  "members": [
-    {
-      "id": "member_001",
-      "user": {
-        "id": "user_123",
-        "name": "김개발",
-        "email": "dev@example.com"
-      },
-      "role": "admin",
-      "active": true,
-      "joined_at": "2025-01-20T10:00:00Z"
-    }
-  ]
-}
-
-# 멤버 초대
-POST /api/v1/members/invite
-Content-Type: application/json
-
-{
-  "email": "newuser@example.com",
-  "role": "member",
-  "message": "조직에 오신 것을 환영합니다!"
-}
-```
-
-### 📈 대시보드 API 예제
-
-```bash
-# 태스크 통계
-GET /api/v1/tasks/stats
-
-# 응답:
-{
-  "stats": {
-    "total": 142,
-    "by_status": {
-      "todo": 45,
-      "in_progress": 23,
-      "review": 8,
-      "done": 66
-    },
-    "by_priority": {
-      "low": 32,
-      "medium": 78,
-      "high": 25,
-      "urgent": 7
-    },
-    "completion_rate": 46.5,
-    "avg_completion_time": 3.2
-  }
-}
-
-# 알림 내역
-GET /api/v1/notifications?unread_only=true
-
-# 응답:
-{
-  "notifications": [
-    {
-      "id": "notif_001",
-      "type": "task_assigned",
-      "title": "새 태스크가 할당되었습니다",
-      "message": "'새로운 기능 개발' 태스크가 할당되었습니다.",
-      "read": false,
-      "created_at": "2025-09-28T15:30:00Z"
-    }
-  ],
-  "unread_count": 3
-}
-```
-
-### 👨‍💻 개발자 도구
-
-```bash
-# API 테스트 도구
-bin/rails console
-
-# 토큰 생성 테스트
-> user = User.first
-> org = Organization.first
-> token = JwtService.encode(user_id: user.id, organization_id: org.id)
-> puts token
-
-# API 엔드포인트 테스트
-> response = HTTP.auth("Bearer #{token}")
->               .get("http://api.creatia.local:3000/api/v1/tasks")
-> puts response.body
-
-# API 상태 확인
+# 3. 상태 확인
 curl http://api.creatia.local:3000/api/v1/health/status
 ```
 
+**📖 상세 가이드**: [API 사용 가이드](docs/api_usage_guide.md)에서 인증, 태스크 관리, 조직 관리 등 전체 API 사용법을 확인하세요.
+
 ## 📚 문서
 
-### 📖 상세 가이드
+### 📖 완전 가이드
+
+| 문서                                                              | 설명                               |
+| ----------------------------------------------------------------- | ---------------------------------- |
+| [**🚀 API 사용 가이드**](docs/api_usage_guide.md)                 | JWT 인증, RESTful API 완전 가이드   |
+| [**🔒 보안 가이드**](docs/security_guide.md)                     | 인증, 네트워크, DB 보안 체크리스트  |
+| [**🔧 개발환경 설정**](docs/development_setup_guide.md)          | IDE 설정, 디버깅, 성능 최적화      |
+| [**🏗️ 데이터베이스 아키텍처**](docs/database_architecture.md)    | PostgreSQL + MongoDB 하이브리드    |
+
+### 📝 기존 문서
 
 | 문서                                                              | 설명                        |
 | ----------------------------------------------------------------- | --------------------------- |
@@ -986,7 +734,6 @@ curl http://api.creatia.local:3000/api/v1/health/status
 | [**시스템 통합 테스트**](docs/system_integration_tests.md)        | 포괄적인 테스트 스위트 구현 |
 | [**멀티테넌트 가이드**](docs/multi.md)                            | 멀티테넌트 아키텍처 설명    |
 | [**디자인 시스템**](docs/design_system.md)                        | UI 컴포넌트 가이드          |
-| [**API 문서**](docs/api.md)                                       | REST API 엔드포인트         |
 
 ### 🏗️ 아키텍처 문서
 
