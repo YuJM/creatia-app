@@ -20,7 +20,7 @@ gem "tailwindcss-rails"
 gem "jbuilder"
 
 # Fast JSON serialization [https://github.com/okuramasafumi/alba]
-gem "alba", "~> 3.5"
+gem "alba", "~> 3.9"
 
 # Authentication
 gem "devise", "~> 4.9"
