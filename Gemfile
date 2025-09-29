@@ -69,7 +69,7 @@ gem "omniauth-github", "~> 2.0"
 gem "omniauth-rails_csrf_protection", "~> 1.0"
 
 # ViewComponent for reusable view components [https://github.com/viewcomponent/view_component]
-gem "view_component", "~> 3.20"
+gem "view_component", "~> 4.0"
 
 # Time management and tracking
 gem 'business_time', '~> 0.13.0'  # Business time calculations
