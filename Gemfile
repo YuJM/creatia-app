@@ -34,7 +34,7 @@ gem "rails-i18n", "~> 8.0"
 gem "cancancan", "~> 3.6"
 
 # JWT for secure cross-domain authentication
-gem "jwt", "~> 2.7"
+gem "jwt", "~> 3.1"
 
 # Service object utilities
 gem "attr_extras", "~> 7.1"
