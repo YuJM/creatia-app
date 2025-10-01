@@ -65,6 +65,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 ```
 
 **응답 예시:**
+
 ```json
 {
   "tasks": [
@@ -202,6 +203,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 ```
 
 **응답:**
+
 ```json
 {
   "members": [
@@ -263,6 +265,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 ```
 
 **응답:**
+
 ```json
 {
   "stats": {
@@ -304,6 +307,7 @@ POST /api/v1/notifications/mark_all_read
 ```
 
 **알림 응답:**
+
 ```json
 {
   "notifications": [
@@ -483,3 +487,7 @@ X-RateLimit-Reset: 1632825600
 - [개발환경 설정](development_setup_guide.md)
 - [데이터베이스 아키텍처](database_architecture.md)
 - [메인 README](../README.md)
+
+
+
+

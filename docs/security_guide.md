@@ -18,16 +18,19 @@
 ### ✅ 체크리스트
 
 - [ ] **JWT 시크릿 키가 충분히 복잡한지 확인**
+
   - 최소 32자 이상의 랜덤 문자열
   - 영문 대소문자, 숫자, 특수문자 포함
   - 정기적으로 로테이션 (월 1회 권장)
 
 - [ ] **OAuth 클라이언트 시크릿이 안전하게 보관되는지 확인**
+
   - 환경변수로만 관리, 코드에 하드코딩 금지
   - CI/CD 파이프라인에서 마스킹 처리
   - 개발/스테이징/프로덕션 환경별 분리
 
 - [ ] **세션 타임아웃이 적절히 설정되었는지 확인**
+
   - 일반 사용자: 8시간 (480분)
   - 관리자: 4시간 (240분)
   - API 토큰: 24시간
@@ -58,7 +61,7 @@ def generate_jwt(user, organization)
     aud: organization.subdomain,  # Audience claim
     iss: 'creatia-app'  # Issuer claim
   }
-  
+
   JWT.encode(payload, JWT_SECRET, 'HS256')
 end
 ```
@@ -70,17 +73,17 @@ end
 Devise.setup do |config|
   # 세션 타임아웃
   config.timeout_in = 8.hours
-  
+
   # 비밀번호 복잡성
   config.password_length = 8..128
-  
+
   # 로그인 시도 제한
   config.maximum_attempts = 5
   config.unlock_in = 1.hour
-  
+
   # 이메일 확인 필수
   config.confirm_within = 3.days
-  
+
   # 비밀번호 재설정 링크 유효시간
   config.reset_password_within = 6.hours
 end
@@ -91,17 +94,20 @@ end
 ### ✅ 체크리스트
 
 - [ ] **HTTPS 사용 (프로덕션 환경)**
+
   - SSL/TLS 인증서 설정
   - HTTP → HTTPS 리다이렉트
   - HSTS (HTTP Strict Transport Security) 헤더
   - 안전한 쿠키 설정 (Secure, HttpOnly, SameSite)
 
 - [ ] **CORS 설정이 올바른지 확인**
+
   - 허용된 도메인만 명시적 설정
-  - 와일드카드(*) 사용 금지
+  - 와일드카드(\*) 사용 금지
   - 크리덴셜 포함 요청 제한
 
 - [ ] **API Rate Limiting 설정**
+
   - IP별 요청 제한: 1000회/시간
   - 사용자별 요청 제한: 5000회/시간
   - 엔드포인트별 세부 제한
@@ -130,22 +136,22 @@ class SecurityHeaders
 
   def call(env)
     status, headers, response = @app.call(env)
-    
+
     headers['X-Frame-Options'] = 'DENY'
     headers['X-Content-Type-Options'] = 'nosniff'
     headers['X-XSS-Protection'] = '1; mode=block'
     headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     headers['Content-Security-Policy'] = csp_header
-    
+
     if Rails.env.production?
       headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
     end
-    
+
     [status, headers, response]
   end
-  
+
   private
-  
+
   def csp_header
     "default-src 'self'; " \
     "script-src 'self' 'unsafe-inline' https://unpkg.com; " \
@@ -168,14 +174,14 @@ class Rack::Attack
   throttle('req/ip', limit: 1000, period: 1.hour) do |req|
     req.ip
   end
-  
+
   # 로그인 시도 제한
   throttle('logins/ip', limit: 5, period: 20.seconds) do |req|
     if req.path == '/auth/login' && req.post?
       req.ip
     end
   end
-  
+
   # API 제한
   throttle('api/user', limit: 5000, period: 1.hour) do |req|
     if req.path.start_with?('/api/')
@@ -191,16 +197,19 @@ end
 ### ✅ 체크리스트
 
 - [ ] **PostgreSQL 접속 계정에 최소 권한 부여**
+
   - 애플리케이션용 전용 계정 생성
   - 필요한 테이블/스키마만 접근 허용
   - 관리자 계정과 분리
 
 - [ ] **MongoDB 인증 활성화**
+
   - 사용자 인증 활성화
   - 역할 기반 접근 제어 (RBAC)
   - 네트워크 접근 제한
 
 - [ ] **데이터베이스 연결 암호화 (SSL/TLS)**
+
   - PostgreSQL SSL 연결
   - MongoDB TLS 연결
   - 인증서 검증
@@ -274,11 +283,13 @@ db.createUser({
 ### ✅ 체크리스트
 
 - [ ] **민감한 정보가 로그에 기록되지 않는지 확인**
+
   - 비밀번호, 토큰, 개인정보 마스킹
   - 신용카드 정보, 주민등록번호 제외
   - 파라미터 필터링 설정
 
 - [ ] **로그 접근 권한 제한**
+
   - 관리자만 로그 파일 접근 가능
   - 로그 뷰어 접근 권한 분리
   - 감사 로그 별도 관리
@@ -387,7 +398,7 @@ API_RATE_LIMIT_PER_HOUR=5000
 cp .env.example .env.development
 # 약한 시크릿 사용 가능 (실제 서비스와 구분)
 
-# 스테이징환경 - .env.staging  
+# 스테이징환경 - .env.staging
 # 프로덕션과 유사하지만 별도 시크릿 사용
 
 # 프로덕션환경 - .env.production
@@ -426,7 +437,7 @@ bin/security_check
 # SQL Injection 테스트
 sqlmap -u "http://localhost:3000/api/v1/tasks?id=1" --cookie="session=..."
 
-# XSS 테스트  
+# XSS 테스트
 # XSSer, BeEF 등 도구 사용
 
 # 포트 스캔
@@ -447,15 +458,15 @@ class SecurityMonitoring
       user_id: Current.user&.id,
       ip_address: Thread.current[:client_ip]
     }.to_json)
-    
+
     # 심각한 경우 알림 발송
     if critical_events.include?(event)
       SecurityAlertService.notify(event, details)
     end
   end
-  
+
   private
-  
+
   def self.critical_events
     ['sql_injection_attempt', 'xss_attempt', 'brute_force_attack']
   end
@@ -467,6 +478,7 @@ end
 ### 인시던트 대응 절차
 
 1. **탐지 및 초기 대응 (0-15분)**
+
    ```bash
    # 즉시 수행
    - 로그 확인 및 범위 파악
@@ -475,6 +487,7 @@ end
    ```
 
 2. **격리 및 차단 (15분-1시간)**
+
    ```bash
    # 공격 벡터 차단
    - 취약한 엔드포인트 비활성화
@@ -483,6 +496,7 @@ end
    ```
 
 3. **조사 및 분석 (1-24시간)**
+
    ```bash
    # 포렌식 분석
    - 로그 수집 및 보존
@@ -541,3 +555,7 @@ external_support:
 - [개발환경 설정](development_setup_guide.md)
 - [데이터베이스 아키텍처](database_architecture.md)
 - [메인 README](../README.md)
+
+
+
+

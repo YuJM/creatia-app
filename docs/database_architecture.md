@@ -18,10 +18,10 @@
 
 Creatia App은 각 데이터베이스의 강점을 활용한 하이브리드 아키텍처를 사용합니다:
 
-| 데이터베이스   | 용도                                  | 저장 데이터                          | 특징 |
-| -------------- | ------------------------------------- | ------------------------------------ | ---- |
+| 데이터베이스   | 용도                                  | 저장 데이터                          | 특징                          |
+| -------------- | ------------------------------------- | ------------------------------------ | ----------------------------- |
 | **PostgreSQL** | 메타데이터, 관계형 데이터             | 사용자, 조직, 권한, 설정             | ACID, 트랜잭션, 관계형 무결성 |
-| **MongoDB**    | 실행 데이터, 로그, 실시간 협업 데이터 | 태스크, 스프린트, 활동로그, 성능지표 | 유연성, 확장성, 실시간 성능 |
+| **MongoDB**    | 실행 데이터, 로그, 실시간 협업 데이터 | 태스크, 스프린트, 활동로그, 성능지표 | 유연성, 확장성, 실시간 성능   |
 
 ### 아키텍처 다이어그램
 
@@ -47,12 +47,14 @@ Creatia App은 각 데이터베이스의 강점을 활용한 하이브리드 아
 ### 데이터 분할 원칙
 
 #### PostgreSQL 저장 기준
+
 - **변경 빈도가 낮음**: 사용자 정보, 조직 설정
 - **관계형 무결성 중요**: 권한 시스템, 멤버십
 - **트랜잭션 필요**: 결제, 구독 관리
 - **스키마가 고정적**: 구조화된 메타데이터
 
 #### MongoDB 저장 기준
+
 - **변경 빈도가 높음**: 태스크 상태, 활동 로그
 - **유연한 스키마**: 다양한 형태의 데이터
 - **실시간 성능**: 빠른 읽기/쓰기 필요
@@ -76,7 +78,7 @@ CREATE TABLE users (
   uid VARCHAR(255),
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL,
-  
+
   INDEX idx_users_email ON users(email),
   INDEX idx_users_provider_uid ON users(provider, uid)
 );
@@ -91,7 +93,7 @@ CREATE TABLE organizations (
   settings JSONB,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL,
-  
+
   INDEX idx_organizations_subdomain ON organizations(subdomain),
   INDEX idx_organizations_active ON organizations(active)
 );
@@ -104,7 +106,7 @@ CREATE TABLE organization_memberships (
   role VARCHAR(50) DEFAULT 'member',
   active BOOLEAN DEFAULT true,
   joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
+
   UNIQUE(user_id, organization_id),
   INDEX idx_org_memberships_user ON organization_memberships(user_id),
   INDEX idx_org_memberships_org ON organization_memberships(organization_id),
@@ -126,7 +128,7 @@ CREATE TABLE roles (
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL,
-  
+
   UNIQUE(organization_id, key),
   INDEX idx_roles_organization ON roles(organization_id),
   INDEX idx_roles_system ON roles(system_role)
@@ -140,7 +142,7 @@ CREATE TABLE permissions (
   action VARCHAR(100) NOT NULL,
   description TEXT,
   created_at TIMESTAMP NOT NULL,
-  
+
   INDEX idx_permissions_resource_action ON permissions(resource, action)
 );
 
@@ -151,7 +153,7 @@ CREATE TABLE role_permissions (
   permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
   granted BOOLEAN DEFAULT true,
   created_at TIMESTAMP NOT NULL,
-  
+
   UNIQUE(role_id, permission_id),
   INDEX idx_role_permissions_role ON role_permissions(role_id),
   INDEX idx_role_permissions_permission ON role_permissions(permission_id)
@@ -162,19 +164,19 @@ CREATE TABLE role_permissions (
 
 ```sql
 -- 복합 인덱스 (쿼리 패턴 기반)
-CREATE INDEX idx_org_memberships_org_active 
+CREATE INDEX idx_org_memberships_org_active
   ON organization_memberships(organization_id, active);
 
 -- 부분 인덱스 (선택적 데이터만)
-CREATE INDEX idx_users_active_admin 
+CREATE INDEX idx_users_active_admin
   ON users(id) WHERE role = 'admin' AND active = true;
 
 -- JSONB 인덱스 (설정 데이터)
-CREATE INDEX idx_organizations_settings_gin 
+CREATE INDEX idx_organizations_settings_gin
   ON organizations USING gin(settings);
 
 -- 전문 검색 인덱스
-CREATE INDEX idx_users_name_trgm 
+CREATE INDEX idx_users_name_trgm
   ON users USING gin(name gin_trgm_ops);
 ```
 
@@ -196,11 +198,11 @@ CREATE TABLE permission_audit_logs (
 ) PARTITION BY RANGE (created_at);
 
 -- 월별 파티션 생성
-CREATE TABLE permission_audit_logs_2025_09 
+CREATE TABLE permission_audit_logs_2025_09
   PARTITION OF permission_audit_logs
   FOR VALUES FROM ('2025-09-01') TO ('2025-10-01');
 
-CREATE TABLE permission_audit_logs_2025_10 
+CREATE TABLE permission_audit_logs_2025_10
   PARTITION OF permission_audit_logs
   FOR VALUES FROM ('2025-10-01') TO ('2025-11-01');
 ```
@@ -215,27 +217,27 @@ CREATE TABLE permission_audit_logs_2025_10
 // tasks 컬렉션
 {
   _id: ObjectId("..."),
-  
+
   // PostgreSQL 참조 (UUID)
   organization_id: "uuid-string",
   service_id: "uuid-string",
   sprint_id: "uuid-string",
   created_by_id: "uuid-string",
-  
+
   // 태스크 식별
   task_id: "TASK-001",
   external_id: "github-123",
-  
+
   // 태스크 정보
   title: "새로운 기능 개발",
   description: "사용자 대시보드 개선",
   task_type: "feature",
-  
+
   // 할당 정보
   assignee_id: "uuid-string",
   reviewer_id: "uuid-string",
   team_id: "uuid-string",
-  
+
   // 사용자 스냅샷 (성능 최적화)
   assignee_snapshot: {
     user_id: "uuid-string",
@@ -244,12 +246,12 @@ CREATE TABLE permission_audit_logs_2025_10
     avatar_url: "https://...",
     synced_at: ISODate("2025-09-28T10:00:00Z")
   },
-  
+
   // 상태 및 우선순위
   status: "in_progress",
   priority: "high",
   position: 100,
-  
+
   // 시간 추적
   estimated_hours: 8.0,
   actual_hours: 3.5,
@@ -262,16 +264,16 @@ CREATE TABLE permission_audit_logs_2025_10
       logged_at: ISODate("2025-09-28T09:00:00Z")
     }
   ],
-  
+
   // 날짜
   due_date: ISODate("2025-10-01T00:00:00Z"),
   start_date: ISODate("2025-09-28T00:00:00Z"),
   completed_at: null,
-  
+
   // 메타데이터
   tags: ["frontend", "ui", "dashboard"],
   labels: ["urgent", "customer-request"],
-  
+
   // 감사 정보
   created_at: ISODate("2025-09-28T08:00:00Z"),
   updated_at: ISODate("2025-09-28T14:30:00Z")
@@ -284,27 +286,27 @@ CREATE TABLE permission_audit_logs_2025_10
 // sprints 컬렉션
 {
   _id: ObjectId("..."),
-  
+
   // PostgreSQL 참조
   organization_id: "uuid-string",
   milestone_id: "uuid-string",
-  
+
   // 스프린트 정보
   name: "Sprint 2025-10",
   goal: "사용자 경험 개선",
   status: "active",
-  
+
   // 기간
   start_date: ISODate("2025-09-23T00:00:00Z"),
   end_date: ISODate("2025-10-06T23:59:59Z"),
-  
+
   // 용량 계획
   capacity: {
     total_hours: 160,
     allocated_hours: 120,
     available_hours: 40
   },
-  
+
   // 메트릭 (실시간 계산)
   metrics: {
     total_tasks: 15,
@@ -318,14 +320,14 @@ CREATE TABLE permission_audit_logs_2025_10
       // ...
     ]
   },
-  
+
   // 회고 데이터
   retrospective: {
     what_went_well: ["좋은 팀워크", "빠른 배포"],
     what_to_improve: ["코드 리뷰 시간", "테스트 커버리지"],
     action_items: ["코드 리뷰 체크리스트 도입"]
   },
-  
+
   created_at: ISODate("2025-09-20T10:00:00Z"),
   updated_at: ISODate("2025-09-28T15:00:00Z")
 }
@@ -337,16 +339,16 @@ CREATE TABLE permission_audit_logs_2025_10
 // activity_logs 컬렉션
 {
   _id: ObjectId("..."),
-  
+
   // 기본 정보
   organization_id: "uuid-string",
   user_id: "uuid-string",
-  
+
   // 활동 정보
   action: "task.status_changed",
   resource_type: "Task",
   resource_id: "task-uuid",
-  
+
   // 변경 사항
   changes: {
     status: {
@@ -354,7 +356,7 @@ CREATE TABLE permission_audit_logs_2025_10
       to: "in_progress"
     }
   },
-  
+
   // 메타데이터
   metadata: {
     user_agent: "Mozilla/5.0...",
@@ -362,7 +364,7 @@ CREATE TABLE permission_audit_logs_2025_10
     api_version: "v1",
     client_type: "web"
   },
-  
+
   // 시간 정보
   timestamp: ISODate("2025-09-28T14:30:00Z"),
   created_at: ISODate("2025-09-28T14:30:00Z")
@@ -374,28 +376,25 @@ CREATE TABLE permission_audit_logs_2025_10
 ```javascript
 // MongoDB 인덱스 생성
 db.tasks.createIndex(
-  { "organization_id": 1, "status": 1, "created_at": -1 },
+  { organization_id: 1, status: 1, created_at: -1 },
   { name: "idx_tasks_org_status_created" }
 );
 
 db.tasks.createIndex(
-  { "assignee_id": 1, "status": 1 },
+  { assignee_id: 1, status: 1 },
   { name: "idx_tasks_assignee_status" }
 );
 
-db.tasks.createIndex(
-  { "due_date": 1 },
-  { name: "idx_tasks_due_date" }
-);
+db.tasks.createIndex({ due_date: 1 }, { name: "idx_tasks_due_date" });
 
 // 텍스트 검색 인덱스
 db.tasks.createIndex(
-  { 
-    "title": "text", 
-    "description": "text", 
-    "tags": "text" 
+  {
+    title: "text",
+    description: "text",
+    tags: "text"
   },
-  { 
+  {
     name: "idx_tasks_text_search",
     default_language: "korean"
   }
@@ -403,20 +402,20 @@ db.tasks.createIndex(
 
 // TTL 인덱스 (로그 자동 삭제)
 db.activity_logs.createIndex(
-  { "created_at": 1 },
-  { 
+  { created_at: 1 },
+  {
     name: "idx_activity_logs_ttl",
-    expireAfterSeconds: 2592000  // 30일
+    expireAfterSeconds: 2592000 // 30일
   }
 );
 
 // 부분 인덱스 (활성 태스크만)
 db.tasks.createIndex(
-  { "organization_id": 1, "assignee_id": 1 },
-  { 
+  { organization_id: 1, assignee_id: 1 },
+  {
     name: "idx_tasks_org_assignee_active",
-    partialFilterExpression: { 
-      "status": { $in: ["todo", "in_progress", "review"] }
+    partialFilterExpression: {
+      status: { $in: ["todo", "in_progress", "review"] }
     }
   }
 );
@@ -426,19 +425,16 @@ db.tasks.createIndex(
 
 ```javascript
 // 샤드 키 설정 (조직 기반)
-sh.enableSharding("creatia_logs")
+sh.enableSharding("creatia_logs");
 
 // tasks 컬렉션 샤딩
-sh.shardCollection(
-  "creatia_logs.tasks",
-  { "organization_id": 1, "_id": 1 }
-)
+sh.shardCollection("creatia_logs.tasks", { organization_id: 1, _id: 1 });
 
 // activity_logs 컬렉션 샤딩 (시간 기반)
-sh.shardCollection(
-  "creatia_logs.activity_logs",
-  { "organization_id": 1, "created_at": 1 }
-)
+sh.shardCollection("creatia_logs.activity_logs", {
+  organization_id: 1,
+  created_at: 1
+});
 ```
 
 ## 🔄 데이터 동기화
@@ -452,7 +448,7 @@ PostgreSQL의 사용자 정보를 MongoDB에 캐시하여 조인 쿼리 없이 �
 class UserSnapshot
   include Mongoid::Document
   include Mongoid::Timestamps
-  
+
   # 사용자 정보 스냅샷
   field :user_id, type: String
   field :name, type: String
@@ -461,14 +457,14 @@ class UserSnapshot
   field :department, type: String
   field :position, type: String
   field :synced_at, type: DateTime
-  
+
   index({ user_id: 1 }, { unique: true })
-  
+
   # 신선도 확인 (5분 이내)
   def fresh?
     synced_at && synced_at > 5.minutes.ago
   end
-  
+
   # User 객체로 변환
   def to_user
     OpenStruct.new(
@@ -480,7 +476,7 @@ class UserSnapshot
       position: position
     )
   end
-  
+
   # PostgreSQL User로부터 동기화
   def self.from_user(user)
     find_or_initialize_by(user_id: user.id.to_s).tap do |snapshot|
@@ -501,26 +497,26 @@ end
 # app/jobs/mongodb_snapshot_sync_job.rb
 class MongodbSnapshotSyncJob < ApplicationJob
   queue_as :default
-  
+
   def perform(user)
     # 사용자 스냅샷 업데이트
     snapshot = UserSnapshot.from_user(user)
     snapshot.save!
-    
+
     # 연관된 태스크들의 스냅샷 업데이트
     update_task_snapshots(user)
-    
+
     Rails.logger.info "User snapshot synced: #{user.id}"
   end
-  
+
   private
-  
+
   def update_task_snapshots(user)
     # 할당된 태스크 업데이트
     Task.where(assignee_id: user.id.to_s).each do |task|
       task.sync_assignee_snapshot!(user)
     end
-    
+
     # 리뷰어로 지정된 태스크 업데이트
     Task.where(reviewer_id: user.id.to_s).each do |task|
       task.sync_reviewer_snapshot!(user)
@@ -539,34 +535,34 @@ class CrossDbSyncService
     check_missing_snapshots
     check_data_integrity
   end
-  
+
   private
-  
+
   def self.check_orphaned_tasks
     # MongoDB에 있지만 PostgreSQL 조직이 없는 태스크
     orphaned_count = Task.where(
       :organization_id.nin => Organization.pluck(:id).map(&:to_s)
     ).count
-    
+
     if orphaned_count > 0
       Rails.logger.warn "Found #{orphaned_count} orphaned tasks"
       # 알림 또는 정리 작업 수행
     end
   end
-  
+
   def self.check_missing_snapshots
     # 스냅샷이 없는 태스크 찾기
     tasks_without_snapshots = Task.where(
       :assignee_id.exists => true,
       :assignee_snapshot_id.exists => false
     )
-    
+
     tasks_without_snapshots.each do |task|
       user = User.find_by(id: task.assignee_id)
       task.sync_assignee_snapshot!(user) if user
     end
   end
-  
+
   def self.check_data_integrity
     # 정기적인 데이터 무결성 검사
     CheckDataIntegrityJob.perform_later
@@ -584,14 +580,14 @@ end
 # 인덱스 활용도 확인
 def check_index_usage
   sql = <<~SQL
-    SELECT 
+    SELECT
       schemaname,
       tablename,
       indexname,
       idx_tup_read,
       idx_tup_fetch,
       idx_scan,
-      CASE 
+      CASE
         WHEN idx_scan = 0 THEN 'Unused'
         WHEN idx_scan < 100 THEN 'Low usage'
         ELSE 'Good usage'
@@ -599,7 +595,7 @@ def check_index_usage
     FROM pg_stat_user_indexes
     ORDER BY idx_scan ASC;
   SQL
-  
+
   ActiveRecord::Base.connection.execute(sql)
 end
 
@@ -607,7 +603,7 @@ end
 def analyze_slow_queries
   # pg_stat_statements 확장 필요
   sql = <<~SQL
-    SELECT 
+    SELECT
       query,
       calls,
       mean_time,
@@ -618,7 +614,7 @@ def analyze_slow_queries
     ORDER BY mean_time DESC
     LIMIT 10;
   SQL
-  
+
   ActiveRecord::Base.connection.execute(sql)
 end
 ```
@@ -627,29 +623,41 @@ end
 
 ```javascript
 // 쿼리 성능 분석
-db.tasks.explain("executionStats").find({
-  "organization_id": "org-uuid",
-  "status": "in_progress"
-}).sort({ "created_at": -1 })
+db.tasks
+  .explain("executionStats")
+  .find({
+    organization_id: "org-uuid",
+    status: "in_progress"
+  })
+  .sort({ created_at: -1 });
 
 // 집계 파이프라인 최적화
-db.tasks.aggregate([
-  { $match: { 
-    "organization_id": "org-uuid",
-    "created_at": { $gte: ISODate("2025-09-01") }
-  }},
-  { $group: {
-    _id: "$status",
-    count: { $sum: 1 },
-    avg_hours: { $avg: "$estimated_hours" }
-  }},
-  { $sort: { count: -1 }}
-], { allowDiskUse: true })
+db.tasks.aggregate(
+  [
+    {
+      $match: {
+        organization_id: "org-uuid",
+        created_at: { $gte: ISODate("2025-09-01") }
+      }
+    },
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
+        avg_hours: { $avg: "$estimated_hours" }
+      }
+    },
+    { $sort: { count: -1 } }
+  ],
+  { allowDiskUse: true }
+);
 
 // 인덱스 힌트 사용
-db.tasks.find({
-  "assignee_id": "user-uuid"
-}).hint({ "assignee_id": 1, "status": 1 })
+db.tasks
+  .find({
+    assignee_id: "user-uuid"
+  })
+  .hint({ assignee_id: 1, status: 1 });
 ```
 
 ### 캐싱 전략
@@ -663,7 +671,7 @@ class CacheService
       calculate_task_stats(organization_id)
     end
   end
-  
+
   # 사용자별 대시보드 데이터 캐싱 (10분)
   def self.user_dashboard(user_id, organization_id)
     cache_key = "dashboard:#{user_id}:#{organization_id}"
@@ -671,7 +679,7 @@ class CacheService
       build_dashboard_data(user_id, organization_id)
     end
   end
-  
+
   # 캐시 무효화
   def self.invalidate_task_cache(organization_id)
     Rails.cache.delete("task_stats:#{organization_id}")
@@ -681,9 +689,9 @@ class CacheService
       Rails.cache.delete("dashboard:#{user_id}:#{organization_id}")
     end
   end
-  
+
   private
-  
+
   def self.calculate_task_stats(organization_id)
     # MongoDB 집계 쿼리로 통계 계산
     Task.collection.aggregate([
@@ -704,16 +712,16 @@ end
 # app/jobs/batch_sync_job.rb
 class BatchSyncJob < ApplicationJob
   queue_as :low_priority
-  
+
   def perform
     # 배치 크기로 나누어 처리
     User.includes(:organizations).find_in_batches(batch_size: 100) do |users|
       sync_user_snapshots(users)
     end
   end
-  
+
   private
-  
+
   def sync_user_snapshots(users)
     # 벌크 업데이트로 성능 최적화
     operations = users.map do |user|
@@ -723,7 +731,7 @@ class BatchSyncJob < ApplicationJob
         email: user.email,
         synced_at: Time.current
       }
-      
+
       {
         update_one: {
           filter: { user_id: user.id.to_s },
@@ -732,7 +740,7 @@ class BatchSyncJob < ApplicationJob
         }
       }
     end
-    
+
     UserSnapshot.collection.bulk_write(operations, ordered: false)
   end
 end
@@ -804,24 +812,24 @@ rm "$BACKUP_DIR/creatia_logs_${DATE}.tar.gz"
 
 ```sql
 -- 연결 상태 확인
-SELECT 
+SELECT
   state,
   count(*) as connection_count
-FROM pg_stat_activity 
+FROM pg_stat_activity
 WHERE datname = 'creatia_production'
 GROUP BY state;
 
 -- 테이블 사이즈 확인
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
-FROM pg_tables 
+FROM pg_tables
 WHERE schemaname = 'public'
 ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 
 -- 인덱스 사용률 확인
-SELECT 
+SELECT
   schemaname,
   tablename,
   round((seq_scan::float / (seq_scan + idx_scan) * 100), 2) as seq_scan_ratio
@@ -834,23 +842,21 @@ ORDER BY seq_scan_ratio DESC;
 
 ```javascript
 // 연결 상태 확인
-db.runCommand({ connectionStatus: 1 })
+db.runCommand({ connectionStatus: 1 });
 
 // 컬렉션 통계
-db.stats()
-db.tasks.stats()
+db.stats();
+db.tasks.stats();
 
 // 느린 작업 확인
-db.setProfilingLevel(2, { slowms: 100 })
-db.system.profile.find().sort({ ts: -1 }).limit(5)
+db.setProfilingLevel(2, { slowms: 100 });
+db.system.profile.find().sort({ ts: -1 }).limit(5);
 
 // 현재 실행 중인 작업
-db.currentOp()
+db.currentOp();
 
 // 인덱스 사용 통계
-db.tasks.aggregate([
-  { $indexStats: {} }
-])
+db.tasks.aggregate([{ $indexStats: {} }]);
 ```
 
 ### 장애 대응
@@ -867,7 +873,7 @@ class DatabaseHealthChecker
     Rails.logger.error "PostgreSQL health check failed: #{e.message}"
     false
   end
-  
+
   def self.check_mongodb
     Mongoid.default_client.command(ping: 1)
     true
@@ -875,7 +881,7 @@ class DatabaseHealthChecker
     Rails.logger.error "MongoDB health check failed: #{e.message}"
     false
   end
-  
+
   def self.system_status
     {
       postgresql: check_postgresql,
@@ -889,13 +895,13 @@ end
 class HealthController < ApplicationController
   def database
     status = DatabaseHealthChecker.system_status
-    
+
     if status[:postgresql] && status[:mongodb]
       render json: { status: 'ok', details: status }
     else
-      render json: { 
-        status: 'error', 
-        details: status 
+      render json: {
+        status: 'error',
+        details: status
       }, status: :service_unavailable
     end
   end
@@ -908,15 +914,15 @@ end
 # app/jobs/database_recovery_job.rb
 class DatabaseRecoveryJob < ApplicationJob
   queue_as :critical
-  
+
   def perform
     unless DatabaseHealthChecker.check_mongodb
       Rails.logger.error "MongoDB connection failed - attempting recovery"
-      
+
       # 연결 풀 재설정
       Mongoid::Clients.clear
       Mongoid.load_configuration
-      
+
       # 재연결 시도
       if DatabaseHealthChecker.check_mongodb
         Rails.logger.info "MongoDB connection recovered"
@@ -937,3 +943,7 @@ end
 - [보안 가이드](security_guide.md)
 - [개발환경 설정](development_setup_guide.md)
 - [메인 README](../README.md)
+
+
+
+

@@ -22,18 +22,18 @@
 // .vscode/extensions.json
 {
   "recommendations": [
-    "shopify.ruby-lsp",                    // Ruby LSP (언어 서버)
-    "bradlc.vscode-tailwindcss",           // Tailwind CSS 지원
-    "ms-vscode.vscode-typescript-next",    // TypeScript 지원
-    "esbenp.prettier-vscode",              // 코드 포맷터
+    "shopify.ruby-lsp", // Ruby LSP (언어 서버)
+    "bradlc.vscode-tailwindcss", // Tailwind CSS 지원
+    "ms-vscode.vscode-typescript-next", // TypeScript 지원
+    "esbenp.prettier-vscode", // 코드 포맷터
     "streetsidesoftware.code-spell-checker", // 스펠 체커
-    "ms-vscode.vscode-json",               // JSON 지원
-    "yzhang.markdown-all-in-one",          // Markdown 지원
-    "ms-vscode.hexeditor",                 // 바이너리 편집기
-    "humao.rest-client",                   // REST API 테스트
-    "formulahendry.auto-rename-tag",       // HTML 태그 자동 이름 변경
-    "christian-kohler.path-intellisense",  // 경로 자동완성
-    "ms-vscode.vscode-todo-highlight"      // TODO 하이라이트
+    "ms-vscode.vscode-json", // JSON 지원
+    "yzhang.markdown-all-in-one", // Markdown 지원
+    "ms-vscode.hexeditor", // 바이너리 편집기
+    "humao.rest-client", // REST API 테스트
+    "formulahendry.auto-rename-tag", // HTML 태그 자동 이름 변경
+    "christian-kohler.path-intellisense", // 경로 자동완성
+    "ms-vscode.vscode-todo-highlight" // TODO 하이라이트
   ]
 }
 ```
@@ -54,7 +54,7 @@
   },
   "ruby.lsp.rubyVersionManager": "rbenv",
   "ruby.lsp.bundleGemfile": "Gemfile",
-  
+
   "tailwindCSS.includeLanguages": {
     "erb": "html",
     "ruby": "html"
@@ -63,11 +63,11 @@
     "class:\\s*['\"]([^'\"]*)['\"]",
     "className:\\s*['\"]([^'\"]*)['\"]"
   ],
-  
+
   "emmet.includeLanguages": {
     "erb": "html"
   },
-  
+
   "files.associations": {
     "*.html.erb": "erb",
     "*.js.erb": "javascript",
@@ -77,40 +77,40 @@
     "*.ru": "ruby",
     "*.thor": "ruby"
   },
-  
+
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll": true,
     "source.organizeImports": true
   },
-  
+
   "prettier.configPath": ".prettierrc",
   "prettier.ignorePath": ".prettierignore",
-  
+
   "[ruby]": {
     "editor.defaultFormatter": "shopify.ruby-lsp",
     "editor.formatOnSave": true,
     "editor.tabSize": 2,
     "editor.insertSpaces": true
   },
-  
+
   "[erb]": {
     "editor.defaultFormatter": "shopify.ruby-lsp",
     "editor.formatOnSave": true
   },
-  
+
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  
+
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  
+
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  
+
   "search.exclude": {
     "**/node_modules": true,
     "**/vendor": true,
@@ -119,7 +119,7 @@
     "**/coverage": true,
     "**/.git": true
   },
-  
+
   "files.watcherExclude": {
     "**/tmp/**": true,
     "**/log/**": true,
@@ -236,6 +236,7 @@
 ### RubyMine 설정 (대안)
 
 #### 필수 플러그인
+
 - Ruby/Rails
 - Database Tools
 - Git Integration
@@ -244,6 +245,7 @@
 - .env files support
 
 #### 설정 팁
+
 ```ruby
 # 코드 스타일 설정
 # Settings > Editor > Code Style > Ruby
@@ -268,7 +270,7 @@
 def some_method
   debugger  # 또는 binding.debug
   # 코드 실행이 여기서 멈춤
-  
+
   puts "변수 확인: #{variable}"
 end
 
@@ -363,9 +365,9 @@ def analyze_queries
       binds: payload[:binds]
     }
   end
-  
+
   yield
-  
+
   queries.sort_by { |q| -q[:duration] }.first(10)
 ensure
   ActiveSupport::Notifications.unsubscribe(subscriber)
@@ -513,17 +515,17 @@ echo "✅ Pre-commit checks passed!"
 RSpec.configure do |config|
   # 출력 포맷
   config.formatter = :documentation
-  
+
   # 실패한 테스트만 재실행
   config.example_status_persistence_file_path = "spec/examples.txt"
-  
+
   # 랜덤 순서로 테스트 실행
   config.order = :random
   Kernel.srand config.seed
-  
+
   # 프로파일링 활성화
   config.profile_examples = 10
-  
+
   # 테스트 태그 필터링
   config.filter_run_when_matching :focus
   config.filter_run_excluding :slow unless ENV['RUN_SLOW_TESTS']
@@ -536,7 +538,7 @@ end
 # spec/support/factory_bot.rb
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
-  
+
   # Factory 유효성 검사
   config.before(:suite) do
     FactoryBot.find_definitions
@@ -551,12 +553,12 @@ FactoryBot.define do
     sequence(:email) { |n| "user#{n}@example.com" }
     password { "password123" }
     name { Faker::Name.name }
-    
+
     # 트레이트 사용
     trait :admin do
       role { 'admin' }
     end
-    
+
     trait :with_organization do
       after(:create) do |user|
         organization = create(:organization)
@@ -579,7 +581,7 @@ RAILS_ENV=test bin/rails db:seed
 # spec/rails_helper.rb
 if ENV['PARALLEL_WORKERS']
   require 'parallel_tests'
-  
+
   RSpec.configure do |config|
     config.before(:suite) do
       ParallelTests.first_process? and TestProf::FactoryBot.init
@@ -602,18 +604,18 @@ Rails.application.configure do
   config.cache_classes = false
   config.action_controller.perform_caching = true
   config.cache_store = :memory_store
-  
+
   # 에셋 최적화
   config.assets.debug = false  # 개별 파일 대신 번들 사용
   config.assets.quiet = true   # 에셋 로그 줄이기
-  
+
   # SQL 쿼리 최적화
   config.active_record.verbose_query_logs = true
   config.active_record.query_log_tags_enabled = true
-  
+
   # 메일러 최적화
   config.action_mailer.perform_deliveries = false
-  
+
   # 파일 감시 최적화
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
 end
@@ -626,10 +628,10 @@ end
 def check_missing_indexes
   ActiveRecord::Base.connection.tables.each do |table|
     model = table.classify.constantize rescue next
-    
+
     model.reflect_on_all_associations.each do |association|
       foreign_key = association.foreign_key
-      
+
       unless has_index?(table, foreign_key)
         puts "Missing index: #{table}.#{foreign_key}"
       end
@@ -730,3 +732,7 @@ test: 태스크 모델 테스트 추가
 - [보안 가이드](security_guide.md)
 - [데이터베이스 아키텍처](database_architecture.md)
 - [메인 README](../README.md)
+
+
+
+
