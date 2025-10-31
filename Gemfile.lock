@@ -388,7 +388,7 @@ GEM
     public_suffix (6.0.2)
     puma (6.6.1)
       nio4r (~> 2.0)
-    pundit-matchers (3.1.2)
+    pundit-matchers (4.0.0)
       rspec-core (~> 3.12)
       rspec-expectations (~> 3.12)
       rspec-mocks (~> 3.12)
@@ -477,7 +477,7 @@ GEM
       rspec-expectations (~> 3.13)
       rspec-mocks (~> 3.13)
       rspec-support (~> 3.13)
-    rspec-support (3.13.5)
+    rspec-support (3.13.6)
     rubocop (1.80.0)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
@@ -660,7 +660,7 @@ DEPENDENCIES
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)
-  pundit-matchers (~> 3.1)
+  pundit-matchers (~> 4.0)
   rails (~> 8.0.2)
   rails-controller-testing
   rails-i18n (~> 8.0)
